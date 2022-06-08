@@ -7,8 +7,8 @@ The Cognos Powershell Module requires PowerShell 7
 Open PowerShell Window as Administrator
 ````
 mkdir "C:\Program Files\PowerShell\Modules\CognosModule"
-Invoke-WebRequest -Uri https://github.com/carbm1/CognosModule/master/CognosModule.psd1 -OutFile "C:\Program Files\PowerShell\Modules\CognosModule/CognosModule.psd1"
-Invoke-WebRequest -Uri https://github.com/carbm1/CognosModule/master/CognosModule.psm1 -OutFile "C:\Program Files\PowerShell\Modules\CognosModule/CognosModule.psm1"
+Invoke-WebRequest -Uri https://github.com/carbm1/CognosModule/master/CognosModule.psd1 -OutFile "C:\Program Files\PowerShell\Modules\CognosModule\CognosModule.psd1"
+Invoke-WebRequest -Uri https://github.com/carbm1/CognosModule/master/CognosModule.psm1 -OutFile "C:\Program Files\PowerShell\Modules\CognosModule\CognosModule.psm1"
 ````
 
 ## Intial Configuration
@@ -48,5 +48,44 @@ Please provide your Cognos Password: ********************
 
 ## Example
 ````
-Connect-ToCognos
+PS C:\Users\craig> Connect-ToCognos
+Authenticating and switching to gentrysms... Success.
+PS C:\Users\craig> $advisors = Get-CognosReport -report "advisors"
+PS C:\Users\craig> $advisors | Select-Object -First 5 | Format-Table
 
+Current Building Student Id Advisor
+---------------- ---------- -------
+17               403004590  1063
+17               403004604  2225
+17               403004635  2356
+17               403004638  2311
+17               403004650  2309
+
+PS C:\Users\craig> Save-CognosReport -report "advisors"
+Info: Saving to C:\Users\craig\advisors.csv
+
+PS C:\Users\craig> Save-CognosReport -report "advisors" -savepath c:\scripts
+Info: Saving to c:\scripts\advisors.csv
+
+PS C:\Users\craig> Import-Csv C:\Scripts\advisors.csv | Select-Object -First 5 | Format-Table
+
+Current Building Student Id Advisor
+---------------- ---------- -------
+17               403004590  1063
+17               403004604  2225
+17               403004635  2356
+17               403004638  2311
+17               403004650  2309
+
+PS C:\Users\craig> Get-CognosReport -report schools -cognosfolder "_Shared Data File Reports\Clever Files" -TeamContent | Measure-Object
+
+Count             : 4
+Average           :
+Sum               :
+Maximum           :
+Minimum           :
+StandardDeviation :
+Property          :
+
+PS C:\Users\craig> Save-CognosReport -report schools -cognosfolder "_Shared Data File Reports\Clever Files" -TeamContent -savepath "c:\scripts"
+````

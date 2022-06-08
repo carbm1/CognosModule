@@ -1,29 +1,56 @@
+function Update-CognosModule {
+    
+    <#
+        .SYNOPSIS
+        Update the Cognos Module from Github.
 
+        .DESCRIPTION
+        Update the Cognos Module from Github.
+
+        .EXAMPLE
+        Update-CognosModule
+
+    #>
+        
+    if (-Not $(New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        Write-Error "Must run as administrator!" -ErrorAction STOP
+    }
+    
+    $ModulePath = Get-Module CognosModule | Select-Object -ExpandProperty ModuleBase
+
+    try {
+        Invoke-WebRequest -Uri "https://github.com/carbm1/CognosModule/master/CognosModule.psd1" -OutFile "$($ModulePath)\CognosModule.psd1"
+        Invoke-WebRequest -Uri "https://github.com/carbm1/CognosModule/master/CognosModule.psm1" -OutFile "$($ModulePath)\CognosModule.psm1"
+    } catch {
+        Throw "Failed to update module. $PSitem"
+    }
+
+}
 
 function Set-CognosConfig {
-<#
-    .SYNOPSIS
-    Creates or updates a config
+    <#
+        .SYNOPSIS
+        Creates or updates a config
 
-    .DESCRIPTION
-    Creates or updates a config
+        .DESCRIPTION
+        Creates or updates a config
 
-    .PARAMETER ConfigName
-    The friendly name for the config you are creating or updating. Will be stored at $HOME\.config\Coognos\[ConfigName].json
+        .PARAMETER ConfigName
+        The friendly name for the config you are creating or updating. Will be stored at $HOME\.config\Coognos\[ConfigName].json
 
-    .PARAMETER Username
-    Your Cognos Username
+        .PARAMETER Username
+        Your Cognos Username
 
-    .PARAMETER espDSN
-    Your school database name in Cognos.
+        .PARAMETER espDSN
+        Your school database name in Cognos.
 
-    .EXAMPLE
-    Set-CognosConfig -Username "0403cmillsap" -dsnname "gentrysms"
+        .EXAMPLE
+        Set-CognosConfig -Username "0403cmillsap" -dsnname "gentrysms"
 
-    .EXAMPLE
-    Set-CognosConfig -ConfigName "GentryeFinance" -Username "0403cmillsap" -dsnname "gentryfms" -eFinanceUsername "cmillsap"
+        .EXAMPLE
+        Set-CognosConfig -ConfigName "GentryeFinance" -Username "0403cmillsap" -dsnname "gentryfms" -eFinanceUsername "cmillsap"
 
-#>
+    #>
 
     [Diagnostics.CodeAnalysis.SuppressMessageAttribute("PSAvoidUsingConvertToSecureStringWithPlainText", "")]
     [cmdletbinding()]
@@ -62,18 +89,19 @@ function Set-CognosConfig {
     $config | ConvertTo-Json | Out-File $configPath -Force
 
 }
+
 function Show-CognosConfig {
-<#
-    .SYNOPSIS
-    Display saved Cognos Configurations
+    <#
+        .SYNOPSIS
+        Display saved Cognos Configurations
 
-    .DESCRIPTION
-    Display saved Cognos Configurations
+        .DESCRIPTION
+        Display saved Cognos Configurations
 
-    .EXAMPLE
-    Show-CognosConfig
+        .EXAMPLE
+        Show-CognosConfig
 
-#>
+    #>
     $configs = Get-ChildItem "$($HOME)\.config\Cognos\*.json" -File
 
     if ($configs) {
@@ -98,21 +126,22 @@ function Show-CognosConfig {
     }
 
 }
+
 function Remove-CognosConfig {
-<#
-    .SYNOPSIS
-    Remove a saved config
+    <#
+        .SYNOPSIS
+        Remove a saved config
 
-    .DESCRIPTION
-    Remove a saved config
+        .DESCRIPTION
+        Remove a saved config
 
-    .PARAMETER ConfigName
-    The friendly name for the config you want to remove. Will be removed from $HOME\.config\Coognos\[ConfigName].json
+        .PARAMETER ConfigName
+        The friendly name for the config you want to remove. Will be removed from $HOME\.config\Coognos\[ConfigName].json
 
-    .EXAMPLE
-    Remove-CognosConfig -ConfigName "Gentry"
+        .EXAMPLE
+        Remove-CognosConfig -ConfigName "Gentry"
 
-#>
+    #>
     Param(
         [parameter(Mandatory = $true)][string]$ConfigName
     )
@@ -127,17 +156,17 @@ function Remove-CognosConfig {
 }
 
 function Update-CognosPassword {
-<#
-    .SYNOPSIS
-    Display saved Cognos Configurations
+    <#
+        .SYNOPSIS
+        Display saved Cognos Configurations
 
-    .DESCRIPTION
-    Display saved Cognos Configurations
+        .DESCRIPTION
+        Display saved Cognos Configurations
 
-    .EXAMPLE
-    Show-CognosConfig
+        .EXAMPLE
+        Show-CognosConfig
 
-#>
+    #>
     Param(
         [parameter(Mandatory = $false)][string]$ConfigName="DefaultConfig"
     )
@@ -158,24 +187,26 @@ function Update-CognosPassword {
     }
 
 }
+
 function Connect-ToCognos {
-<#
-    .SYNOPSIS
-    Establish a session to Cognos
+    <#
+        .SYNOPSIS
+        Establish a session to Cognos
 
-    .DESCRIPTION
-    Establish a session to Cognos
+        .DESCRIPTION
+        Establish a session to Cognos
 
-    .PARAMETER ConfigName
-    The friendly name for the config that contains your username, dsn, eFinance username.
+        .PARAMETER ConfigName
+        The friendly name for the config that contains your username, dsn, eFinance username.
 
-    .EXAMPLE
-    Connect-ToCognos
+        .EXAMPLE
+        Connect-ToCognos
 
-    .EXAMPLE
-    Connect-ToCognos -ConfigName "Gentry"
-    
-#>
+        .EXAMPLE
+        Connect-ToCognos -ConfigName "Gentry"
+        
+    #>
+
     Param(
         [parameter(Mandatory = $false)][string]$ConfigName = "DefaultConfig",
         [parameter(Mandatory = $false)][switch]$eFinance
@@ -246,24 +277,24 @@ function Connect-ToCognos {
     } until ($session)
 
 }
+
 function Get-CognosReport {
-<#
-    .SYNOPSIS
-    Returns a Cognos Report as an object
+    <#
+        .SYNOPSIS
+        Returns a Cognos Report as an object
 
-    .DESCRIPTION
-    Returns a Cognos Report as an object
+        .DESCRIPTION
+        Returns a Cognos Report as an object
 
-    .EXAMPLE
-    Get-CognosReport -report schools -cognosfolder "_Shared Data File Reports\Clever Files" -TeamContent
+        .EXAMPLE
+        Get-CognosReport -report schools -cognosfolder "_Shared Data File Reports\Clever Files" -TeamContent
 
-    .EXAMPLE
-    Get-CognosReport -report schools -cognosfolder "_Shared Data File Reports\Clever Files" -TeamContent | Export-CSV -Path "schools.csv" -UseQuotes AsNeeded
+        .EXAMPLE
+        Get-CognosReport -report schools -cognosfolder "_Shared Data File Reports\Clever Files" -TeamContent | Export-CSV -Path "schools.csv" -UseQuotes AsNeeded
 
-    .EXAMPLE
-    Get-CognosReport -report advisors -raw | Out-File advisors.csv
-
-#>
+        .EXAMPLE
+        Get-CognosReport -report advisors -raw | Out-File advisors.csv
+    #>
 
     Param(
         [parameter(Mandatory=$true,HelpMessage="Give the name of the report you want to download.")]
@@ -285,6 +316,7 @@ function Get-CognosReport {
     )
 
     $baseURL = "https://adecognos.arkansas.gov"
+    $progressPreference = 'silentlyContinue'
 
     if (-Not($CognosSession)) {
         if ($CognosProfile) {
@@ -512,25 +544,26 @@ function Get-CognosReport {
     }
 
 }
+
 function Save-CognosReport {
-<#
-    .SYNOPSIS
-    Save a Cognos Report to disk
+    <#
+        .SYNOPSIS
+        Save a Cognos Report to disk
 
-    .DESCRIPTION
-    Save a Cognos Report to disk
+        .DESCRIPTION
+        Save a Cognos Report to disk
 
-    .EXAMPLE
-    Save-CognosReport -report schools -cognosfolder "_Shared Data File Reports\Clever Files" -TeamContent
+        .EXAMPLE
+        Save-CognosReport -report schools -cognosfolder "_Shared Data File Reports\Clever Files" -TeamContent
 
-    .EXAMPLE
-    Save-CognosReport -report schools -cognosfolder "_Shared Data File Reports\Clever Files" -TeamContent -savepath "c:\scripts"
+        .EXAMPLE
+        Save-CognosReport -report schools -cognosfolder "_Shared Data File Reports\Clever Files" -TeamContent -savepath "c:\scripts"
 
-    .EXAMPLE
-    Save-CognosReport -report advisors
-    #Will save to the current folder.
+        .EXAMPLE
+        Save-CognosReport -report advisors
+        #Will save to the current folder.
 
-#>
+    #>
 
     Param(
         [parameter(Mandatory=$true,HelpMessage="Give the name of the report you want to download.")]
@@ -571,6 +604,7 @@ function Save-CognosReport {
 
     $baseURL = "https://adecognos.arkansas.gov"
     $fullFilePath = Join-Path -Path "$savepath" -ChildPath "$filename"
+    $progressPreference = 'silentlyContinue'
 
     if (-Not($CognosSession)) {
         if ($CognosProfile) {
@@ -797,12 +831,13 @@ function Save-CognosReport {
                 } until ($response3.receipt.status -ne "working")
 
                 #We should have the actual file now. We need to test if a previous file exists and back it up first.
-                Write-Host "Info: Saving to $($fullfilePath)" -ForeGroundColor Yellow
                 if (Test-Path $fullFilePath) {
                     $backupFileName = Join-Path -Path (Split-Path $fullFilePath) -ChildPath ((Split-Path -Leaf $fullFilePath) + '.bak')
                     Write-Host "Info: Backing up $($fullFilePath) to $($backupFileName)" -ForegroundColor Yellow
                     Move-Item -Path $fullFilePath -Destination $backupFileName -Force
                 }
+
+                Write-Host "Info: Saving to $($fullfilePath)" -ForeGroundColor Yellow
 
                 if ($extension -eq "csv" -and $TrimCSVWhiteSpace) {
                     $trimmedValues = Import-Csv -Path $reportIDHashFilePath
@@ -834,6 +869,8 @@ function Save-CognosReport {
                     Move-Item -Path $fullFilePath -Destination $backupFileName -Force
                 }
 
+                Write-Host "Info: Saving to $($fullfilePath)" -ForeGroundColor Yellow
+
                 #if specified lets clean up the file.
                 if ($extension -eq "csv" -and $TrimCSVWhiteSpace) {
                     $trimmedValues = Import-Csv -Path $reportIDHashFilePath
@@ -864,29 +901,29 @@ function Save-CognosReport {
     }
 
 }
+
 function Get-CogStudent {
-<#
-    .SYNOPSIS
-    Returns an object of enrolled student data
+    <#
+        .SYNOPSIS
+        Returns an object of enrolled student data
 
-    .DESCRIPTION
-    Returns an object of enrolled student data
+        .DESCRIPTION
+        Returns an object of enrolled student data
 
-    .EXAMPLE
-    Get-CogStudent -All
+        .EXAMPLE
+        Get-CogStudent -All
 
-    .EXAMPLE
-    Get-CogStudent -id 403005966
-    Get-CogStudent -id "403005966,403005988"
+        .EXAMPLE
+        Get-CogStudent -id 403005966
+        Get-CogStudent -id "403005966,403005988"
 
-    .EXAMPLE
-    Get-CogStudent -Building 15 -Grade 8
+        .EXAMPLE
+        Get-CogStudent -Building 15 -Grade 8
 
-    .EXAMPLE
-    Get-CogStudent -EntryAfter "1/1/22"
-    Get all students that have enrolled after 1/1/22
-
-#>
+        .EXAMPLE
+        Get-CogStudent -EntryAfter "1/1/22"
+        Get all students that have enrolled after 1/1/22
+    #>
 
     [CmdletBinding(DefaultParametersetName="default")]
     Param(
@@ -990,21 +1027,22 @@ function Get-CogStudent {
     }
 
 }
+
 function Get-CogSchool {
-<#
-    .SYNOPSIS
-    Returns an object with the building information
+    <#
+        .SYNOPSIS
+        Returns an object with the building information
 
-    .DESCRIPTION
-    Returns an object with the building information
+        .DESCRIPTION
+        Returns an object with the building information
 
-    .EXAMPLE
-    Get-CogSchool
+        .EXAMPLE
+        Get-CogSchool
 
-    .EXAMPLE
-    Get-CogSchool -Building 15
+        .EXAMPLE
+        Get-CogSchool -Building 15
 
-#>
+    #>
 
     Param(
         [parameter(Mandatory=$false)]$Building
@@ -1024,21 +1062,22 @@ function Get-CogSchool {
     return (Get-CognosReport @parameters -TeamContent)
 
 }
+
 function Get-CogStudentSchedule {
-<#
-    .SYNOPSIS
-    Returns an array of an array of a students schedule
+    <#
+        .SYNOPSIS
+        Returns an array of an array of a students schedule
 
-    .DESCRIPTION
-    Returns an array of an array of a students schedule
+        .DESCRIPTION
+        Returns an array of an array of a students schedule
 
-    .EXAMPLE
-    Get-CogStudentSchedule -id 403005966 | Format-Table
+        .EXAMPLE
+        Get-CogStudentSchedule -id 403005966 | Format-Table
 
-    .EXAMPLE
-    Get-CogStudentSchedule -Building 15 | ForEach-Object { $PSItem | Format-Table }
+        .EXAMPLE
+        Get-CogStudentSchedule -Building 15 | ForEach-Object { $PSItem | Format-Table }
 
-#>
+    #>
 
     Param(
         [parameter(Mandatory=$false,ValueFromPipeline=$true)]$id,
@@ -1133,40 +1172,41 @@ function Get-CogStudentSchedule {
     }
 
 }
+
 function Get-CogStuAttendance {
-<#
-    .SYNOPSIS
-    Returns Student Attendance Codes for a specified day, date after, or for the current school year. By default pulls todays date only.
+    <#
+        .SYNOPSIS
+        Returns Student Attendance Codes for a specified day, date after, or for the current school year. By default pulls todays date only.
 
-    .DESCRIPTION
-    Returns Student Attendance Codes for a specified day, date after, or for the current school year. By default pulls todays date only.
+        .DESCRIPTION
+        Returns Student Attendance Codes for a specified day, date after, or for the current school year. By default pulls todays date only.
 
-    .PARAMETER date
-    Pull a specific dates attendance. If not specified it will always be the current day.
+        .PARAMETER date
+        Pull a specific dates attendance. If not specified it will always be the current day.
 
-    .PARAMETER dateafter
-    Pull all attendance after this specific date.
+        .PARAMETER dateafter
+        Pull all attendance after this specific date.
 
-    .PARAMETER All
-    Pull attendance for this school year. equivalent to -dateafter "7/1/202X"
+        .PARAMETER All
+        Pull attendance for this school year. equivalent to -dateafter "7/1/202X"
 
-    .PARAMETER AttendanceCode
-    Specify what attendance codes you want to pull.
+        .PARAMETER AttendanceCode
+        Specify what attendance codes you want to pull.
 
-    .PARAMETER ExcludePeriodsByName
-    Exclude certain periods by their name. Example: ADV or an Advisory hour that we do not track attendance for.
+        .PARAMETER ExcludePeriodsByName
+        Exclude certain periods by their name. Example: ADV or an Advisory hour that we do not track attendance for.
 
-    .EXAMPLE
-    Get-CogStuAttendance -id 403005966
+        .EXAMPLE
+        Get-CogStuAttendance -id 403005966
 
-    .EXAMPLE
-    To get a specific dates attendance
-    Get-CogStuAttendance -date "4/15/2022"
+        .EXAMPLE
+        To get a specific dates attendance
+        Get-CogStuAttendance -date "4/15/2022"
 
-    .EXAMPLE
-    Get-CogStuAttendance -dateafter "1-14-2022" -AttendanceCode "A,M"
+        .EXAMPLE
+        Get-CogStuAttendance -dateafter "1-14-2022" -AttendanceCode "A,M"
 
-#>    
+    #>    
 
     Param(
         [parameter(Mandatory=$false,ValueFromPipeline=$true)]$id,
@@ -1307,16 +1347,18 @@ function Get-CogStuAttendance {
         return (Get-CognosReport @parameters -TeamContent)
     }
 }
+
 function Get-CogGuardian {
     #not ready yet.
 
 }
+
 function Get-CogGuardianPhone {
     #not ready yet
 
 }
 
-function Start-CognosBrowser() {
+function Start-CognosBrowser {
 
     Param(
         [parameter(Mandatory=$false)][string]$url="https://adecognos.arkansas.gov/ibmcognos/bi/v1/disp/rds/wsil/path",
@@ -1500,9 +1542,4 @@ function Start-CognosBrowser() {
         Start-CognosBrowser -url $url
     }
 
-}
-
-function Update-CognosModule() {
- #check for admin rights then Invoke-WebRequest directly to the github to put them in the C:\Program Files\PowerShell\Modules folder.
- Get-Module CognosModule | Select-Object -ExpandProperty ModuleBase
 }
