@@ -36,8 +36,8 @@
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
     FunctionsToExport = 'Set-CognosConfig','Show-CognosConfig','Remove-CognosConfig','Connect-ToCognos',
         'Update-CognosPassword','Get-CognosReport','Save-CognosReport','Get-CogStudent',
-        'Get-CogSchool','Get-CogStudentSchedule','Get-CogStuAttendance','Get-CogGuardian',
-        'Get-CogGuardianPhone','Start-CognosBrowser','Update-CognosModule'
+        'Get-CogSchool','Get-CogStuSchedule','Get-CogStuAttendance','Start-CognosBrowser',
+        'Update-CognosModule'
     
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport = @()

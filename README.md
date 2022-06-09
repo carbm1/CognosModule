@@ -7,8 +7,8 @@ The Cognos Powershell Module requires PowerShell 7
 Open PowerShell Window as Administrator
 ````
 mkdir "C:\Program Files\PowerShell\Modules\CognosModule"
-Invoke-WebRequest -Uri https://github.com/carbm1/CognosModule/master/CognosModule.psd1 -OutFile "C:\Program Files\PowerShell\Modules\CognosModule\CognosModule.psd1"
-Invoke-WebRequest -Uri https://github.com/carbm1/CognosModule/master/CognosModule.psm1 -OutFile "C:\Program Files\PowerShell\Modules\CognosModule\CognosModule.psm1"
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/carbm1/CognosModule/master/CognosModule.psd1 -OutFile "C:\Program Files\PowerShell\Modules\CognosModule\CognosModule.psd1"
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/carbm1/CognosModule/master/CognosModule.psm1 -OutFile "C:\Program Files\PowerShell\Modules\CognosModule\CognosModule.psm1"
 ````
 
 ## Intial Configuration
@@ -22,31 +22,65 @@ PS C:\Scripts> Set-CognosConfig -ConfigName "Judy" -username 0403judy -dsnname g
 Please provide your Cognos Password: ********************
 ````
 
-## Cmdlets
-- Set-CognosConfig
-    > Configure the username, dsn, and password for the connection.
-- Show-CognosConfig
-    > Show available configurations.
-- Remove-CognosConfig
-    > Remove a configuration.
-- Update-CognosPassword
-    > Change the password in a saved configuration.
-- Start-CognosBrowser
-    > Super Awesome command line based Cognos Browser.
-- Get-CognosReport
-    > Return a Cognos Report as a data object.
-- Save-CognosReport
-    > Download a Cognos Report and save as CSV,XLSX, or PDF.
-- Get-CogSchool
-    > School Building Information
-- Get-CogStudent
-    > Student Demographic Information
-- Get-CogStudentSchedule
-    > Student Schedule Information
-- Get-CogStuAttendance
-    > Student Attendance Information
+# Cmdlets
 
-## Example
+### Configure a profile for the username, dsn, and password for the connection.
+````
+Set-CognosConfig [[-ConfigName] <String>] [-username] <String> [[-eFinanceUsername] <String>] [-dsnname] <String>
+````
+
+### Show available configurations.
+```
+Show-CognosConfig
+````
+
+### Remove a configuration.
+````
+Remove-CognosConfig [-ConfigName] <String>
+````
+
+### Change the password in a saved configuration.
+````
+Update-CognosPassword [[-ConfigName] <String>]
+````
+
+### Super Awesome command line based Cognos Browser.
+````
+Start-CognosBrowser
+````
+    
+### Return a Cognos Report as a data object.
+````
+Get-CognosReport [-report] <String> [[-cognosfolder] <String>] [[-reportparams] <String>] [[-XMLParameters] <String>] [-SavePrompts] [[-Timeout] <Int32>] [-Raw] [-TeamContent]
+````
+
+### Download a Cognos Report and save as CSV,XLSX, or PDF.
+````
+Save-CognosReport -report <String> [[-extension] <String>] [-filename <String>] [-savepath <String>] [-cognosfolder <String>] [-reportparams <String>] [-XMLParameters <String>] [-SavePrompts] [-Timeout <Int32>] [-TeamContent] [-TrimCSVWhiteSpace] [-CSVUseQuotes] [-RandomTempFile]
+````
+
+### School Building Information
+````
+Get-CogSchool [[-Building] <Object>]
+````
+
+### Student Demographic Information
+````
+Get-CogStudent [-id <Object>] [-Building <Object>] [-Grade <Object>] [-FirstName <Object>] [-LastName <Object>] [-EntryAfter <DateTime>]
+Get-CogStudent [-All]
+````
+
+### Student Schedule Information
+````
+Get-CogStuSchedule [[-id] <Object>] [[-Grade] <Object>] [[-Building] <Object>]
+````
+
+### Student Attendance Information
+````
+Get-CogStuAttendance [[-id] <Object>] [[-Building] <Object>] [[-AttendanceCode] <Object>] [[-ExcludePeriodsByName] <Object>] [[-date] <DateTime>] [[-dateafter] <String>] [-All]
+````
+
+# Examples
 ````
 PS C:\Users\craig> Connect-ToCognos
 Authenticating and switching to gentrysms... Success.
@@ -88,4 +122,23 @@ StandardDeviation :
 Property          :
 
 PS C:\Users\craig> Save-CognosReport -report schools -cognosfolder "_Shared Data File Reports\Clever Files" -TeamContent -savepath "c:\scripts"
+````
+
+## eFinance Context
+````
+PS C:\Users\craig> Connect-ToCognos -eFinance -ConfigName "GentryeFinance"
+Authenticating and switching to gentryfms... Success.
+
+PS C:\Users\craig> Get-CognosReport -report "Open PO List" -cognosfolder "District Shared\Gentry" -TeamContent | Where-Object { $PSItem.VENDOR -LIKE "2414*" } | Select-Object -Property 'VENDOR','NAME','PAYMENTS' -First 5 | Format-Table
+
+VENDOR NAME                                PAYMENTS
+------ ----                                --------
+2414   CDW GOVERNMENT INC                  1218.54
+2414   CDW GOVERNMENT INC                  1061.05
+2414   CDW GOVERNMENT INC                  1061.06
+2414   CDW GOVERNMENT INC                  1061.06
+2414   CDW GOVERNMENT INC                  0
+
+PS C:\Users\craig> Save-CognosReport -report "Open PO List" -cognosfolder "District Shared\Gentry" -TeamContent
+Info: Saving to C:\Users\craig\Open PO List.csv
 ````

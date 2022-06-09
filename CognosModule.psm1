@@ -326,6 +326,11 @@ function Get-CognosReport {
         }
     }
 
+    #if the dsn name ends in fms then set eFinance to $True.
+    if ($CognosDSN.Substring($CognosDSN.Length -3) -eq 'fms') {
+        $eFinance = $True
+    }
+
     #To measure for a timeout.
     $startTime = Get-Date
 
@@ -393,6 +398,7 @@ function Get-CognosReport {
     }
 
     try {
+
         #This should always return a ticket.
         $response = Invoke-RestMethod -Uri $downloadURL -WebSession $CognosSession -SkipHttpErrorCheck -ErrorAction STOP
 
@@ -614,6 +620,11 @@ function Save-CognosReport {
         }
     }
 
+    #if the dsn name ends in fms then set eFinance to $True.
+    if ($CognosDSN.Substring($CognosDSN.Length -3) -eq 'fms') {
+        $eFinance = $True
+    }
+
     #We need a predicatable save path name but not one that overwrites the final file name. So we will take a hash of the report name. Once the file is verified it will be
     #copied to its final location overwriting the existing file.
     if ($RandomTempFile) {
@@ -702,6 +713,9 @@ function Save-CognosReport {
     }
 
     try {
+
+        Write-Verbose "$($downloadURL)"
+
         #This should always return a ticket.
         $response = Invoke-RestMethod -Uri $downloadURL -WebSession $CognosSession -SkipHttpErrorCheck -ErrorAction STOP
 
@@ -1063,7 +1077,7 @@ function Get-CogSchool {
 
 }
 
-function Get-CogStudentSchedule {
+function Get-CogStuSchedule {
     <#
         .SYNOPSIS
         Returns an array of an array of a students schedule
@@ -1348,16 +1362,6 @@ function Get-CogStuAttendance {
     }
 }
 
-function Get-CogGuardian {
-    #not ready yet.
-
-}
-
-function Get-CogGuardianPhone {
-    #not ready yet
-
-}
-
 function Start-CognosBrowser {
 
     Param(
@@ -1367,6 +1371,11 @@ function Start-CognosBrowser {
 
     if (-Not($CognosSession)) {
         Connect-ToCognos
+    }
+
+    #if the dsn name ends in fms then set eFinance to $True.
+    if ($CognosDSN.Substring($CognosDSN.Length -3) -eq 'fms') {
+        $eFinance = $True
     }
 
     $results = [System.Collections.Generic.List[PSObject]]@()
@@ -1438,11 +1447,15 @@ function Start-CognosBrowser {
 
                     $fileURL = $results[$selection - 1].url
                     $decodedURL = [System.Web.HttpUtility]::UrlDecode($results[$selection - 1].url)
-                    
+
                     if ($decodedURL.indexOf('/path/Team Content') -ge 1) {
                         #team content
                         $teamContent = $True
-                        $parameters.cognosFolder = Split-Path -Parent ($decodedURL.split('Team Content/Student Management System/')[1..99] -join '/')
+                        if ($eFinance) {
+                            $parameters.cognosFolder = Split-Path -Parent ($decodedURL.split('Team Content/Financial Management System/')[1..99] -join '/')
+                        } else {
+                            $parameters.cognosFolder = Split-Path -Parent ($decodedURL.split('Team Content/Student Management System/')[1..99] -join '/')
+                        }
                     } else {
                         #my folder
                         $teamContent = $False
@@ -1515,10 +1528,17 @@ function Start-CognosBrowser {
                         #Start-CognosBrowser -url $url
                     }
 
-                    $manualDownload = "To manually download this report`n.\CognosDownload.ps1 -report ""$($parameters.report)"" -cognosfolder ""$($parameters.cognosFolder)"" -savepath ""$($parameters.savepath)"""
+                    if ($parameters.savepath) {
+                        $manualDownload = "To manually download this report`nSave-CognosReport -report ""$($parameters.report)"" -cognosfolder ""$($parameters.cognosFolder)"""
+                        $manualDownload += " -savepath ""$($parameters.savepath)"""
+                    } else {
+                        $manualDownload = "To manually download this report`nGet-CognosReport -report ""$($parameters.report)"" -cognosfolder ""$($parameters.cognosFolder)"""
+                    }
+
                     if ($teamContent) {
                         $manualDownload += " -TeamContent"
                     }
+
                     Write-Host $manualDownload
 
                     Read-Host "Press enter to continue..."
@@ -1526,7 +1546,7 @@ function Start-CognosBrowser {
                     Start-CognosBrowser -url $url
                     
                 } else {
-                    Write-Host "To manually run this report`n.\CognosDownload.ps1 -report ""$name"" -cognosfolder ""$cognosFolder"""
+                    Write-Host "To manually run this report`nSave-CognosReport -report ""$name"" -cognosfolder ""$cognosFolder"""
                     Read-Host "Press enter to continue..."
                     Start-CognosBrowser -url $url
                 }
