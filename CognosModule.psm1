@@ -315,238 +315,137 @@ function Get-CognosReport {
             [switch]$TeamContent
     )
 
-    $baseURL = "https://adecognos.arkansas.gov"
-    $progressPreference = 'silentlyContinue'
-
-    if (-Not($CognosSession)) {
-        if ($CognosProfile) {
-            Connect-ToCognos -ConfigName $CognosProfile
-        } else {
-            Connect-ToCognos
-        }
-    }
-
-    #if the dsn name ends in fms then set eFinance to $True.
-    if ($CognosDSN.Substring($CognosDSN.Length -3) -eq 'fms') {
-        $eFinance = $True
-    }
-
-    #To measure for a timeout.
-    $startTime = Get-Date
-
-    if ($eFinance) {
-        $camName = "efp" #efp for eFinance
-        $dsnparam = "spi_db_name"
-        $dsnname = $CognosDSN.SubString(0,$CognosDSN.Length - 3) + 'fms'
-        if ($CognoseFPUsername) {
-            $camid = "CAMID(""efp_x003Aa_x003A$($CognoseFPUsername)"")"
-        } else {
-            $camid = "CAMID(""efp_x003Aa_x003A$($CognosUsername)"")"
-        }
-    } else {
-        $camName = "esp"    #esp for eSchool
-        $dsnparam = "dsn"
-        $dsnname = $CognosDSN
-        $camid = "CAMID(""esp_x003Aa_x003A$($CognosUsername)"")"
-    }
-
-    #Do not use UrlEncode here. The only character that must be encoded is the space so we have to use a Replace.
-    if ($cognosfolder -eq "My Folders") {
-        $cognosfolder = "$($camid)/My Folders"
-    } elseif ($TeamContent) {
-        if ($eFinance) {
-            $cognosfolder = "Team Content/Financial Management System/$($cognosfolder)"
-        } else {
-            $cognosfolder = "Team Content/Student Management System/$($cognosfolder)"
-        }
-    } else {
-        $cognosfolder = "$($camid)/My Folders/$($cognosfolder)"
-    }
-
-    #Do not use UrlEncode here. The only character that must be encoded is the space so we have to use a Replace.
-    $cognosfolder = $cognosfolder.Replace(' ','%20')
-
-    $downloadURL = "$($baseURL)/ibmcognos/bi/v1/disp/rds/outputFormat/path/$($cognosfolder)/$($report)/CSV?v=3&async=MANUAL"
-
-    Write-Verbose $downloadURL
-
-    if ($reportparams -ne '') {
-        $downloadURL = $downloadURL + '&' + $reportparams
-    }
-
-    #Complex parameters require an XML file to work properly. The path must be specified when invoking this module.
-    if ($XMLParameters -ne '') {
-        if (Test-Path "$XMLParameters") {
-            Write-Verbose "Using $($XMLParameters) for report prompts."
-            $reportParamXML = (Get-Content "$XMLParameters") -replace ' xmlns:rds="http://www.ibm.com/xmlns/prod/cognos/rds/types/201310"','' -replace 'rds:','' -replace '<','%3C' -replace '>','%3E' -replace '/','%2F'
-            $promptXML = [xml]((Get-Content "$XMLParameters") -replace ' xmlns:rds="http://www.ibm.com/xmlns/prod/cognos/rds/types/201310"','' -replace 'rds:','')
-            $downloadURL = $downloadURL + '&xmlData=' + $reportParamXML
-        } else {
-            Write-Error "The XML parameters file $XMLParameters can not be found." -ErrorAction STOP
-        }
-    }
-
-    #if you specify -verbose this information will be output to the terminal.
-    if ($promptXML) {
-        Write-Verbose "Info: You can customize your prompts by changing any of the following fields and using the -reportparams parameter."
-        $promptXML.promptAnswers.promptValues | ForEach-Object {
-            $promptname = $PSItem.name
-            $PSItem.values.item.SimplePValue.useValue | ForEach-Object {
-                Write-Verbose ("&p_$($promptname)=$($PSItem)").Trim()
-            }
-        }
-    }
-
     try {
 
-        #This should always return a ticket.
-        $response = Invoke-RestMethod -Uri $downloadURL -WebSession $CognosSession -SkipHttpErrorCheck -ErrorAction STOP
+        $conversationID = Start-CognosReport @PSBoundParameters
 
-        Write-Verbose $response
+        $baseURL = "https://adecognos.arkansas.gov"
 
-        #It is possible the terminal has sat long enough for the session to be expired. Try to reauthenticate.
-        if ($response.error.message -eq "RDS-ERR-1020 The currently provided credentials are invalid. Please provide the logon credentials.") {
-            Connect-ToCognos -ConfigName $CognosProfile
-        }
+        #Attempt first download.
+        Write-Verbose "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID.ConversationID)?v=3&async=MANUAL"
+        $response = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID.ConversationID)?v=3&async=MANUAL" -WebSession $CognosSession -ErrorAction STOP
+                
+        #This would indicate a generic failure or a prompt failure.
+        if ($response.error) {
+            $errorResponse = $response.error
+            Write-Error "$($errorResponse.message)"
 
-        if ($response.error.message) {
-            #Throw "$($response4.error.message)"
-            #Instead of throwing an error if we just try again without -SkipHttpErrorCheck we can get the actual error output to the console.
-            Write-Verbose $response.error.message
-            $response = Invoke-RestMethod -Uri $downloadURL -WebSession $CognosSession -ErrorAction STOP
-        }
+            if ($errorResponse.promptID) {
 
-        if ($response.receipt.status -eq "working") {
+                $promptid = $errorResponse.promptID
 
-            #At this point we have our conversationID that we can use to query for if the report is done or not. If it is still running it will return an XML response with reciept.status = working.
-            #The problem now is that Cognos decides to either reply with the actual file or another receipt. Since we can't decipher which one prior to our next request we need to check for possible
-            #values in the XML reponse.
+                #The report ID is included in the prompt response.
+                $errorResponse.url -match 'storeID%28%22(.{33})%22%29' | Out-Null
+                $reportId = $Matches.1
 
-            #Attempt first download.
-            $response2 = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($response.receipt.conversationID)?v=3&async=MANUAL" -WebSession $CognosSession -ErrorAction STOP
-            
-            #This would indicate a generic failure or a prompt failure.
-            if ($response2.error) {
-                $errorResponse = $response2.error
-                Write-Error "$($errorResponse.message)"
+                #Expecting prompts. Lets see if we can find them.
+                $promptsConversation = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/reportPrompts/report/$($reportID)?v=3&async=MANUAL" -WebSession $CognosSession
+                $prompts = Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($promptsConversation.receipt.conversationID)?v=3&async=MANUAL" -WebSession $CognosSession
+                Write-Error "This report expects the following prompts:"
 
-                if ($errorResponse.promptID) {
+                Select-Xml -Xml ([xml]$prompts.Content) -XPath '//x:pname' -Namespace @{ x = "http://www.ibm.com/xmlns/prod/cognos/layoutData/201310" } | ForEach-Object {
+                    
+                    $promptname = $PSItem.Node.'#text'
+                    Write-Host "p_$($promptname)="
 
-                    $promptid = $errorResponse.promptID
-
-                    #The report ID is included in the prompt response.
-                    $errorResponse.url -match 'storeID%28%22(.{33})%22%29' | Out-Null
-                    $reportId = $Matches.1
-
-                    #Expecting prompts. Lets see if we can find them.
-                    $promptsConversation = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/reportPrompts/report/$($reportID)?v=3&async=MANUAL" -WebSession $CognosSession
-                    $prompts = Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($promptsConversation.receipt.conversationID)?v=3&async=MANUAL" -WebSession $CognosSession
-                    Write-Error "This report expects the following prompts:"
-
-                    Select-Xml -Xml ([xml]$prompts.Content) -XPath '//x:pname' -Namespace @{ x = "http://www.ibm.com/xmlns/prod/cognos/layoutData/201310" } | ForEach-Object {
-                        
-                        $promptname = $PSItem.Node.'#text'
-                        Write-Host "p_$($promptname)="
-
-                        if (Select-Xml -Xml ([xml]$prompts.Content) -XPath '//x:p_value' -Namespace @{ x = "http://www.ibm.com/xmlns/prod/cognos/layoutData/200904" }) {
-                            $promptvalues = Select-Xml -Xml ([xml]$prompts.Content) -XPath '//x:p_value' -Namespace @{ x = "http://www.ibm.com/xmlns/prod/cognos/layoutData/200904" } | Where-Object { $PSItem.Node.pname -eq $promptname }
-                            if ($promptvalues.Node.selOptions.sval) {
-                                $promptvalues.Node.selOptions.sval
-                            }
-                        }
-
-                    }
-
-                    Write-Host "Info: If you want to save prompts please run the script again with the -SavePrompts switch."
-
-                    if ($SavePrompts) {
-                        
-                        Write-Host "`r`nInfo: For complex prompts you can submit your prompts at the following URL. You must have a browser window open and signed into Cognos for this URL to work." -ForegroundColor Yellow
-                        Write-Host ("$($baseURL)" + ([uri]$errorResponse.url).PathAndQuery) + "`r`n"
-                        
-                        $promptAnswers = Read-Host -Prompt "After you have followed the link above and finish the prompts, would you like to download the responses for later use? (y/n)"
-
-                        if (@('Y','y') -contains $promptAnswers) {
-                            Write-Host "Info: Saving Report Responses to $($reportID).xml to be used later." -ForegroundColor Yellow
-                            Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/promptAnswers/conversationID/$($promptid)?v=3&async=OFF" -WebSession $CognosSession -OutFile "$($reportID).xml"
-                            Write-Host "Info: You will need to rerun this script to download the report using the saved prompts." -ForegroundColor Yellow
-
-                            $promptXML = [xml]((Get-Content "$($reportID).xml") -replace ' xmlns:rds="http://www.ibm.com/xmlns/prod/cognos/rds/types/201310"','' -replace 'rds:','')
-                            $promptXML.promptAnswers.promptValues | ForEach-Object {
-                                $promptname = $PSItem.name
-                                $PSItem.values.item.SimplePValue.useValue | ForEach-Object {
-                                    Write-Host "&p_$($promptname)=$($PSItem)"
-                                }
-                            }
-                            
+                    if (Select-Xml -Xml ([xml]$prompts.Content) -XPath '//x:p_value' -Namespace @{ x = "http://www.ibm.com/xmlns/prod/cognos/layoutData/200904" }) {
+                        $promptvalues = Select-Xml -Xml ([xml]$prompts.Content) -XPath '//x:p_value' -Namespace @{ x = "http://www.ibm.com/xmlns/prod/cognos/layoutData/200904" } | Where-Object { $PSItem.Node.pname -eq $promptname }
+                        if ($promptvalues.Node.selOptions.sval) {
+                            $promptvalues.Node.selOptions.sval
                         }
                     }
+
                 }
 
-                Throw "This report requires prompts."
+                Write-Host "Info: If you want to save prompts please run the script again with the -SavePrompts switch."
 
-            } elseif ($response2.receipt) { #task is still in a working status
-                
-                Write-Host "`r`nInfo: Report is still working." -ForegroundColor Yellow
-                Start-Sleep -Milliseconds 500 #Cognos is stupid fast sometimes but not so fast that we can make another query immediately.
-                
-                #The Cognos Server has started randomly timing out, 502 bad gateway, or TLS errors. We need to allow at least 3 errors becuase its not consistent.
-                $errorResponse = 0
-                do {
+                if ($SavePrompts) {
+                    
+                    Write-Host "`r`nInfo: For complex prompts you can submit your prompts at the following URL. You must have a browser window open and signed into Cognos for this URL to work." -ForegroundColor Yellow
+                    Write-Host ("$($baseURL)" + ([uri]$errorResponse.url).PathAndQuery) + "`r`n"
+                    
+                    $promptAnswers = Read-Host -Prompt "After you have followed the link above and finish the prompts, would you like to download the responses for later use? (y/n)"
 
-                    if ((Get-Date) -gt $startTime.AddMinutes($Timeout)) {
-                        Write-Error "Timeout of $Timeout met. Exiting." -ErrorAction STOP
-                    }
+                    if (@('Y','y') -contains $promptAnswers) {
+                        Write-Host "Info: Saving Report Responses to $($reportID).xml to be used later." -ForegroundColor Yellow
+                        Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/promptAnswers/conversationID/$($promptid)?v=3&async=OFF" -WebSession $CognosSession -OutFile "$($reportID).xml"
+                        Write-Host "Info: You will need to rerun this script to download the report using the saved prompts." -ForegroundColor Yellow
 
-                    try {
-                        $response3 = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($response2.receipt.conversationID)?v=3&async=AUTO" -WebSession $CognosSession
-                        $errorResponse = 0 #reset error response counter. We want three in a row, not three total.
-                    } catch {
-                        #on failure $response3 is not overwritten.
-                        $errorResponse++ #increment error response counter.
-                        #we have failed 3 times.
-                        if ($errorResponse -ge 3) {
-                            Write-Error "Failed to download file. $($PSitem)" -ErrorAction STOP
+                        $promptXML = [xml]((Get-Content "$($reportID).xml") -replace ' xmlns:rds="http://www.ibm.com/xmlns/prod/cognos/rds/types/201310"','' -replace 'rds:','')
+                        $promptXML.promptAnswers.promptValues | ForEach-Object {
+                            $promptname = $PSItem.name
+                            $PSItem.values.item.SimplePValue.useValue | ForEach-Object {
+                                Write-Host "&p_$($promptname)=$($PSItem)"
+                            }
                         }
-
-                        Start-Sleep -Seconds (Get-Random -Minimum 2 -Maximum 10) #Lets wait just a bit longer to see if its a timing issue.
+                        
                     }
-
-                    if ($response3.receipt.status -eq "working") {
-                        Write-Host '.' -NoNewline -ForegroundColor Yellow
-                        Start-Sleep -Seconds 2
-                    }
-
-                } until ($response3.receipt.status -ne "working")
-
-                #Return the actual data.
-                try {
-                    if ($Raw) {
-                        return [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding(28591).GetBytes($response3))
-                    } else {
-                        return [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding(28591).GetBytes($response3)) | ConvertFrom-Csv
-                    }
-                } catch {
-                    Throw "Unable to convert encoding on downloaded file to an object or the object is empty."
                 }
-
-            } else {
-                #we did not get a prompt page or an error so we should be able to output to disk.
-                
-                try {
-                    if ($Raw) {
-                        return [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding(28591).GetBytes($response2))
-                    } else {
-                        return [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding(28591).GetBytes($response2)) | ConvertFrom-Csv
-                    }
-                } catch {
-                    Throw "Unable to convert encoding on downloaded file to an object or the object is empty."
-                }     
             }
+
+            Throw "This report requires prompts."
+
+        } elseif ($response.receipt) { #task is still in a working status
+            
+            Write-Host "`r`nInfo: Report is still working." -ForegroundColor Yellow
+            Start-Sleep -Milliseconds 500 #Cognos is stupid fast sometimes but not so fast that we can make another query immediately.
+            
+            #The Cognos Server has started randomly timing out, 502 bad gateway, or TLS errors. We need to allow at least 3 errors becuase its not consistent.
+            $errorResponse = 0
+            do {
+
+                if ((Get-Date) -gt $startTime.AddMinutes($Timeout)) {
+                    Write-Error "Timeout of $Timeout met. Exiting." -ErrorAction STOP
+                }
+
+                try {
+                    $response2 = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID.ConversationID)?v=3&async=AUTO" -WebSession $CognosSession
+                    $errorResponse = 0 #reset error response counter. We want three in a row, not three total.
+                } catch {
+                    #on failure $response2 is not overwritten.
+                    $errorResponse++ #increment error response counter.
+                    #we have failed 3 times.
+                    if ($errorResponse -ge 3) {
+                        Write-Error "Failed to download file. $($PSitem)" -ErrorAction STOP
+                    }
+
+                    Start-Sleep -Seconds (Get-Random -Minimum 2 -Maximum 10) #Lets wait just a bit longer to see if its a timing issue.
+                }
+
+                if ($response2.receipt.status -eq "working") {
+                    Write-Host '.' -NoNewline -ForegroundColor Yellow
+                    Start-Sleep -Seconds 2
+                }
+
+            } until ($response2.receipt.status -ne "working")
+
+            #Return the actual data.
+            try {
+                if ($Raw) {
+                    return [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding(28591).GetBytes($response2))
+                } else {
+                    return [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding(28591).GetBytes($response2)) | ConvertFrom-Csv
+                }
+            } catch {
+                Throw "Unable to convert encoding on downloaded file to an object or the object is empty."
+            }
+
+        } else {
+            #we did not get a prompt page or an error so we should be able to output to disk.
+            
+            try {
+                if ($Raw) {
+                    return [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding(28591).GetBytes($response))
+                } else {
+                    return [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding(28591).GetBytes($response)) | ConvertFrom-Csv
+                }
+            } catch {
+                Throw "Unable to convert encoding on downloaded file to an object or the object is empty."
+            }     
         }
 
     } catch {
-        Write-Error "$($_)" -ErrorAction STOP
+        Write-Error "$($PSItem)" -ErrorAction STOP
     }
 
 }
@@ -607,307 +506,205 @@ function Save-CognosReport {
             [switch]$RandomTempFile
     )
 
+    
+
     $baseURL = "https://adecognos.arkansas.gov"
     $fullFilePath = Join-Path -Path "$savepath" -ChildPath "$filename"
     $progressPreference = 'silentlyContinue'
 
-    if (-Not($CognosSession)) {
-        if ($CognosProfile) {
-            Connect-ToCognos -ConfigName $CognosProfile
-        } else {
-            Connect-ToCognos
-        }
-    }
+    try{
 
-    #if the dsn name ends in fms then set eFinance to $True.
-    if ($CognosDSN.Substring($CognosDSN.Length -3) -eq 'fms') {
-        $eFinance = $True
-    }
+        $conversationID = Start-CognosReport @PSBoundParameters
 
-    #We need a predicatable save path name but not one that overwrites the final file name. So we will take a hash of the report name. Once the file is verified it will be
-    #copied to its final location overwriting the existing file.
-    if ($RandomTempFile) {
-        $reportIDHash = (New-Guid).Guid.ToString()
-    } else {   
-        $reportIDHash = (Get-FileHash -InputStream ([System.IO.MemoryStream]::New([System.Text.Encoding]::ASCII.GetBytes($report)))).Hash
-    }
-
-    $reportIDHashFilePath = Join-Path -Path "$(Split-Path $fullFilePath)" -ChildPath "$($reportIDHash)"
-
-    Write-Verbose $filename
-    Write-Verbose $fullFilePath
-    Write-Verbose $savepath
-    Write-Verbose $reportIDHashFilePath
-
-    #To measure for a timeout.
-    $startTime = Get-Date
-
-    if ($eFinance) {
-        $camName = "efp" #efp for eFinance
-        $dsnparam = "spi_db_name"
-        $dsnname = $CognosDSN.SubString(0,$CognosDSN.Length - 3) + 'fms'
-        if ($CognoseFPUsername) {
-            $camid = "CAMID(""efp_x003Aa_x003A$($CognoseFPUsername)"")"
-        } else {
-            $camid = "CAMID(""efp_x003Aa_x003A$($CognosUsername)"")"
-        }
-    } else {
-        $camName = "esp"    #esp for eSchool
-        $dsnparam = "dsn"
-        $dsnname = $CognosDSN
-        $camid = "CAMID(""esp_x003Aa_x003A$($CognosUsername)"")"
-    }
-
-    #Do not use UrlEncode here. The only character that must be encoded is the space so we have to use a Replace.
-    if ($cognosfolder -eq "My Folders") {
-        $cognosfolder = "$($camid)/My Folders"
-    } elseif ($TeamContent) {
-        if ($eFinance) {
-            $cognosfolder = "Team Content/Financial Management System/$($cognosfolder)"
-        } else {
-            $cognosfolder = "Team Content/Student Management System/$($cognosfolder)"
-        }
-    } else {
-        $cognosfolder = "$($camid)/My Folders/$($cognosfolder)"
-    }
-
-    #Do not use UrlEncode here. The only character that must be encoded is the space so we have to use a Replace.
-    $cognosfolder = $cognosfolder.Replace(' ','%20')
-
-    switch ($extension) {
-        "pdf" { $rdsFormat = "PDF" }
-        "csv" { $rdsFormat = "CSV" }
-        "xlsx" { $rdsFormat = "spreadsheetML" }
-    }
-
-    $downloadURL = "$($baseURL)/ibmcognos/bi/v1/disp/rds/outputFormat/path/$($cognosfolder)/$($report)/$($rdsFormat)?v=3&async=MANUAL"
-
-    Write-Verbose $downloadURL
-
-    if ($reportparams -ne '') {
-        $downloadURL = $downloadURL + '&' + $reportparams
-    }
-
-    #Complex parameters require an XML file to work properly. The path must be specified when invoking this module.
-    if ($XMLParameters -ne '') {
-        if (Test-Path "$XMLParameters") {
-            Write-Verbose "Using $($XMLParameters) for report prompts."
-            $reportParamXML = (Get-Content "$XMLParameters") -replace ' xmlns:rds="http://www.ibm.com/xmlns/prod/cognos/rds/types/201310"','' -replace 'rds:','' -replace '<','%3C' -replace '>','%3E' -replace '/','%2F'
-            $promptXML = [xml]((Get-Content "$XMLParameters") -replace ' xmlns:rds="http://www.ibm.com/xmlns/prod/cognos/rds/types/201310"','' -replace 'rds:','')
-            $downloadURL = $downloadURL + '&xmlData=' + $reportParamXML
-        } else {
-            Write-Error "The XML parameters file $XMLParameters can not be found." -ErrorAction STOP
-        }
-    }
-
-    #if you specify -verbose this information will be output to the terminal.
-    if ($promptXML) {
-        Write-Verbose "Info: You can customize your prompts by changing any of the following fields and using the -reportparams parameter."
-        $promptXML.promptAnswers.promptValues | ForEach-Object {
-            $promptname = $PSItem.name
-            $PSItem.values.item.SimplePValue.useValue | ForEach-Object {
-                Write-Verbose ("&p_$($promptname)=$($PSItem)").Trim()
-            }
-        }
-    }
-
-    try {
-
-        Write-Verbose "$($downloadURL)"
-
-        #This should always return a ticket.
-        $response = Invoke-RestMethod -Uri $downloadURL -WebSession $CognosSession -SkipHttpErrorCheck -ErrorAction STOP
-
-        Write-Verbose $response
-
-        #It is possible the terminal has sat long enough for the session to be expired. Try to reauthenticate.
-        if ($response.error.message -eq "RDS-ERR-1020 The currently provided credentials are invalid. Please provide the logon credentials.") {
-            Connect-ToCognos -ConfigName $CognosProfile
+        #We need a predicatable save path name but not one that overwrites the final file name. So we will take a hash of the report name. Once the file is verified it will be
+        #copied to its final location overwriting the existing file.
+        if ($RandomTempFile) {
+            $reportIDHash = (New-Guid).Guid.ToString()
+        } else {   
+            $reportIDHash = (Get-FileHash -InputStream ([System.IO.MemoryStream]::New([System.Text.Encoding]::ASCII.GetBytes($report)))).Hash
         }
 
-        if ($response.error.message) {
-            #Throw "$($response4.error.message)"
-            #Instead of throwing an error if we just try again without -SkipHttpErrorCheck we can get the actual error output to the console.
-            Write-Verbose $response.error.message
-            $response = Invoke-RestMethod -Uri $downloadURL -WebSession $CognosSession -ErrorAction STOP
-        }
+        $reportIDHashFilePath = Join-Path -Path "$(Split-Path $fullFilePath)" -ChildPath "$($reportIDHash)"
 
-        if ($response.receipt.status -eq "working") {
+        Write-Verbose $filename
+        Write-Verbose $fullFilePath
+        Write-Verbose $savepath
+        Write-Verbose $reportIDHashFilePath
 
-            #At this point we have our conversationID that we can use to query for if the report is done or not. If it is still running it will return an XML response with reciept.status = working.
-            #The problem now is that Cognos decides to either reply with the actual file or another receipt. Since we can't decipher which one prior to our next request we need to check for possible
-            #values in the XML reponse.
+        #At this point we have our conversationID that we can use to query for if the report is done or not. If it is still running it will return an XML response with reciept.status = working.
+        #The problem now is that Cognos decides to either reply with the actual file or another receipt. Since we can't decipher which one prior to our next request we need to check for possible
+        #values in the XML reponse.
 
-            #Attempt first download.
-            Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($response.receipt.conversationID)?v=3&async=MANUAL" -WebSession $CognosSession -OutFile "$reportIDHashFilePath" -ErrorAction STOP
-            
-            try {
-                $response2 = [XML](Get-Content $reportIDHashFilePath)
-            } catch {}
+        #Attempt first download.
+        Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID.conversationID)?v=3&async=MANUAL" -WebSession $CognosSession -OutFile "$reportIDHashFilePath" -ErrorAction STOP
+        
+        try {
+            $response2 = [XML](Get-Content $reportIDHashFilePath)
+        } catch {}
 
-            #This would indicate a generic failure or a prompt failure.
-            if ($response2.error) {
-                $errorResponse = $response2.error
-                Write-Error "$($errorResponse.message)"
+        #This would indicate a generic failure or a prompt failure.
+        if ($response2.error) {
+            $errorResponse = $response2.error
+            Write-Error "$($errorResponse.message)"
 
-                if ($errorResponse.promptID) {
+            if ($errorResponse.promptID) {
 
-                    $promptid = $errorResponse.promptID
+                $promptid = $errorResponse.promptID
 
-                    #The report ID is included in the prompt response.
-                    $errorResponse.url -match 'storeID%28%22(.{33})%22%29' | Out-Null
-                    $reportId = $Matches.1
+                #The report ID is included in the prompt response.
+                $errorResponse.url -match 'storeID%28%22(.{33})%22%29' | Out-Null
+                $reportId = $Matches.1
 
-                    #Expecting prompts. Lets see if we can find them.
-                    $promptsConversation = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/reportPrompts/report/$($reportID)?v=3&async=MANUAL" -WebSession $CognosSession
-                    $prompts = Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($promptsConversation.receipt.conversationID)?v=3&async=MANUAL" -WebSession $CognosSession
-                    Write-Error "This report expects the following prompts:"
+                #Expecting prompts. Lets see if we can find them.
+                $promptsConversation = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/reportPrompts/report/$($reportID)?v=3&async=MANUAL" -WebSession $CognosSession
+                $prompts = Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($promptsConversation.receipt.conversationID)?v=3&async=MANUAL" -WebSession $CognosSession
+                Write-Error "This report expects the following prompts:"
 
-                    Select-Xml -Xml ([xml]$prompts.Content) -XPath '//x:pname' -Namespace @{ x = "http://www.ibm.com/xmlns/prod/cognos/layoutData/201310" } | ForEach-Object {
-                        
-                        $promptname = $PSItem.Node.'#text'
-                        Write-Host "p_$($promptname)="
-
-                        if (Select-Xml -Xml ([xml]$prompts.Content) -XPath '//x:p_value' -Namespace @{ x = "http://www.ibm.com/xmlns/prod/cognos/layoutData/200904" }) {
-                            $promptvalues = Select-Xml -Xml ([xml]$prompts.Content) -XPath '//x:p_value' -Namespace @{ x = "http://www.ibm.com/xmlns/prod/cognos/layoutData/200904" } | Where-Object { $PSItem.Node.pname -eq $promptname }
-                            if ($promptvalues.Node.selOptions.sval) {
-                                $promptvalues.Node.selOptions.sval
-                            }
-                        }
-
-                    }
-
-                    Write-Host "Info: If you want to save prompts please run the script again with the -SavePrompts switch."
-
-                    if ($SavePrompts) {
-                        
-                        Write-Host "`r`nInfo: For complex prompts you can submit your prompts at the following URL. You must have a browser window open and signed into Cognos for this URL to work." -ForegroundColor Yellow
-                        Write-Host ("$($baseURL)" + ([uri]$errorResponse.url).PathAndQuery) + "`r`n"
-                        
-                        $promptAnswers = Read-Host -Prompt "After you have followed the link above and finish the prompts, would you like to download the responses for later use? (y/n)"
-
-                        if (@('Y','y') -contains $promptAnswers) {
-                            Write-Host "Info: Saving Report Responses to $($reportID).xml to be used later." -ForegroundColor Yellow
-                            Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/promptAnswers/conversationID/$($promptid)?v=3&async=OFF" -WebSession $CognosSession -OutFile "$($reportID).xml"
-                            Write-Host "Info: You will need to rerun this script to download the report using the saved prompts." -ForegroundColor Yellow
-
-                            $promptXML = [xml]((Get-Content "$($reportID).xml") -replace ' xmlns:rds="http://www.ibm.com/xmlns/prod/cognos/rds/types/201310"','' -replace 'rds:','')
-                            $promptXML.promptAnswers.promptValues | ForEach-Object {
-                                $promptname = $PSItem.name
-                                $PSItem.values.item.SimplePValue.useValue | ForEach-Object {
-                                    Write-Host "&p_$($promptname)=$($PSItem)"
-                                }
-                            }
-                            
-                        }
-                    }
-                }
-
-                Throw "This report requires prompts."
-
-            } elseif ($response2.receipt) { #task is still in a working status
-                
-                Write-Host "`r`nInfo: Report is still working."
-                Start-Sleep -Milliseconds 500 #Cognos is stupid fast sometimes but not so fast that we can make another query immediately.
-                
-                #The Cognos Server has started randomly timing out, 502 bad gateway, or TLS errors. We need to allow at least 3 errors becuase its not consistent.
-                $errorResponse = 0
-                do {
-
-                    if ((Get-Date) -gt $startTime.AddMinutes($Timeout)) {
-                        Write-Error "Timeout of $Timeout met. Exiting." -ErrorAction STOP
-                    }
-
-                    try {
-                        Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($response2.receipt.conversationID)?v=3&async=AUTO" -WebSession $CognosSession -OutFile "$reportIDHashFilePath"
-                        $errorResponse = 0 #reset error response counter. We want three in a row, not three total.
-                    } catch {
-                        #on failure $response3 is not overwritten.
-                        $errorResponse++ #increment error response counter.
-                        #we have failed 3 times.
-                        if ($errorResponse -ge 3) {
-                            Write-Error "Failed to download file. $($PSitem)" -ErrorAction STOP
-                        }
-
-                        Start-Sleep -Seconds (Get-Random -Minimum 2 -Maximum 10) #Lets wait just a bit longer to see if its a timing issue.
-                    }
-
-                    try {
-                        $response3 = [XML](Get-Content $reportIDHashFilePath)
-                    } catch {}
-
-                    if ($response3.receipt.status -eq "working") {
-                        Write-Host '.' -NoNewline
-                        Start-Sleep -Seconds 2
-                    }
-
-                } until ($response3.receipt.status -ne "working")
-
-                #We should have the actual file now. We need to test if a previous file exists and back it up first.
-                if (Test-Path $fullFilePath) {
-                    $backupFileName = Join-Path -Path (Split-Path $fullFilePath) -ChildPath ((Split-Path -Leaf $fullFilePath) + '.bak')
-                    Write-Host "Info: Backing up $($fullFilePath) to $($backupFileName)" -ForegroundColor Yellow
-                    Move-Item -Path $fullFilePath -Destination $backupFileName -Force
-                }
-
-                Write-Host "Info: Saving to $($fullfilePath)" -ForeGroundColor Yellow
-
-                if ($extension -eq "csv" -and $TrimCSVWhiteSpace) {
-                    $trimmedValues = Import-Csv -Path $reportIDHashFilePath
-                    $trimmedValues | Foreach-Object {  
-                        $_.PSObject.Properties | Foreach-Object {
-                            $_.Value = $_.Value.Trim()
-                        }
-                    }
-
-                    if ($CSVUseQuotes) {
-                        Write-Host "Info: Exporting CSV using quotes." -ForegroundColor Yellow
-                        $trimmedValues | Export-Csv -UseQuotes Always -Path $fullfilepath -Force
-                    } else {
-                        $trimmedValues | Export-Csv -UseQuotes AsNeeded -Path $fullfilepath -Force
-                    }
+                Select-Xml -Xml ([xml]$prompts.Content) -XPath '//x:pname' -Namespace @{ x = "http://www.ibm.com/xmlns/prod/cognos/layoutData/201310" } | ForEach-Object {
                     
-                    Remove-Item -Path $reportIDHashFilePath -Force
+                    $promptname = $PSItem.Node.'#text'
+                    Write-Host "p_$($promptname)="
 
-                } else {
-                    Move-Item -Path $reportIDHashFilePath -Destination $fullFilePath -Force
+                    if (Select-Xml -Xml ([xml]$prompts.Content) -XPath '//x:p_value' -Namespace @{ x = "http://www.ibm.com/xmlns/prod/cognos/layoutData/200904" }) {
+                        $promptvalues = Select-Xml -Xml ([xml]$prompts.Content) -XPath '//x:p_value' -Namespace @{ x = "http://www.ibm.com/xmlns/prod/cognos/layoutData/200904" } | Where-Object { $PSItem.Node.pname -eq $promptname }
+                        if ($promptvalues.Node.selOptions.sval) {
+                            $promptvalues.Node.selOptions.sval
+                        }
+                    }
+
                 }
+
+                Write-Host "Info: If you want to save prompts please run the script again with the -SavePrompts switch."
+
+                if ($SavePrompts) {
+                    
+                    Write-Host "`r`nInfo: For complex prompts you can submit your prompts at the following URL. You must have a browser window open and signed into Cognos for this URL to work." -ForegroundColor Yellow
+                    Write-Host ("$($baseURL)" + ([uri]$errorResponse.url).PathAndQuery) + "`r`n"
+                    
+                    $promptAnswers = Read-Host -Prompt "After you have followed the link above and finish the prompts, would you like to download the responses for later use? (y/n)"
+
+                    if (@('Y','y') -contains $promptAnswers) {
+                        Write-Host "Info: Saving Report Responses to $($reportID).xml to be used later." -ForegroundColor Yellow
+                        Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/promptAnswers/conversationID/$($promptid)?v=3&async=OFF" -WebSession $CognosSession -OutFile "$($reportID).xml"
+                        Write-Host "Info: You will need to rerun this script to download the report using the saved prompts." -ForegroundColor Yellow
+
+                        $promptXML = [xml]((Get-Content "$($reportID).xml") -replace ' xmlns:rds="http://www.ibm.com/xmlns/prod/cognos/rds/types/201310"','' -replace 'rds:','')
+                        $promptXML.promptAnswers.promptValues | ForEach-Object {
+                            $promptname = $PSItem.name
+                            $PSItem.values.item.SimplePValue.useValue | ForEach-Object {
+                                Write-Host "&p_$($promptname)=$($PSItem)"
+                            }
+                        }
+                        
+                    }
+                }
+            }
+
+            Throw "This report requires prompts."
+
+        } elseif ($response2.receipt) { #task is still in a working status
+            
+            Write-Host "`r`nInfo: Report is still working."
+            Start-Sleep -Milliseconds 500 #Cognos is stupid fast sometimes but not so fast that we can make another query immediately.
+            
+            #The Cognos Server has started randomly timing out, 502 bad gateway, or TLS errors. We need to allow at least 3 errors becuase its not consistent.
+            $errorResponse = 0
+            do {
+
+                if ((Get-Date) -gt $startTime.AddMinutes($Timeout)) {
+                    Write-Error "Timeout of $Timeout met. Exiting." -ErrorAction STOP
+                }
+
+                try {
+                    Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID.conversationID)?v=3&async=AUTO" -WebSession $CognosSession -OutFile "$reportIDHashFilePath"
+                    $errorResponse = 0 #reset error response counter. We want three in a row, not three total.
+                } catch {
+                    #on failure $response3 is not overwritten.
+                    $errorResponse++ #increment error response counter.
+                    #we have failed 3 times.
+                    if ($errorResponse -ge 3) {
+                        Write-Error "Failed to download file. $($PSitem)" -ErrorAction STOP
+                    }
+
+                    Start-Sleep -Seconds (Get-Random -Minimum 2 -Maximum 10) #Lets wait just a bit longer to see if its a timing issue.
+                }
+
+                try {
+                    $response3 = [XML](Get-Content $reportIDHashFilePath)
+                } catch {}
+
+                if ($response3.receipt.status -eq "working") {
+                    Write-Host '.' -NoNewline
+                    Start-Sleep -Seconds 2
+                }
+
+            } until ($response3.receipt.status -ne "working")
+
+            #We should have the actual file now. We need to test if a previous file exists and back it up first.
+            if (Test-Path $fullFilePath) {
+                $backupFileName = Join-Path -Path (Split-Path $fullFilePath) -ChildPath ((Split-Path -Leaf $fullFilePath) + '.bak')
+                Write-Host "Info: Backing up $($fullFilePath) to $($backupFileName)" -ForegroundColor Yellow
+                Move-Item -Path $fullFilePath -Destination $backupFileName -Force
+            }
+
+            Write-Host "Info: Saving to $($fullfilePath)" -ForeGroundColor Yellow
+
+            if ($extension -eq "csv" -and $TrimCSVWhiteSpace) {
+                $trimmedValues = Import-Csv -Path $reportIDHashFilePath
+                $trimmedValues | Foreach-Object {  
+                    $_.PSObject.Properties | Foreach-Object {
+                        $_.Value = $_.Value.Trim()
+                    }
+                }
+
+                if ($CSVUseQuotes) {
+                    Write-Host "Info: Exporting CSV using quotes." -ForegroundColor Yellow
+                    $trimmedValues | Export-Csv -UseQuotes Always -Path $fullfilepath -Force
+                } else {
+                    $trimmedValues | Export-Csv -UseQuotes AsNeeded -Path $fullfilepath -Force
+                }
+                
+                Remove-Item -Path $reportIDHashFilePath -Force
 
             } else {
-                
-                #No prompt page. Move forward.
-                if (Test-Path $fullFilePath) {
-                    $backupFileName = Join-Path -Path (Split-Path $fullFilePath) -ChildPath ((Split-Path -Leaf $fullFilePath) + '.bak')
-                    Write-Host "Info: Backing up $($fullFilePath) to $($backupFileName)" -ForegroundColor Yellow
-                    Move-Item -Path $fullFilePath -Destination $backupFileName -Force
-                }
-
-                Write-Host "Info: Saving to $($fullfilePath)" -ForeGroundColor Yellow
-
-                #if specified lets clean up the file.
-                if ($extension -eq "csv" -and $TrimCSVWhiteSpace) {
-                    $trimmedValues = Import-Csv -Path $reportIDHashFilePath
-                    $trimmedValues | Foreach-Object {  
-                        $_.PSObject.Properties | Foreach-Object {
-                            $_.Value = $_.Value.Trim()
-                        }
-                    }
-
-                    if ($CSVUseQuotes) {
-                        Write-Host "Info: Exporting CSV using quotes." -ForegroundColor Yellow
-                        $trimmedValues | Export-Csv -UseQuotes Always -Path $fullFilePath -Force
-                    } else {
-                        $trimmedValues | Export-Csv -UseQuotes AsNeeded -Path $fullFilePath -Force
-                    }
-
-                    Remove-Item -Path $reportIDHashFilePath -Force
-
-                } else {
-                    Move-Item -Path $reportIDHashFilePath -Destination $fullFilePath -Force
-                }
-
+                Move-Item -Path $reportIDHashFilePath -Destination $fullFilePath -Force
             }
+
+        } else {
+            
+            #No prompt page. Move forward.
+            if (Test-Path $fullFilePath) {
+                $backupFileName = Join-Path -Path (Split-Path $fullFilePath) -ChildPath ((Split-Path -Leaf $fullFilePath) + '.bak')
+                Write-Host "Info: Backing up $($fullFilePath) to $($backupFileName)" -ForegroundColor Yellow
+                Move-Item -Path $fullFilePath -Destination $backupFileName -Force
+            }
+
+            Write-Host "Info: Saving to $($fullfilePath)" -ForeGroundColor Yellow
+
+            #if specified lets clean up the file.
+            if ($extension -eq "csv" -and $TrimCSVWhiteSpace) {
+                $trimmedValues = Import-Csv -Path $reportIDHashFilePath
+                $trimmedValues | Foreach-Object {  
+                    $_.PSObject.Properties | Foreach-Object {
+                        $_.Value = $_.Value.Trim()
+                    }
+                }
+
+                if ($CSVUseQuotes) {
+                    Write-Host "Info: Exporting CSV using quotes." -ForegroundColor Yellow
+                    $trimmedValues | Export-Csv -UseQuotes Always -Path $fullFilePath -Force
+                } else {
+                    $trimmedValues | Export-Csv -UseQuotes AsNeeded -Path $fullFilePath -Force
+                }
+
+                Remove-Item -Path $reportIDHashFilePath -Force
+
+            } else {
+                Move-Item -Path $reportIDHashFilePath -Destination $fullFilePath -Force
+            }
+
         }
+        
 
     } catch {
         Write-Error "$($_)" -ErrorAction STOP
@@ -928,17 +725,35 @@ function Start-CognosReport {
 
     #>
 
+    #Start-CognosReport must have all parameters that Start-CognosReport and Resume-CognosReport have.
     Param(
         [parameter(Mandatory=$true,HelpMessage="Give the name of the report you want to download.")]
             [string]$report,
+        [parameter(Mandatory=$false,HelpMessage="Format you want to download report as.")]
+            [ValidateSet("csv","xlsx","pdf")]
+            [string]$extension="csv",
+        [parameter(Mandatory=$false,HelpMessage="Override filename. Must include the extension.")]
+            [string]$filename = "$($report).$($extension)",
+        [parameter(Mandatory=$false,HelpMessage="Folder to save report to.")]
+            [string]$savepath = (Get-Location).Path,
         [parameter(Mandatory=$false,HelpMessage="Cognos Folder Structure.")]
             [string]$cognosfolder = "My Folders", #Cognos Folder "Folder 1/Sub Folder 2/Sub Folder 3" NO TRAILING SLASH
         [parameter(Mandatory=$false,HelpMessage="Report Parameters")]
             [string]$reportparams, #If a report requires parameters you can specifiy them here. Example:"p_year=2017&p_school=Middle School"
         [parameter(Mandatory=$false)]
             [string]$XMLParameters, #Path to XML for answering prompts.
+        [parameter(Mandatory=$false)]
+            [switch]$SavePrompts, #Interactive submitting and saving of complex prompts.
+        [parameter(Mandatory=$false)] #How long in minutes are you willing to let CognosDownloader run for said report? 5 mins is default and gives us a way to error control.
+            [int]$Timeout = 5,
         [parameter(Mandatory=$false)] #If the report is in the Team Content folder we have to switch paths.
             [switch]$TeamContent,
+        [parameter(Mandatory=$false)] #Remove Spaces in CSV files. This requires Powershell 7.1+
+            [switch]$TrimCSVWhiteSpace,
+        [parameter(Mandatory=$false)] #If you Trim CSV White Space do you want to wrap everything in quotes?
+            [switch]$CSVUseQuotes,
+        [parameter(Mandatory=$false)] #If you need to download the same report multiple times but with different parameters we have to use a random temp file so they don't conflict.
+            [switch]$RandomTempFile,
         [parameter(Mandatory=$false)] #provide a name for the report so it can be returned with the ConverstationID.
             [string]$JobName = $report
     )
@@ -1059,7 +874,6 @@ function Start-CognosReport {
     }
 
 }
-
 function Resume-CognosReport {
     <#
         .SYNOPSIS
