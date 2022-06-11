@@ -550,7 +550,6 @@ function Get-CognosReport {
     }
 
 }
-
 function Save-CognosReport {
     <#
         .SYNOPSIS
@@ -914,6 +913,192 @@ function Save-CognosReport {
         Write-Error "$($_)" -ErrorAction STOP
     }
 
+}
+
+function Start-CognosReport {
+    <#
+        .SYNOPSIS
+        Run a Cognos Report on the server and return a Conversation ID to be retrieved later.
+
+        .DESCRIPTION
+        Run a Cognos Report on the server and return a Conversation ID to be retrieved later.
+
+        .EXAMPLE
+        Start-CognosReport -report schools -cognosfolder "_Shared Data File Reports\Clever Files" -TeamContent
+
+    #>
+
+    Param(
+        [parameter(Mandatory=$true,HelpMessage="Give the name of the report you want to download.")]
+            [string]$report,
+        [parameter(Mandatory=$false,HelpMessage="Cognos Folder Structure.")]
+            [string]$cognosfolder = "My Folders", #Cognos Folder "Folder 1/Sub Folder 2/Sub Folder 3" NO TRAILING SLASH
+        [parameter(Mandatory=$false,HelpMessage="Report Parameters")]
+            [string]$reportparams, #If a report requires parameters you can specifiy them here. Example:"p_year=2017&p_school=Middle School"
+        [parameter(Mandatory=$false)]
+            [string]$XMLParameters, #Path to XML for answering prompts.
+        [parameter(Mandatory=$false)] #If the report is in the Team Content folder we have to switch paths.
+            [switch]$TeamContent,
+        [parameter(Mandatory=$false)] #provide a name for the report so it can be returned with the ConverstationID.
+            [string]$JobName = $report
+    )
+
+    $baseURL = "https://adecognos.arkansas.gov"
+    $progressPreference = 'silentlyContinue'
+
+    if (-Not($CognosSession)) {
+        if ($CognosProfile) {
+            Connect-ToCognos -ConfigName $CognosProfile
+        } else {
+            Connect-ToCognos
+        }
+    }
+
+    #if the dsn name ends in fms then set eFinance to $True.
+    if ($CognosDSN.Substring($CognosDSN.Length -3) -eq 'fms') {
+        $eFinance = $True
+    }
+
+    #To measure for a timeout.
+    $startTime = Get-Date
+
+    if ($eFinance) {
+        $camName = "efp" #efp for eFinance
+        $dsnparam = "spi_db_name"
+        $dsnname = $CognosDSN.SubString(0,$CognosDSN.Length - 3) + 'fms'
+        if ($CognoseFPUsername) {
+            $camid = "CAMID(""efp_x003Aa_x003A$($CognoseFPUsername)"")"
+        } else {
+            $camid = "CAMID(""efp_x003Aa_x003A$($CognosUsername)"")"
+        }
+    } else {
+        $camName = "esp"    #esp for eSchool
+        $dsnparam = "dsn"
+        $dsnname = $CognosDSN
+        $camid = "CAMID(""esp_x003Aa_x003A$($CognosUsername)"")"
+    }
+
+    #Do not use UrlEncode here. The only character that must be encoded is the space so we have to use a Replace.
+    if ($cognosfolder -eq "My Folders") {
+        $cognosfolder = "$($camid)/My Folders"
+    } elseif ($TeamContent) {
+        if ($eFinance) {
+            $cognosfolder = "Team Content/Financial Management System/$($cognosfolder)"
+        } else {
+            $cognosfolder = "Team Content/Student Management System/$($cognosfolder)"
+        }
+    } else {
+        $cognosfolder = "$($camid)/My Folders/$($cognosfolder)"
+    }
+
+    #Do not use UrlEncode here. The only character that must be encoded is the space so we have to use a Replace.
+    $cognosfolder = $cognosfolder.Replace(' ','%20')
+
+    $downloadURL = "$($baseURL)/ibmcognos/bi/v1/disp/rds/outputFormat/path/$($cognosfolder)/$($report)/CSV?v=3&async=MANUAL"
+
+    Write-Verbose $downloadURL
+
+    if ($reportparams -ne '') {
+        $downloadURL = $downloadURL + '&' + $reportparams
+    }
+
+    #Complex parameters require an XML file to work properly. The path must be specified when invoking this module.
+    if ($XMLParameters -ne '') {
+        if (Test-Path "$XMLParameters") {
+            Write-Verbose "Using $($XMLParameters) for report prompts."
+            $reportParamXML = (Get-Content "$XMLParameters") -replace ' xmlns:rds="http://www.ibm.com/xmlns/prod/cognos/rds/types/201310"','' -replace 'rds:','' -replace '<','%3C' -replace '>','%3E' -replace '/','%2F'
+            $promptXML = [xml]((Get-Content "$XMLParameters") -replace ' xmlns:rds="http://www.ibm.com/xmlns/prod/cognos/rds/types/201310"','' -replace 'rds:','')
+            $downloadURL = $downloadURL + '&xmlData=' + $reportParamXML
+        } else {
+            Write-Error "The XML parameters file $XMLParameters can not be found." -ErrorAction STOP
+        }
+    }
+
+    #if you specify -verbose this information will be output to the terminal.
+    if ($promptXML) {
+        Write-Verbose "Info: You can customize your prompts by changing any of the following fields and using the -reportparams parameter."
+        $promptXML.promptAnswers.promptValues | ForEach-Object {
+            $promptname = $PSItem.name
+            $PSItem.values.item.SimplePValue.useValue | ForEach-Object {
+                Write-Verbose ("&p_$($promptname)=$($PSItem)").Trim()
+            }
+        }
+    }
+
+    try {
+
+        #This should always return a ticket.
+        $response = Invoke-RestMethod -Uri $downloadURL -WebSession $CognosSession -SkipHttpErrorCheck -ErrorAction STOP
+
+        Write-Verbose $response
+
+        #It is possible the terminal has sat long enough for the session to be expired. Try to reauthenticate.
+        if ($response.error.message -eq "RDS-ERR-1020 The currently provided credentials are invalid. Please provide the logon credentials.") {
+            Connect-ToCognos -ConfigName $CognosProfile
+        }
+
+        if ($response.error.message) {
+            #Throw "$($response4.error.message)"
+            #Instead of throwing an error if we just try again without -SkipHttpErrorCheck we can get the actual error output to the console.
+            Write-Verbose $response.error.message
+            $response = Invoke-RestMethod -Uri $downloadURL -WebSession $CognosSession -ErrorAction STOP
+        }
+
+        if ($response.receipt.status -eq "working") {
+            #At this point we have our conversationID
+            return [PSCustomObject]@{
+                Report = $JobName
+                ConversationID = $($response.receipt.conversationID)
+            }
+        } else {
+            Throw "Failed to run report. Please try with Get-CognosReport or Save-CognosReport."
+        }
+
+    } catch {
+        Write-Error "$($_)" -ErrorAction STOP
+    }
+
+}
+
+function Resume-CognosReport {
+    <#
+        .SYNOPSIS
+        Resumes a Conversation ID and retrieves the data.
+
+        .DESCRIPTION
+        Resumes a Conversation ID and retrieves the data.
+
+        .EXAMPLE
+        Resume-CognosReport -ConversationID iEB18BC21637D4EDAA53E26F8447F6B6F
+    #>
+
+    Param(
+        [parameter(Mandatory=$true,HelpMessage="Provide the conversation ID returned by Start-CognosReport.")]
+            [string]$ConversationID
+    )
+
+    $baseURL = "https://adecognos.arkansas.gov"
+    $progressPreference = 'silentlyContinue'
+
+    #Attempt download.
+    $response = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($ConversationID)?v=3&async=MANUAL" -WebSession $CognosSession -ErrorAction STOP
+            
+    if ($response.receipt) { #task is still in a working status
+                
+        Throw "Report not ready yet."
+    
+    } else {
+
+        try {
+            if ($Raw) {
+                return [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding(28591).GetBytes($response))
+            } else {
+                return [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding(28591).GetBytes($response)) | ConvertFrom-Csv
+            }
+        } catch {
+            Throw "Unable to convert encoding on downloaded file to an object or the object is empty."
+        }     
+    }
 }
 
 function Get-CogStudent {

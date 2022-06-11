@@ -11,7 +11,7 @@ Invoke-WebRequest -Uri https://raw.githubusercontent.com/carbm1/CognosModule/mas
 Invoke-WebRequest -Uri https://raw.githubusercontent.com/carbm1/CognosModule/master/CognosModule.psm1 -OutFile "C:\Program Files\PowerShell\Modules\CognosModule\CognosModule.psm1"
 ````
 
-## Intial Configuration
+## Initial Configuration
 ````
 PS C:\Scripts> Set-CognosConfig -username 0403cmillsap -dsnname gentrysms -eFinanceUsername cmillsap
 Please provide your Cognos Password: ********************
