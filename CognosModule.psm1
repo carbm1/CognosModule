@@ -231,16 +231,16 @@ function Connect-ToCognos {
         $camName = "efp"    #efp for eFinance
         $dsnparam = "spi_db_name"
         $dsnname = $CognosDSN.SubString(0,$CognosDSN.Length - 3) + 'fms'
-        if ($efpusername) {
-            $camid = "CAMID(""efp_x003Aa_x003A$($efpusername)"")"
-        } else {
-            $camid = "CAMID(""efp_x003Aa_x003A$($username)"")"
-        }
+        # if ($efpusername) {
+        #     $camid = "CAMID(""efp_x003Aa_x003A$($efpusername)"")"
+        # } else {
+        #     $camid = "CAMID(""efp_x003Aa_x003A$($username)"")"
+        # }
     } else {
         $camName = "esp"    #esp for eSchool
         $dsnparam = "dsn"
         $dsnname = $CognosDSN
-        $camid = "CAMID(""esp_x003Aa_x003A$($username)"")"
+        # $camid = "CAMID(""esp_x003Aa_x003A$($username)"")"
     }
 
     #Attempt two authentications. Sometimes Cognos just doesn't reply. [shock face goes here]
@@ -296,34 +296,43 @@ function Get-CognosReport {
         Get-CognosReport -report advisors -raw | Out-File advisors.csv
     #>
 
+    [CmdletBinding(DefaultParametersetName="default")]
     Param(
-        [parameter(Mandatory=$true,HelpMessage="Give the name of the report you want to download.")]
+        [parameter(Mandatory=$true,HelpMessage="Give the name of the report you want to download.",ParameterSetName="Default")]
             [string]$report,
-        [parameter(Mandatory=$false,HelpMessage="Cognos Folder Structure.")]
+        [parameter(Mandatory=$false,HelpMessage="Cognos Folder Structure.",ParameterSetName="Default")]
             [string]$cognosfolder = "My Folders", #Cognos Folder "Folder 1/Sub Folder 2/Sub Folder 3" NO TRAILING SLASH
-        [parameter(Mandatory=$false,HelpMessage="Report Parameters")]
+        [parameter(Mandatory=$false,HelpMessage="Report Parameters",ParameterSetName="Default")]
             [string]$reportparams, #If a report requires parameters you can specifiy them here. Example:"p_year=2017&p_school=Middle School"
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory=$false,ParameterSetName="Default")]
             [string]$XMLParameters, #Path to XML for answering prompts.
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory=$false,ParameterSetName="Default")]
             [switch]$SavePrompts, #Interactive submitting and saving of complex prompts.
-        [parameter(Mandatory=$false)] #How long in minutes are you willing to let CognosDownloader run for said report? 5 mins is default and gives us a way to error control.
+        [parameter(Mandatory=$false,ParameterSetName="Default")] #How long in minutes are you willing to let CognosDownloader run for said report? 5 mins is default and gives us a way to error control.
             [int]$Timeout = 5,
-        [parameter(Mandatory=$false)] #This will dump the raw CSV data to the terminal.
+        [parameter(Mandatory=$false,ParameterSetName="Default")] #This will dump the raw CSV data to the terminal.
             [switch]$Raw,
-        [parameter(Mandatory=$false)] #If the report is in the Team Content folder we have to switch paths.
-            [switch]$TeamContent
+        [parameter(Mandatory=$false,ParameterSetName="Default")] #If the report is in the Team Content folder we have to switch paths.
+            [switch]$TeamContent,
+        [parameter(Mandatory=$false,ParameterSetName="conversation")] #Provide a conversationID if you already started one via Start-CognosReport
+            $conversationID
     )
 
     try {
+        
+        $startTime = Get-Date
 
-        $conversationID = Start-CognosReport @PSBoundParameters
+        #If the conversationID has already been supplied then we will use that.
+        if (-Not($conversationID)) {
+            $conversation = Start-CognosReport @PSBoundParameters
+            $conversationID = $conversation.conversationID
+        }
 
         $baseURL = "https://adecognos.arkansas.gov"
 
         #Attempt first download.
-        Write-Verbose "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID.ConversationID)?v=3&async=MANUAL"
-        $response = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID.ConversationID)?v=3&async=MANUAL" -WebSession $CognosSession -ErrorAction STOP
+        Write-Verbose "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID)?v=3&async=MANUAL"
+        $response = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID)?v=3&async=MANUAL" -WebSession $CognosSession -ErrorAction STOP
                 
         #This would indicate a generic failure or a prompt failure.
         if ($response.error) {
@@ -399,7 +408,7 @@ function Get-CognosReport {
                 }
 
                 try {
-                    $response2 = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID.ConversationID)?v=3&async=AUTO" -WebSession $CognosSession
+                    $response2 = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID)?v=3&async=AUTO" -WebSession $CognosSession
                     $errorResponse = 0 #reset error response counter. We want three in a row, not three total.
                 } catch {
                     #on failure $response2 is not overwritten.
@@ -417,6 +426,8 @@ function Get-CognosReport {
                     Start-Sleep -Seconds 2
                 }
 
+                Write-Verbose "$($response2.receipt.status)"
+
             } until ($response2.receipt.status -ne "working")
 
             #Return the actual data.
@@ -433,6 +444,8 @@ function Get-CognosReport {
         } else {
             #we did not get a prompt page or an error so we should be able to output to disk.
             
+            Write-Verbose "$($response.receipt.status)"
+
             try {
                 if ($Raw) {
                     return [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding(28591).GetBytes($response))
@@ -449,6 +462,7 @@ function Get-CognosReport {
     }
 
 }
+
 function Save-CognosReport {
     <#
         .SYNOPSIS
@@ -469,15 +483,19 @@ function Save-CognosReport {
 
     #>
 
+    [CmdletBinding(DefaultParametersetName="default")]
     Param(
-        [parameter(Mandatory=$true,HelpMessage="Give the name of the report you want to download.")]
+        [parameter(Mandatory=$true,HelpMessage="Give the name of the report you want to download.",ParameterSetName="default")]
             [string]$report,
-        [parameter(Position=2,Mandatory=$false,HelpMessage="Format you want to download report as.")]
+        [parameter(Mandatory=$false,HelpMessage="Format you want to download report as.",ParameterSetName="default")]
+        [parameter(Mandatory=$false,HelpMessage="Format you want to download report as.",ParameterSetName="conversation")]
             [ValidateSet("csv","xlsx","pdf")]
             [string]$extension="csv",
-        [parameter(Mandatory=$false,HelpMessage="Override filename. Must include the extension.")]
+        [parameter(Mandatory=$false,HelpMessage="Override filename. Must include the extension.",ParameterSetName="default")]
+        [parameter(Mandatory=$false,HelpMessage="Override filename. Must include the extension.",ParameterSetName="conversation")]
             [string]$filename = "$($report).$($extension)",
-        [parameter(Mandatory=$false,HelpMessage="Folder to save report to.")]
+        [parameter(Mandatory=$false,HelpMessage="Folder to save report to.",ParameterSetName="default")]
+        [parameter(Mandatory=$false,HelpMessage="Folder to save report to.",ParameterSetName="conversation")]
             [ValidateScript( {
                 if ([System.IO.Directory]::Exists("$PSitem")) {
                     $True
@@ -486,24 +504,35 @@ function Save-CognosReport {
                 }
             })]
             [string]$savepath = (Get-Location).Path,
-        [parameter(Mandatory=$false,HelpMessage="Cognos Folder Structure.")]
+        [parameter(Mandatory=$false,HelpMessage="Cognos Folder Structure.",ParameterSetName="default")]
+        [parameter(Mandatory=$false,HelpMessage="Cognos Folder Structure.",ParameterSetName="conversation")]
             [string]$cognosfolder = "My Folders", #Cognos Folder "Folder 1/Sub Folder 2/Sub Folder 3" NO TRAILING SLASH
-        [parameter(Mandatory=$false,HelpMessage="Report Parameters")]
+        [parameter(Mandatory=$false,HelpMessage="Report Parameters",ParameterSetName="default")]
+        [parameter(Mandatory=$false,HelpMessage="Report Parameters",ParameterSetName="conversation")]
             [string]$reportparams, #If a report requires parameters you can specifiy them here. Example:"p_year=2017&p_school=Middle School"
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory=$false,ParameterSetName="default")]
+        [parameter(Mandatory=$false,ParameterSetName="conversation")]
             [string]$XMLParameters, #Path to XML for answering prompts.
-        [parameter(Mandatory=$false)]
+        [parameter(Mandatory=$false,ParameterSetName="default")]
+        [parameter(Mandatory=$false,ParameterSetName="conversation")]
             [switch]$SavePrompts, #Interactive submitting and saving of complex prompts.
-        [parameter(Mandatory=$false)] #How long in minutes are you willing to let CognosDownloader run for said report? 5 mins is default and gives us a way to error control.
+        [parameter(Mandatory=$false,ParameterSetName="default")] #How long in minutes are you willing to let CognosDownloader run for said report? 5 mins is default and gives us a way to error control.
+        [parameter(Mandatory=$false,ParameterSetName="conversation")]
             [int]$Timeout = 5,
-        [parameter(Mandatory=$false)] #If the report is in the Team Content folder we have to switch paths.
+        [parameter(Mandatory=$false,ParameterSetName="default")] #If the report is in the Team Content folder we have to switch paths.
+        [parameter(Mandatory=$false,ParameterSetName="conversation")]
             [switch]$TeamContent,
-        [parameter(Mandatory=$false)] #Remove Spaces in CSV files. This requires Powershell 7.1+
+        [parameter(Mandatory=$false,ParameterSetName="default")] #Remove Spaces in CSV files. This requires Powershell 7.1+
+        [parameter(Mandatory=$false,ParameterSetName="conversation")]
             [switch]$TrimCSVWhiteSpace,
-        [parameter(Mandatory=$false)] #If you Trim CSV White Space do you want to wrap everything in quotes?
+        [parameter(Mandatory=$false,ParameterSetName="default")] #If you Trim CSV White Space do you want to wrap everything in quotes?
+        [parameter(Mandatory=$false,ParameterSetName="conversation")]
             [switch]$CSVUseQuotes,
-        [parameter(Mandatory=$false)] #If you need to download the same report multiple times but with different parameters we have to use a random temp file so they don't conflict.
-            [switch]$RandomTempFile
+        [parameter(Mandatory=$false,ParameterSetName="default")] #If you need to download the same report multiple times but with different parameters we have to use a random temp file so they don't conflict.
+        [parameter(Mandatory=$false,ParameterSetName="conversation")]    
+            [switch]$RandomTempFile,
+        [parameter(Mandatory=$true,ParameterSetName="conversation")] #Provide a conversationID if you already started one via Start-CognosReport
+            $conversationID
     )
 
     
@@ -514,7 +543,11 @@ function Save-CognosReport {
 
     try{
 
-        $conversationID = Start-CognosReport @PSBoundParameters
+        #If the conversationID has already been supplied then we will use that.
+        if (-Not($conversationID)) {
+            $conversation = Start-CognosReport @PSBoundParameters
+            $conversationID = $conversation.conversationID
+        }
 
         #We need a predicatable save path name but not one that overwrites the final file name. So we will take a hash of the report name. Once the file is verified it will be
         #copied to its final location overwriting the existing file.
@@ -536,7 +569,7 @@ function Save-CognosReport {
         #values in the XML reponse.
 
         #Attempt first download.
-        Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID.conversationID)?v=3&async=MANUAL" -WebSession $CognosSession -OutFile "$reportIDHashFilePath" -ErrorAction STOP
+        Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID)?v=3&async=MANUAL" -WebSession $CognosSession -OutFile "$reportIDHashFilePath" -ErrorAction STOP
         
         try {
             $response2 = [XML](Get-Content $reportIDHashFilePath)
@@ -616,7 +649,7 @@ function Save-CognosReport {
                 }
 
                 try {
-                    Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID.conversationID)?v=3&async=AUTO" -WebSession $CognosSession -OutFile "$reportIDHashFilePath"
+                    Invoke-WebRequest -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID)?v=3&async=AUTO" -WebSession $CognosSession -OutFile "$reportIDHashFilePath"
                     $errorResponse = 0 #reset error response counter. We want three in a row, not three total.
                 } catch {
                     #on failure $response3 is not overwritten.
@@ -725,7 +758,7 @@ function Start-CognosReport {
 
     #>
 
-    #Start-CognosReport must have all parameters that Start-CognosReport and Resume-CognosReport have.
+    #Start-CognosReport must have all parameters that Get-CognosReport and Save-CognosReport has.
     Param(
         [parameter(Mandatory=$true,HelpMessage="Give the name of the report you want to download.")]
             [string]$report,
@@ -754,6 +787,8 @@ function Start-CognosReport {
             [switch]$CSVUseQuotes,
         [parameter(Mandatory=$false)] #If you need to download the same report multiple times but with different parameters we have to use a random temp file so they don't conflict.
             [switch]$RandomTempFile,
+        [parameter(Mandatory=$false)]
+            [switch]$Raw,
         [parameter(Mandatory=$false)] #provide a name for the report so it can be returned with the ConverstationID.
             [string]$JobName = $report
     )
@@ -860,10 +895,11 @@ function Start-CognosReport {
         }
 
         if ($response.receipt.status -eq "working") {
-            #At this point we have our conversationID
+            #At this point we have our conversationID. Lets return an object with with some information.
             return [PSCustomObject]@{
-                Report = $JobName
                 ConversationID = $($response.receipt.conversationID)
+                Report = $JobName
+                StartTime = Get-Date
             }
         } else {
             Throw "Failed to run report. Please try with Get-CognosReport or Save-CognosReport."
@@ -873,46 +909,6 @@ function Start-CognosReport {
         Write-Error "$($_)" -ErrorAction STOP
     }
 
-}
-function Resume-CognosReport {
-    <#
-        .SYNOPSIS
-        Resumes a Conversation ID and retrieves the data.
-
-        .DESCRIPTION
-        Resumes a Conversation ID and retrieves the data.
-
-        .EXAMPLE
-        Resume-CognosReport -ConversationID iEB18BC21637D4EDAA53E26F8447F6B6F
-    #>
-
-    Param(
-        [parameter(Mandatory=$true,HelpMessage="Provide the conversation ID returned by Start-CognosReport.")]
-            [string]$ConversationID
-    )
-
-    $baseURL = "https://adecognos.arkansas.gov"
-    $progressPreference = 'silentlyContinue'
-
-    #Attempt download.
-    $response = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($ConversationID)?v=3&async=MANUAL" -WebSession $CognosSession -ErrorAction STOP
-            
-    if ($response.receipt) { #task is still in a working status
-                
-        Throw "Report not ready yet."
-    
-    } else {
-
-        try {
-            if ($Raw) {
-                return [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding(28591).GetBytes($response))
-            } else {
-                return [System.Text.Encoding]::UTF8.GetString([System.Text.Encoding]::GetEncoding(28591).GetBytes($response)) | ConvertFrom-Csv
-            }
-        } catch {
-            Throw "Unable to convert encoding on downloaded file to an object or the object is empty."
-        }     
-    }
 }
 
 function Get-CogStudent {
@@ -946,10 +942,13 @@ function Get-CogStudent {
         [parameter(Mandatory=$false,ParameterSetName="Default")]$FirstName,
         [parameter(Mandatory=$false,ParameterSetName="Default")]$LastName,
         [parameter(Mandatory=$false,ParameterSetName="Default")][datetime]$EntryAfter,
+        [parameter(Mandatory=$false,ParameterSetName="Default")][switch]$InActive,
+        [parameter(Mandatory=$false,ParameterSetName="Default")][switch]$Graduated,
         [parameter(Mandatory=$false,ParameterSetName="All")][switch]$All
     )
 
     Begin {
+        $students = [System.Collections.Generic.List[PSObject]]@()
         $studentIds = [System.Collections.Generic.List[PSObject]]@()
     }
 
@@ -976,12 +975,21 @@ function Get-CogStudent {
         $parameters = @{
             report = "students"
             cognosfolder = "_Shared Data File Reports/API"
+            reportparams = ""
         }
 
         if ($All) {
-            $parameters.reportparams += "p_fake=1"
+            $parameters.reportparams += "p_status=A&p_status=I&p_status=G"
             Write-Verbose "$($parameters.reportparams)"
             return (Get-CognosReport @parameters -TeamContent)
+        }
+
+        if ($InActive) {
+            $parameters.reportparams += "p_status=I&"
+        } elseif ($Graduated) {
+            $parameters.reportparams += "p_status=G&"
+        } else {
+            $parameters.reportparams += "p_status=A&"    
         }
 
         #If -id was specified or an incoming object with a property of Student_id was provided then we should loop through them to query for them.
@@ -990,10 +998,9 @@ function Get-CogStudent {
             #75 seems like a good break point and will keep us under the url limit. We need to make multiple queries.
             $skip = 0
             $loops = [Math]::Round([Math]::Ceiling($studentIds.count / 75))
-            $students = [System.Collections.Generic.List[PSObject]]@()
 
             for ($i = 0; $i -lt $loops; $i++) {
-                $param = ''
+                $param = $parameters.reportparams
 
                 $studentIds | Select-Object -First 75 -Skip $skip | ForEach-Object {
                     $param += "p_studentid=$($PSItem)&"
@@ -1437,30 +1444,44 @@ function Start-CognosBrowser {
 
         try {
             if ($results[$selection - 1].type -eq 'report') {
+
+                $parameters = @{
+                    report = $results[$selection - 1].name
+                }
+
+                $fileURL = $results[$selection - 1].url
+                $decodedURL = [System.Web.HttpUtility]::UrlDecode($results[$selection - 1].url)
+                Write-Verbose "$decodedURL"
+
+                if ($decodedURL.indexOf('/path/Team Content') -ge 1) {
+                    #team content
+                    $teamContent = $True
+                    if ($eFinance) {
+                        $parameters.cognosFolder = Split-Path -Parent ($decodedURL.split('Team Content/Financial Management System/')[1..99] -join '/')
+                    } else {
+                        $parameters.cognosFolder = Split-Path -Parent ($decodedURL.split('Team Content/Student Management System/')[1..99] -join '/')
+                    }
+                } else {
+                    #my folder
+                    $teamContent = $False
+                    $parameters.cognosFolder = Split-Path -Parent ($decodedURL.split('My Folders/')[1..99] -join '/')
+                }
+
+                try {
+                    $atomURL = $decodedURL -replace '/rds/wsdl/path/','/rds/atom/path/'
+                    $reportDetails = Invoke-RestMethod -Uri $atomURL -WebSession $CognosSession -SkipHttpErrorCheck
+                    $reportDetails.feed | Select-Object -Property title,owner,ownerEmail,description,location | Format-List
+                    if ($reportDetails.error) {
+                        $reportDetails.error | Format-List -
+                    }
+                } catch {
+                    $PSitem
+                    
+                }
+
                 $fileAction = Read-Host "You have selected a Report. Do you want to preview (p) or download (d) the report?"
                 if (@('p','preview','d','download') -contains $fileAction) {
                     
-                    $parameters = @{
-                        report = $results[$selection - 1].name
-                    }
-
-                    $fileURL = $results[$selection - 1].url
-                    $decodedURL = [System.Web.HttpUtility]::UrlDecode($results[$selection - 1].url)
-
-                    if ($decodedURL.indexOf('/path/Team Content') -ge 1) {
-                        #team content
-                        $teamContent = $True
-                        if ($eFinance) {
-                            $parameters.cognosFolder = Split-Path -Parent ($decodedURL.split('Team Content/Financial Management System/')[1..99] -join '/')
-                        } else {
-                            $parameters.cognosFolder = Split-Path -Parent ($decodedURL.split('Team Content/Student Management System/')[1..99] -join '/')
-                        }
-                    } else {
-                        #my folder
-                        $teamContent = $False
-                        $parameters.cognosFolder = Split-Path -Parent ($decodedURL.split('My Folders/')[1..99] -join '/')
-                    }
-
                     try {
                         if (@('p','preview') -contains $fileAction) {
                             if ($teamContent) {
@@ -1531,6 +1552,9 @@ function Start-CognosBrowser {
                         $manualDownload = "To manually download this report`nSave-CognosReport -report ""$($parameters.report)"" -cognosfolder ""$($parameters.cognosFolder)"""
                         $manualDownload += " -savepath ""$($parameters.savepath)"""
                     } else {
+                        if ($null -eq $($parameters.cognosFolder) -or $parameters.cognosFolder -eq '') {
+                            $parameters.cognosFolder = "My Folders"
+                        }
                         $manualDownload = "To manually download this report`nGet-CognosReport -report ""$($parameters.report)"" -cognosfolder ""$($parameters.cognosFolder)"""
                     }
 
