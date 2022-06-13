@@ -7,8 +7,8 @@ The Cognos Powershell Module requires PowerShell 7
 Open PowerShell Window as Administrator
 ````
 mkdir "C:\Program Files\PowerShell\Modules\CognosModule"
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/carbm1/CognosModule/master/CognosModule.psd1 -OutFile "C:\Program Files\PowerShell\Modules\CognosModule\CognosModule.psd1"
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/carbm1/CognosModule/master/CognosModule.psm1 -OutFile "C:\Program Files\PowerShell\Modules\CognosModule\CognosModule.psm1"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/AR-k12code/CognosModule/master/CognosModule.psd1" -OutFile "C:\Program Files\PowerShell\Modules\CognosModule\CognosModule.psd1"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/AR-k12code/CognosModule/master/CognosModule.psm1" -OutFile "C:\Program Files\PowerShell\Modules\CognosModule\CognosModule.psm1"
 ````
 
 ## Initial Configuration
