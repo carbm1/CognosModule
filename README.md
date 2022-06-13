@@ -3,6 +3,9 @@ These scripts come without warranty of any kind. Use them at your own risk. I as
 
 The Cognos Powershell Module requires PowerShell 7
 
+## Tutorial
+[![tutorial](/images/youtube_thumbnail.jpg)](https://youtu.be/rdVpaGocKTI)
+
 ## Installation Process
 Open PowerShell Window as Administrator
 ````
