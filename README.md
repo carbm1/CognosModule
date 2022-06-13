@@ -3,9 +3,6 @@ These scripts come without warranty of any kind. Use them at your own risk. I as
 
 The Cognos Powershell Module requires PowerShell 7
 
-## Tutorial
-[![tutorial](/images/youtube_thumbnail.jpg)](https://youtu.be/rdVpaGocKTI)
-
 ## Installation Process
 Open PowerShell Window as Administrator
 ````
@@ -25,7 +22,10 @@ PS C:\Scripts> Set-CognosConfig -ConfigName "Judy" -username 0403judy -dsnname g
 Please provide your Cognos Password: ********************
 ````
 
-# Cmdlets
+## Tutorial
+[![tutorial](/images/youtube_thumbnail.jpg)](https://youtu.be/rdVpaGocKTI)
+
+# Functions
 
 ### Configure a profile for the username, dsn, and password for the connection.
 ````
@@ -81,6 +81,11 @@ Get-CogStuSchedule [[-id] <Object>] [[-Grade] <Object>] [[-Building] <Object>]
 ### Student Attendance Information
 ````
 Get-CogStuAttendance [[-id] <Object>] [[-Building] <Object>] [[-AttendanceCode] <Object>] [[-ExcludePeriodsByName] <Object>] [[-date] <DateTime>] [[-dateafter] <String>] [-All]
+````
+
+### Start a Cognos Report to be retrieved later. This is for some crazy advanced stuff we plan on doing.
+````
+Start-CognosReport [-report] <String> [[-cognosfolder] <String>] [[-reportparams] <String>] [[-XMLParameters] <String>] [-TeamContent] [[-JobName] <String>]
 ````
 
 # Examples
