@@ -19,8 +19,8 @@ function Update-CognosModule {
     $ModulePath = Get-Module CognosModule | Select-Object -ExpandProperty ModuleBase
 
     try {
-        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/AR-k12code/CognosModule/master/CognosModule.psd1" -OutFile "$($ModulePath)\CognosModule.psd1"
-        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/AR-k12code/CognosModule/master/CognosModule.psm1" -OutFile "$($ModulePath)\CognosModule.psm1"
+        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/carbm1/CognosModule/master/CognosModule.psd1" -OutFile "$($ModulePath)\CognosModule.psd1"
+        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/carbm1/CognosModule/master/CognosModule.psm1" -OutFile "$($ModulePath)\CognosModule.psm1"
     } catch {
         Throw "Failed to update module. $PSitem"
     }
@@ -844,13 +844,19 @@ function Start-CognosReport {
     #Do not use UrlEncode here. The only character that must be encoded is the space so we have to use a Replace.
     $cognosfolder = $cognosfolder.Replace(' ','%20')
 
-    $downloadURL = "$($baseURL)/ibmcognos/bi/v1/disp/rds/outputFormat/path/$($cognosfolder)/$($report)/CSV?v=3&async=MANUAL"
+    switch ($extension) {
+        "pdf" { $rdsFormat = "PDF" }
+        "csv" { $rdsFormat = "CSV" }
+        "xlsx" { $rdsFormat = "spreadsheetML" }
+    }
 
-    Write-Verbose $downloadURL
+    $downloadURL = "$($baseURL)/ibmcognos/bi/v1/disp/rds/outputFormat/path/$($cognosfolder)/$($report)/$($rdsFormat)?v=3&async=MANUAL"
 
     if ($reportparams -ne '') {
         $downloadURL = $downloadURL + '&' + $reportparams
     }
+
+    Write-Verbose $downloadURL
 
     #Complex parameters require an XML file to work properly. The path must be specified when invoking this module.
     if ($XMLParameters -ne '') {
