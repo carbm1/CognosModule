@@ -21,6 +21,7 @@ function Update-CognosModule {
     try {
         Invoke-WebRequest -Uri "https://raw.githubusercontent.com/carbm1/CognosModule/master/CognosModule.psd1" -OutFile "$($ModulePath)\CognosModule.psd1"
         Invoke-WebRequest -Uri "https://raw.githubusercontent.com/carbm1/CognosModule/master/CognosModule.psm1" -OutFile "$($ModulePath)\CognosModule.psm1"
+        Import-Module CognosModule -Force
     } catch {
         Throw "Failed to update module. $PSitem"
     }
@@ -218,6 +219,17 @@ function Connect-ToCognos {
     if (-Not(Test-Path "$($HOME)\.config\Cognos\$($ConfigName).json" )) {
         Write-Error "No configuration file found for the provided $($ConfigName). Run Set-CognosConfig first."
     }
+
+    #Attempt retrieving update information.
+    try {
+        $version = Get-Module -Name CognosModule | Select-Object -ExpandProperty Version
+        $versioncheck = Invoke-RestMethod -Uri 'https://raw.githubusercontent.com/AR-k12code/CognosModule/master/version.json' -MaximumRetryCount 0 -TimeoutSec 1
+        if ($version -lt [version]($versioncheck.versions[0].version)) {
+            Write-Host "Info: There is a new version of this module available at https://github.com/AR-k12code/CognosModule"
+            Write-Host "Info: Version $($versioncheck.versions[0].version) is available. Description: $($versioncheck.versions[0].description)"
+            Write-Host "Info: Run Update-CognosModule as an Administrator to update to the latest version."
+        }
+    } catch {} #Do and show nothing if we don't get a response.
 
     $config = Get-Content "$($HOME)\.config\Cognos\$($ConfigName).json" -ErrorAction STOP | ConvertFrom-Json
     $username = $config.username

@@ -1,0 +1,24 @@
+{
+    "versions": [
+        {
+            "version": "22.6.14",
+            "description": "Update notifications."
+        },
+        {
+            "version": "22.6.13",
+            "description": "File format fix, Save-CognosReport and Get-CognosReport now use Start-CognosReport."
+        },
+        {
+            "version": "22.6.10",
+            "description": "Update-CognosModule"
+        },
+        {
+            "version": "22.6.9",
+            "description": "eFinance Changes"
+        },
+        {
+            "version": "22.6.8",
+            "description": "Initial Release"
+        }
+    ]
+}
