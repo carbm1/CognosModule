@@ -27,6 +27,11 @@ Please provide your Cognos Password: ********************
 
 # Functions
 
+### Establish Connection to Cognos
+````
+Connect-ToCognos [[-ConfigName] <String>] [-eFinance]
+````
+
 ### Configure a profile for the username, dsn, and password for the connection.
 ````
 Set-CognosConfig [[-ConfigName] <String>] [-username] <String> [[-eFinanceUsername] <String>] [-dsnname] <String>
