@@ -1566,14 +1566,21 @@ function Start-CognosBrowser {
                         #Start-CognosBrowser -url $url
                     }
 
+                    if ($null -eq $($parameters.cognosFolder) -or $parameters.cognosFolder -eq '') {
+                        $parameters.cognosFolder = "My Folders"
+                    }
+
                     if ($parameters.savepath) {
+                        #Save-CognosReport
                         $manualDownload = "To manually download this report`nSave-CognosReport -report ""$($parameters.report)"" -cognosfolder ""$($parameters.cognosFolder)"""
                         $manualDownload += " -savepath ""$($parameters.savepath)"""
                     } else {
-                        if ($null -eq $($parameters.cognosFolder) -or $parameters.cognosFolder -eq '') {
-                            $parameters.cognosFolder = "My Folders"
-                        }
+                        #Get-CognosReport
                         $manualDownload = "To manually download this report`nGet-CognosReport -report ""$($parameters.report)"" -cognosfolder ""$($parameters.cognosFolder)"""
+                    }
+
+                    if ($parameters.reportparams) {
+                        $manualDownload += " -reportparams ""$($parameters.reportparams)"""
                     }
 
                     if ($teamContent) {
@@ -1587,7 +1594,19 @@ function Start-CognosBrowser {
                     Start-CognosBrowser -url $url
                     
                 } else {
-                    Write-Host "To manually run this report`nSave-CognosReport -report ""$name"" -cognosfolder ""$cognosFolder"""
+
+                    if ($null -eq $($parameters.cognosFolder) -or $parameters.cognosFolder -eq '') {
+                        $parameters.cognosFolder = "My Folders"
+                    }
+
+                    $manualDownload = "To manually run this report`nSave-CognosReport -report ""$($parameters.report)"" -cognosfolder ""$($parameters.cognosFolder)"""
+                    
+                    if ($teamContent) {
+                        $manualDownload += " -TeamContent"
+                    }
+                    
+                    Write-Host $manualDownload
+
                     Read-Host "Press enter to continue..."
                     Start-CognosBrowser -url $url
                 }
