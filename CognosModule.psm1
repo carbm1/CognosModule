@@ -19,8 +19,8 @@ function Update-CognosModule {
     $ModulePath = Get-Module CognosModule | Select-Object -ExpandProperty ModuleBase
 
     try {
-        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/carbm1/CognosModule/master/CognosModule.psd1" -OutFile "$($ModulePath)\CognosModule.psd1"
-        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/carbm1/CognosModule/master/CognosModule.psm1" -OutFile "$($ModulePath)\CognosModule.psm1"
+        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/AR-k12code/CognosModule/master/CognosModule.psd1" -OutFile "$($ModulePath)\CognosModule.psd1"
+        Invoke-WebRequest -Uri "https://raw.githubusercontent.com/AR-k12code/CognosModule/master/CognosModule.psm1" -OutFile "$($ModulePath)\CognosModule.psm1"
         Import-Module CognosModule -Force
     } catch {
         Throw "Failed to update module. $PSitem"
