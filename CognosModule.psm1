@@ -547,11 +547,12 @@ function Save-CognosReport {
             $conversationID
     )
 
-    
-
     $baseURL = "https://adecognos.arkansas.gov"
     $fullFilePath = Join-Path -Path "$savepath" -ChildPath "$filename"
     $progressPreference = 'silentlyContinue'
+
+    #To measure for a timeout.
+    $startTime = Get-Date
 
     try{
 
