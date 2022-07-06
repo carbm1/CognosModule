@@ -169,7 +169,8 @@ function Update-CognosPassword {
 
     #>
     Param(
-        [parameter(Mandatory = $false)][string]$ConfigName="DefaultConfig"
+        [parameter(Mandatory = $false)][string]$ConfigName="DefaultConfig",
+        [parameter(Mandatory = $false)][securestring]$Password
     )
 
     if (Test-Path "$($HOME)\.config\Cognos\$($ConfigName).json") {
@@ -180,7 +181,12 @@ function Update-CognosPassword {
     }
 
     try {
-        $CognosPassword = Read-Host -Prompt "Please provide your new Cognos Password" -AsSecureString | ConvertFrom-SecureString
+        if ($Password) {
+            $CognosPassword = $Password | ConvertFrom-SecureString
+        } else {
+            #prompt for new password
+            $CognosPassword = Read-Host -Prompt "Please provide your new Cognos Password" -AsSecureString | ConvertFrom-SecureString
+        }
         $config.password = $CognosPassword
         $config | ConvertTo-Json | Out-File $configPath -Force
     } catch {
