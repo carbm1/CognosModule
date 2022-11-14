@@ -683,9 +683,12 @@ function Save-CognosReport {
 
                 try {
                     $response3 = [XML](Get-Content $reportIDHashFilePath)
-                } catch {}
+                } catch {
+                    Remove-Variable -Name response3 -ErrorAction SilentlyContinue
+                }
 
-                if ($response3.receipt.status -eq "working") {
+                if ($response3.receipt.status) {
+                    Write-Verbose $response3.receipt.status
                     Write-Host '.' -NoNewline
                     Start-Sleep -Seconds 2
                 }
