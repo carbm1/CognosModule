@@ -223,7 +223,7 @@ function Connect-ToCognos {
 
     #Test that configuration file exists.
     if (-Not(Test-Path "$($HOME)\.config\Cognos\$($ConfigName).json" )) {
-        Write-Error "No configuration file found for the provided $($ConfigName). Run Set-CognosConfig first."
+        Write-Error "No configuration file found for the provided $($ConfigName). Run Set-CognosConfig first." -ErrorAction Stop
     }
 
     #Attempt retrieving update information.
@@ -812,7 +812,9 @@ function Start-CognosReport {
         [parameter(Mandatory=$false)]
             [switch]$Raw,
         [parameter(Mandatory=$false)] #provide a name for the report so it can be returned with the ConverstationID.
-            [string]$JobName = $report
+            [string]$JobName = $report, 
+        [parameter(Mandatory=$false)] #Reference ID for specific request. Useful if you have to run the same report multiple times with different parameters.
+            [string]$RefID
     )
 
     $baseURL = "https://adecognos.arkansas.gov"
@@ -928,6 +930,7 @@ function Start-CognosReport {
                 ConversationID = $($response.receipt.conversationID)
                 Report = $JobName
                 StartTime = Get-Date
+                RefID = $RefID
             }
         } else {
             Throw "Failed to run report. Please try with Get-CognosReport or Save-CognosReport."
