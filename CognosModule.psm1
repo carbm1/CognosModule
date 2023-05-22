@@ -481,6 +481,116 @@ function Get-CognosReport {
 
 }
 
+function Get-CognosDataSet {
+    <#
+        .SYNOPSIS
+        Pulls from RDS DataSet as JSON.
+
+        .DESCRIPTION
+        Pulls from RDS DataSet as JSON.
+
+        .EXAMPLE
+        Get-CognosDataSet -report schools -cognosfolder "_Shared Data File Reports\Clever Files" -TeamContent -PageSize 5000
+
+    #>
+
+    [CmdletBinding(DefaultParametersetName="default")]
+    Param(
+        [parameter(Mandatory=$true,HelpMessage="Give the name of the report you want to download.",ParameterSetName="Default")]
+            [string]$report,
+        [parameter(Mandatory=$false,HelpMessage="Cognos Folder Structure.",ParameterSetName="Default")]
+            [string]$cognosfolder = "My Folders", #Cognos Folder "Folder 1/Sub Folder 2/Sub Folder 3" NO TRAILING SLASH
+        [parameter(Mandatory=$false,HelpMessage="Report Parameters",ParameterSetName="Default")]
+            [string]$reportparams, #If a report requires parameters you can specifiy them here. Example:"p_year=2017&p_school=Middle School"
+        [parameter(Mandatory=$false,ParameterSetName="Default")]
+            [string]$XMLParameters, #Path to XML for answering prompts.
+        [parameter(Mandatory=$false,ParameterSetName="Default")]
+            [switch]$SavePrompts, #Interactive submitting and saving of complex prompts.
+        [parameter(Mandatory=$false,ParameterSetName="Default")] #How long in minutes are you willing to let CognosDownloader run for said report? 5 mins is default and gives us a way to error control.
+            [int]$Timeout = 5,
+        [parameter(Mandatory=$false,ParameterSetName="Default")] #This will dump the raw CSV data to the terminal.
+            [switch]$Raw,
+        [parameter(Mandatory=$false,ParameterSetName="Default")] #If the report is in the Team Content folder we have to switch paths.
+            [switch]$TeamContent,
+        [parameter(Mandatory=$false,ParameterSetName="conversation")] #Provide a conversationID if you already started one via Start-CognosReport
+            $conversationID,
+        [parameter(Mandatory=$false)][int]$pageSize = 2500
+    )
+
+    $baseURL = "https://adecognos.arkansas.gov"
+    $results = [System.Collections.Generic.List[Object]]::new()
+
+    try {
+        
+        $startTime = Get-Date
+
+        #If the conversationID has already been supplied then we will use that.
+        if (-Not($conversationID)) {
+            $conversation = Start-CognosReport @PSBoundParameters -extension json -pageSize $pageSize
+            $conversationID = $conversation.conversationID
+        }
+
+        Write-Verbose $conversationID
+
+        do {		
+            do {
+                $response = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID)?v=3" -WebSession $CognosSession
+            } until ($response.dataSet.dataTable.row -and -Not($response.receipt.status))
+        
+            #return $response #.dataSet.dataTable.row[0]
+            Write-Verbose ($response.dataSet.dataTable.row | ConvertTo-Json -Depth 99)
+
+            #headers with underscore have _x005f so we have to convert it back and forth. I have a bad feeling about this.
+            # $properties = $response.dataset.dataTable.row[0].ChildNodes.Name
+            $rows = $response.dataSet.dataTable.row # | Select-Object -Property $properties
+            
+            #fix name on properties.
+            $properties = @()
+            $rows[0].PSObject.Properties | Select-Object -ExpandProperty Name | ForEach-Object {
+                if ($PSitem -like "*_x005f*") {
+                    $propertyFixedName = $($Psitem -replace '_x005f','_')
+                    $rows | Add-Member -MemberType AliasProperty -Name $propertyFixedName -Value $PSitem
+                    $properties += $propertyFixedName
+                } else {
+                    $properties += $PSitem
+                }
+            }
+
+            $rows = $rows | Select-Object -Property $properties
+            #return $rows
+            #trim everything up nice and neat.
+            $rows | ForEach-Object {  
+                $_.PSObject.Properties | ForEach-Object {
+                    if ($null -ne $_.Value -and $_.Value.GetType() -eq 'System.String') {
+                        $_.Value = $_.Value.Trim()
+                    }
+                }
+            }
+            
+            $rows | ForEach-Object {
+                $results.Add($PSitem)
+            }
+
+            if (($rows).Count -lt $pageSize) {
+                $morePages = $False
+            } else {
+                #next page.
+                $conversation = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID)/next?v=3" -WebSession $CognosSession
+                $conversationID = $conversation.receipt.conversationID
+                Write-Verbose $conversationID
+                Write-Progress -Activity "Downloading Report Data" -Status "$($results.count) rows downloaded." -PercentComplete 0
+            }
+            
+        } until ( $morePages -eq $False )
+
+        return $results
+
+    } catch {
+        Write-Error "$($PSItem)" -ErrorAction STOP
+    }
+
+}
+
 function Save-CognosReport {
     <#
         .SYNOPSIS
@@ -785,7 +895,7 @@ function Start-CognosReport {
         [parameter(Mandatory=$true,HelpMessage="Give the name of the report you want to download.")]
             [string]$report,
         [parameter(Mandatory=$false,HelpMessage="Format you want to download report as.")]
-            [ValidateSet("csv","xlsx","pdf")]
+            [ValidateSet("csv","xlsx","pdf",'json')]
             [string]$extension="csv",
         [parameter(Mandatory=$false,HelpMessage="Override filename. Must include the extension.")]
             [string]$filename = "$($report).$($extension)",
@@ -814,7 +924,9 @@ function Start-CognosReport {
         [parameter(Mandatory=$false)] #provide a name for the report so it can be returned with the ConverstationID.
             [string]$JobName = $report, 
         [parameter(Mandatory=$false)] #Reference ID for specific request. Useful if you have to run the same report multiple times with different parameters.
-            [string]$RefID
+            [string]$RefID,
+        [parameter(Mandatory=$false)] #PageSize for JSON DataSet.
+            [int]$pageSize = 2500
     )
 
     $baseURL = "https://adecognos.arkansas.gov"
@@ -874,7 +986,11 @@ function Start-CognosReport {
         "xlsx" { $rdsFormat = "spreadsheetML" }
     }
 
-    $downloadURL = "$($baseURL)/ibmcognos/bi/v1/disp/rds/outputFormat/path/$($cognosfolder)/$($report)/$($rdsFormat)?v=3&async=MANUAL"
+    if ($extension -eq "json") {
+        $downloadURL = "$($baseURL)/ibmcognos/bi/v1/disp/rds/pagedReportData/path/$($cognosfolder)/$($report)/?v=3&async=MANUAL&fmt=DataSetJSON&rowLimit=$($pageSize)"
+    } else {
+        $downloadURL = "$($baseURL)/ibmcognos/bi/v1/disp/rds/outputFormat/path/$($cognosfolder)/$($report)/$($rdsFormat)?v=3&async=MANUAL"
+    }
 
     if ($reportparams -ne '') {
         $downloadURL = $downloadURL + '&' + $reportparams

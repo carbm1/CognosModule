@@ -10,7 +10,7 @@
     RootModule = 'CognosModule.psm1'
     
     # Version number of this module.
-    ModuleVersion = '22.7.4'
+    ModuleVersion = '23.5.22'
     
     # ID used to uniquely identify this module
     GUID = 'ff7a47df-5c0a-4a90-bba4-816b16290f27'
@@ -37,7 +37,7 @@
     FunctionsToExport = 'Set-CognosConfig','Show-CognosConfig','Remove-CognosConfig','Connect-ToCognos',
         'Update-CognosPassword','Get-CognosReport','Save-CognosReport','Get-CogStudent',
         'Get-CogSchool','Get-CogStuSchedule','Get-CogStuAttendance','Start-CognosBrowser',
-        'Update-CognosModule','Start-CognosReport'
+        'Update-CognosModule','Start-CognosReport','Get-CognosDataSet'
     
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport = @()
