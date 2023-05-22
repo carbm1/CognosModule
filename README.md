@@ -67,6 +67,9 @@ Get-CognosReport [-report] <String> [[-cognosfolder] <String>] [[-reportparams] 
 Save-CognosReport -report <String> [[-extension] <String>] [-filename <String>] [-savepath <String>] [-cognosfolder <String>] [-reportparams <String>] [-XMLParameters <String>] [-SavePrompts] [-Timeout <Int32>] [-TeamContent] [-TrimCSVWhiteSpace] [-CSVUseQuotes] [-RandomTempFile]
 ````
 
+### Return Data as XML Structured Object.
+
+
 ### School Building Information
 ````
 Get-CogSchool [[-Building] <Object>]
