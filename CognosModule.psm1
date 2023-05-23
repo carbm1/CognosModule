@@ -504,12 +504,6 @@ function Get-CognosDataSet {
             [string]$reportparams, #If a report requires parameters you can specifiy them here. Example:"p_year=2017&p_school=Middle School"
         [parameter(Mandatory=$false,ParameterSetName="Default")]
             [string]$XMLParameters, #Path to XML for answering prompts.
-        [parameter(Mandatory=$false,ParameterSetName="Default")]
-            [switch]$SavePrompts, #Interactive submitting and saving of complex prompts.
-        [parameter(Mandatory=$false,ParameterSetName="Default")] #How long in minutes are you willing to let CognosDownloader run for said report? 5 mins is default and gives us a way to error control.
-            [int]$Timeout = 5,
-        [parameter(Mandatory=$false,ParameterSetName="Default")] #This will dump the raw CSV data to the terminal.
-            [switch]$Raw,
         [parameter(Mandatory=$false,ParameterSetName="Default")] #If the report is in the Team Content folder we have to switch paths.
             [switch]$TeamContent,
         [parameter(Mandatory=$false,ParameterSetName="conversation")] #Provide a conversationID if you already started one via Start-CognosReport

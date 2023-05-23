@@ -67,8 +67,11 @@ Get-CognosReport [-report] <String> [[-cognosfolder] <String>] [[-reportparams] 
 Save-CognosReport -report <String> [[-extension] <String>] [-filename <String>] [-savepath <String>] [-cognosfolder <String>] [-reportparams <String>] [-XMLParameters <String>] [-SavePrompts] [-Timeout <Int32>] [-TeamContent] [-TrimCSVWhiteSpace] [-CSVUseQuotes] [-RandomTempFile]
 ````
 
-### Return Data as XML Structured Object.
-
+### Return Data as JSON Structured Object.
+This is much slower but structured/typed data! You must retrieve all pages before the session times out. Testing indicates this is about 20 minutes. This is useful for smaller data sets where you can break up a single report into multiple smaller reports.
+````
+Get-CognosDataSet -report <String> [-cognosfolder <String>] [-reportparams <String>] [-XMLParameters <String>] [-TeamContent] [-pageSize <Int32>]
+````
 
 ### School Building Information
 ````
