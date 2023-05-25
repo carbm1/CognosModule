@@ -1502,7 +1502,7 @@ function Get-CogSqlData {
 
     if ($SQLWhere -or $dtSql) {
         if ($dtSql) {
-            $SQLWhere += $SQLWhere + $dtSql
+            $SQLWhere += " AND $dtSql"
         }
 
         if ($SQLWhere.Substring(0,6) -ne "where ") {
