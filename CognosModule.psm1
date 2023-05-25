@@ -1424,8 +1424,10 @@ function Get-CogSqlData {
         [Parameter(Mandatory=$false,ParameterSetName="default")][switch]$JSON, #data to be retrieved with the Get-CognosDataSet cmdlet.
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][switch]$Trim,
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][switch]$ReturnUID,
+        [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][switch]$ExcludeJSON,
         [Parameter(Mandatory=$false)][switch]$StartOnly,
-        [Parameter(Mandatory=$false)][string]$RefId #to be used with StartOnly to reference the report again.
+        [Parameter(Mandatory=$false)][string]$RefId, #to be used with StartOnly to reference the report again.
+        [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")]$PKColumns #override with string '[STUDENT_ID],CONVERT(date,[ATTENDANCE_DATE])'
     )
 
     if ($null -eq $CognosDSN) { Connect-ToCognos }
@@ -1455,18 +1457,30 @@ function Get-CogSqlData {
     if ($awesomeSauce) {
         $params.reportparams = "p_page=awesomeSauce&p_tblName=[$($table)]"
 
-        #uniqueness from the table definitions.
-        $PKColumns = ($tblDefinitions.$table.PKColumns).Split(',') | ForEach-Object {
-            if ($PSItem -eq '[STUDENT_ID]') {
-                "RTRIM([STUDENT_ID])"
-            } elseif ($PSItem -eq '[DISTRICT]') {
-                #do nothing.
-            } else {
-                $PSItem
-            }
+        if ($ExcludeJSON) {
+            $params.reportparams += "&p_excludeJson=true"
         }
 
-        $params.reportparams += "&p_tblUniqId=CONCAT(" + "$($PKColumns -join ',')" +  ",'')"
+        #uniqueness from the table definitions.
+        if ($PKColumns) {
+            $params.reportparams += "&p_tblUniqId=CONCAT($($PKColumns))"
+        } else {
+            $PKColumns = ($tblDefinitions.$table.PKColumns).Split(',') | ForEach-Object {
+                if ($PSItem -eq '[STUDENT_ID]') {
+                    "RTRIM([STUDENT_ID])"
+                } elseif ($PSItem -eq '[DISTRICT]') {
+                    #do nothing.
+                } elseif ($PSItem -like "*DATE*") {
+                    "CONVERT(date,$PSitem)"
+                } else {
+                    $PSItem
+                }
+            }
+
+            $params.reportparams += "&p_tblUniqId=CONCAT($($PKColumns -join ',''|'','),'')"
+        }
+
+        Write-Verbose ($params.reportparams)
 
         if ($Columns) {
             $params.reportparams += "&p_colSpecify=$($Columns)"
@@ -1539,7 +1553,7 @@ function Get-CogSqlData {
                 }
             }
 
-            if ($ReturnUID) {
+            if ($ReturnUID -or $ExcludeJSON) {
                 return $data
             } else {
                 return ($data | Select-Object -ExcludeProperty uid)
