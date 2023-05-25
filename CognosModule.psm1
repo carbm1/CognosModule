@@ -1505,6 +1505,10 @@ function Get-CogSqlData {
 
         $params.reportparams = "p_page=$($page)"
 
+        if ($ReportParams) {
+            $params.reportparams += "&$($ReportParams)"
+        }
+
         #if not awesome sauce then use the regular paramaters for date time.
         if ($dtStart) {
             $params.reportparams += "&p_dtStart=" + (Get-Date "$dtStart").ToShortDateString()
@@ -1515,8 +1519,10 @@ function Get-CogSqlData {
     }
 
     if ($SQLWhere -or $dtSql) {
-        if ($dtSql) {
-            $SQLWhere += " AND $dtSql"
+        if ($SQLWhere -and $dtSql) {
+            $SQLWhere += " AND $dtSql "
+        } elseif ($dtSql) {
+            $SQLWhere += " $dtSql "
         }
 
         if ($SQLWhere.Substring(0,6) -ne "where ") {
