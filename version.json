@@ -1,8 +1,12 @@
 {
     "versions": [
         {
+            "version": "23.5.25",
+            "description": "Added Get-CogSqlData and Update-CogTableDefintions. Use Write-Progress for waiting on Report."
+        },
+        {
             "version": "23.5.22",
-            "desciption": "Added RefID to Start-CognosReport to reference a ConversationID. Added Get-CognosDataSet."
+            "description": "Added RefID to Start-CognosReport to reference a ConversationID. Added Get-CognosDataSet."
         },
         {
             "version": "22.7.4",
