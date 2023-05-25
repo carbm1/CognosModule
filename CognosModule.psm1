@@ -1431,11 +1431,11 @@ function Get-CogSqlData {
     if ($null -eq $CognosDSN) { Connect-ToCognos }
 
     #if table is specified we will use awesomeSauce.
-    if ($table) {
-        $awesomeSauce = $true
-            
+    if ($Table) {
+        $awesomeSauce = $True
+        
         if (-Not(Test-Path "$($HOME)\.config\Cognos\espTables.csv")) {
-            Update-CogTableDefintions
+            Write-Error "You need to run Update-CogTableDefinitions first." -ErrorAction Stop
         }
 
         $tblDefinitions = Import-Csv "$($HOME)\.config\Cognos\espTables.csv" | Group-Object -Property name -AsHashTable
@@ -1444,7 +1444,7 @@ function Get-CogSqlData {
     $params = @{
         report = $CognosDSN
         reportparams = ''
-        TeamContent = $true
+        TeamContent = $True
         cognosfolder = "_Shared Data File Reports\automation"
     }
 
@@ -1518,10 +1518,10 @@ function Get-CogSqlData {
         return (Start-CognosReport @params -RefID $RefId)
     } else {
         
+        $data = (Get-CognosReport @params)
 
         if ($awesomeSauce) {
-
-            $data = (Get-CognosReport @params)
+           
             if ($null -eq $data) {
                 Write-Warning "No data returned."
                 return
@@ -1556,7 +1556,7 @@ function Get-CogSqlData {
 
 }
 
-function Update-CognosTableDefintions {
+function Update-CogTableDefinitions {
     Param(
         [Parameter(Mandatory=$false)]$eFinance
     )
