@@ -1083,7 +1083,7 @@ function Get-CogSqlData {
     [CmdletBinding(DefaultParametersetName="default")]
     Param(
         [Parameter(Mandatory=$true,ParameterSetName="default")]
-        [ValidateSet('version','tblDefinitions','colDefinitions','_tblStateCourses','API_AUTH_LOG','API_CALLER_CFG','API_CALLER_CFG_OPTIONS','API_CALLER_SECURE_DET','API_CALLER_SUBSCRIBE','API_DELTA_CACHE','API_DISTRICT_DEFINED',
+        [ValidateSet('version','tblDefinitions','colDefinitions','employee','person','clstable','payrate','assignment','hrm_locn','_tblStateCourses','API_AUTH_LOG','API_CALLER_CFG','API_CALLER_CFG_OPTIONS','API_CALLER_SECURE_DET','API_CALLER_SUBSCRIBE','API_DELTA_CACHE','API_DISTRICT_DEFINED',
         'API_GUID_GB_ASMT','API_GUID_GB_SCORE','API_LOG','API_PROGRAMS','API_RULE_DET','API_RULE_HDR','API_RULE_SCOPES','API_RULE_SUBQUERY_JOIN','AR_CLASS_DOWN','AR_DOWN_ALE_DAYS',
         'AR_DOWN_ATTEND','AR_DOWN_CAL','AR_DOWN_DISCIPLINE','AR_DOWN_DISTRICT','AR_DOWN_EC','AR_DOWN_EIS1','AR_DOWN_EIS2','AR_DOWN_EMPLOYEE','AR_DOWN_GRADUATE','AR_DOWN_HEARING',
         'AR_DOWN_JOBASSIGN','AR_DOWN_REFERRAL','AR_DOWN_REGISTER','AR_DOWN_SCHL_AGE','AR_DOWN_SCHOOL','AR_DOWN_SCOLIOSIS','AR_DOWN_SE_STAFF','AR_DOWN_STU','AR_DOWN_STU_ID',
@@ -1433,7 +1433,7 @@ function Get-CogSqlData {
     #if table is specified we will use awesomeSauce.
     if ($Table) {
         $awesomeSauce = $True
-        
+
         if (-Not(Test-Path "$($HOME)\.config\Cognos\espTables.csv")) {
             Write-Error "You need to run Update-CogTableDefinitions first." -ErrorAction Stop
         }
