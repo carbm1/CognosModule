@@ -1421,13 +1421,14 @@ function Get-CogSqlData {
         [Parameter(Mandatory=$false)][string]$dtEnd,
         [Parameter(Mandatory=$false)][string]$dtColumn = '[CHANGE_DATE_TIME]',
         [Parameter(Mandatory=$false,ParameterSetName="default")][string]$ReportParams,
-        [Parameter(Mandatory=$false,ParameterSetName="default")][switch]$JSON, #data to be retrieved with the Get-CognosDataSet cmdlet.
+        [Parameter(Mandatory=$false)][switch]$AsDataSet, #data to be retrieved with the Get-CognosDataSet cmdlet.
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][switch]$Trim,
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][switch]$ReturnUID,
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][switch]$ExcludeJSON,
         [Parameter(Mandatory=$false)][switch]$StartOnly,
         [Parameter(Mandatory=$false)][string]$RefId, #to be used with StartOnly to reference the report again.
-        [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")]$PKColumns #override with string '[STUDENT_ID],CONVERT(date,[ATTENDANCE_DATE])'
+        [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")]$PKColumns, #override with string '[STUDENT_ID],CONVERT(date,[ATTENDANCE_DATE])'
+        [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][int]$Top
     )
 
     if ($null -eq $CognosDSN) { Connect-ToCognos }
@@ -1450,15 +1451,15 @@ function Get-CogSqlData {
         cognosfolder = "_Shared Data File Reports\automation"
     }
 
-    if ($JSON) {
-        $params.extension = 'json'
-    }
-
     if ($awesomeSauce) {
         $params.reportparams = "p_page=awesomeSauce&p_tblName=[$($table)]"
 
         if ($ExcludeJSON) {
             $params.reportparams += "&p_excludeJson=true"
+        }
+
+        if ($Top) {
+            $params.reportparams += "&p_top=TOP $($Top)"
         }
 
         #uniqueness from the table definitions.
@@ -1532,13 +1533,22 @@ function Get-CogSqlData {
         $params.reportparams += "&p_where=" + $SQLWhere
     }
 
+    if ($AsDataSet) {
+        $params.extension = 'json'
+    }
+
     Write-Verbose ($params | ConvertTo-Json)
 
     if ($StartOnly) {
         return (Start-CognosReport @params -RefID $RefId)
     } else {
         
-        $data = (Get-CognosReport @params)
+        if ($AsDataSet) {
+            $Conversation = Start-CognosReport @params
+            $data = (Get-CognosDataSet -conversationID $Conversation.ConversationID)
+        } else {
+            $data = (Get-CognosReport @params)
+        }
 
         if ($awesomeSauce) {
            
