@@ -430,7 +430,7 @@ function Get-CognosReport {
             do {
 
                 if ((Get-Date) -gt $startTime.AddMinutes($Timeout)) {
-                    Write-Error "Timeout of $Timeout met. Exiting." -ErrorAction STOP
+                    Write-Error "Timeout of $Timeout minutes met. Exiting." -ErrorAction STOP
                 }
 
                 try {
