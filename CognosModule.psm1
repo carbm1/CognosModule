@@ -422,8 +422,7 @@ function Get-CognosReport {
 
         } elseif ($response.receipt) { #task is still in a working status
             
-            # $timeoutPercentage = 100
-            # Write-Progress -Status "Report is still processing." -Activity "Downloading Report" -PercentComplete $timeoutPercentage #-ForegroundColor Yellow
+            Write-Progress -Activity "Downloading Report" -Status "Report is still processing." -PercentComplete 100
             Start-Sleep -Milliseconds 500 #Cognos is stupid fast sometimes but not so fast that we can make another query immediately.
             
             #The Cognos Server has started randomly timing out, 502 bad gateway, or TLS errors. We need to allow at least 3 errors becuase its not consistent.
@@ -435,6 +434,7 @@ function Get-CognosReport {
                 }
 
                 try {
+                    #Did you know it can take up to 30 seconds for Cognos to reply?!
                     $response2 = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID)?v=3&async=AUTO" -WebSession $CognosSession
                     $errorResponse = 0 #reset error response counter. We want three in a row, not three total.
                 } catch {
@@ -449,11 +449,12 @@ function Get-CognosReport {
                 }
 
                 if ($response2.receipt.status -eq "working") {
-                    if (($timeoutPercentage = ([Math]::Ceiling(((($startTime.AddMinutes($timeout) - $startTime).TotalSeconds - ((Get-Date) - $startTime).TotalSeconds) / ($startTime.AddMinutes($timeout) - $startTime).TotalSeconds) * 100))) -le 0) {
+                    $secondsLeft = [Math]::Round(($startTime.AddMinutes($timeout) - $startTime).TotalSeconds - ((Get-Date) - $startTime).TotalSeconds)
+                    if (($timeoutPercentage = ([Math]::Ceiling(($secondsLeft / ($startTime.AddMinutes($timeout) - $startTime).TotalSeconds) * 100))) -le 0) {
                         $timeoutPercentage = 0
                     }
 
-                    Write-Progress -Activity "Downloading Report" -Status "Report is still processing." -PercentComplete $timeoutPercentage
+                    Write-Progress -Activity "Downloading Report" -Status "Report is still processing. $($secondsLeft) seconds until timeout." -PercentComplete $timeoutPercentage
                     #Write-Host '.' -NoNewline -ForegroundColor Yellow
                     Start-Sleep -Seconds 2
                 }
