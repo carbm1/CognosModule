@@ -777,7 +777,7 @@ function Save-CognosReport {
 
         } elseif ($response2.receipt) { #task is still in a working status
             
-            Write-Host "`r`nInfo: Report is still working."
+            Write-Progress -Activity "Downloading Report" -Status "Report is still processing." -PercentComplete 100
             Start-Sleep -Milliseconds 500 #Cognos is stupid fast sometimes but not so fast that we can make another query immediately.
             
             #The Cognos Server has started randomly timing out, 502 bad gateway, or TLS errors. We need to allow at least 3 errors becuase its not consistent.
@@ -808,11 +808,18 @@ function Save-CognosReport {
                     Remove-Variable -Name response3 -ErrorAction SilentlyContinue
                 }
 
-                if ($response3.receipt.status) {
-                    Write-Verbose $response3.receipt.status
-                    Write-Host '.' -NoNewline
+                if ($response3.receipt.status -eq "working") {
+                    $secondsLeft = [Math]::Round(($startTime.AddMinutes($timeout) - $startTime).TotalSeconds - ((Get-Date) - $startTime).TotalSeconds)
+                    if (($timeoutPercentage = ([Math]::Ceiling(($secondsLeft / ($startTime.AddMinutes($timeout) - $startTime).TotalSeconds) * 100))) -le 0) {
+                        $timeoutPercentage = 0
+                    }
+
+                    Write-Progress -Activity "Downloading Report" -Status "Report is still processing. $($secondsLeft) seconds until timeout." -PercentComplete $timeoutPercentage
+                    #Write-Host '.' -NoNewline -ForegroundColor Yellow
                     Start-Sleep -Seconds 2
                 }
+
+                Write-Verbose $response3.receipt.status
 
             } until ($response3.receipt.status -ne "working")
 
@@ -1432,6 +1439,22 @@ function Get-CogSqlData {
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][int]$Top
     )
 
+    function Get-Hash {
+
+        Param(
+            [Parameter(ValueFromPipeline, Mandatory=$true, Position=0)][String]$String,
+            [Parameter(ValueFromPipelineByPropertyName, Mandatory=$false, Position=1)][ValidateSet("MD5", "SHA1", "SHA256", "SHA384", "SHA512")][String]$Hash = "SHA1"
+        )
+        
+        $StringBuilder = New-Object System.Text.StringBuilder
+        [System.Security.Cryptography.HashAlgorithm]::Create($Hash).ComputeHash([System.Text.Encoding]::UTF8.GetBytes($String))| ForEach-Object {
+            [Void]$StringBuilder.Append($_.ToString("x2"))
+        }
+        
+        return ($StringBuilder.ToString())
+    
+    }
+
     if ($null -eq $CognosDSN) { Connect-ToCognos }
 
     #if table is specified we will use awesomeSauce.
@@ -1446,7 +1469,7 @@ function Get-CogSqlData {
     }
 
     $params = @{
-        report = $CognosDSN
+        report = (Get-Hash $CognosDSN).Substring(0,24)
         reportparams = ''
         TeamContent = $True
         cognosfolder = "_Shared Data File Reports\automation"
@@ -1538,6 +1561,10 @@ function Get-CogSqlData {
         $params.extension = 'json'
     }
 
+    #runkey - *eyeroll*
+    $runKey = Get-Hash ($CognosDSN.Substring(0,$CognosDSN.Length - 3))
+    $params.reportparams += "&p_runKey=$($runKey.Substring(0,24))"
+
     Write-Verbose ($params | ConvertTo-Json)
 
     if ($StartOnly) {
@@ -1547,6 +1574,11 @@ function Get-CogSqlData {
         if ($AsDataSet) {
             $Conversation = Start-CognosReport @params
             $data = (Get-CognosDataSet -conversationID $Conversation.ConversationID)
+
+            if ($data.value -eq "No Data Available") {
+                Write-Warning "No Data Available"
+                return
+            }
         } else {
             $data = (Get-CognosReport @params)
         }
