@@ -1,6 +1,10 @@
 {
     "versions": [
         {
+            "version": "23.5.30",
+            "description": "So many goodies. Rewrite for Get-CognosReport, Save-CognosReport. Pipe Reports to Get-CognosReport and Get-CognosDataSet."
+        },
+        {
             "version": "23.5.25",
             "description": "Added Get-CogSqlData and Update-CogTableDefintions. Use Write-Progress for waiting on Report."
         },

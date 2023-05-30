@@ -1,2 +1,5 @@
+*.csv
+*.pdf
+*.xlsx
 test.ps1
 dev.ps1
