@@ -13,7 +13,7 @@ function Update-CognosModule {
     #>
     
     Param(
-        [Parmater(Mandatory=$false)][switch]$dev
+        [Parameter(Mandatory=$false)][switch]$dev
     )
 
     if (-Not $(New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
