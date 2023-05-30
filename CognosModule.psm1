@@ -360,14 +360,13 @@ function Get-CognosReport {
 
         #If the conversationID has already been supplied then we will use that.
         if (-Not($conversationID)) {
+            Write-Progress -Activity "Downloading Report" -Status "Starting Report." -PercentComplete 100
             $conversation = Start-CognosReport @PSBoundParameters
             $conversationID = $conversation.conversationID
         }
 
         $baseURL = "https://adecognos.arkansas.gov"
         Write-Verbose "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID)?v=3&async=MANUAL"
-
-        Write-Progress -Activity "Downloading Report" -Status "Starting Report." -PercentComplete 100
 
         do {
             
@@ -562,7 +561,8 @@ function Get-CognosDataSet {
             [switch]$TeamContent,
         [parameter(Mandatory=$false,ParameterSetName="conversation",ValueFromPipelineByPropertyName=$True)] #Provide a conversationID if you already started one via Start-CognosReport
             $conversationID,
-        [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)][int]$pageSize = 2500
+        [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)][int]$pageSize = 2500,
+        [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)][int]$ReturnAfter 
     )
 
     $baseURL = "https://adecognos.arkansas.gov"
@@ -604,6 +604,16 @@ function Get-CognosDataSet {
                 $conversationID = $conversation.receipt.conversationID
                 Write-Verbose $conversationID
                 Write-Progress -Activity "Downloading Report Data" -Status "$($results.count) rows downloaded." -PercentComplete 0
+            }
+
+            #You would process this externally. Then pass this right back to this cmdlet.
+            if ($ReturnAfter -ge 1 -and $results.Count -ge $ReturnAfter) {
+                return [PSCustomObject]@{
+                    ConversationID = $conversationID
+                    data = $results
+                    ReturnAfter = $ReturnAfter
+                    PageSize = $pageSize
+                }
             }
             
         } until ( $morePages -eq $False )
@@ -1279,7 +1289,7 @@ function Get-CogSqlData {
         [Parameter(Mandatory=$false,ParameterSetName="default")][string]$ReportParams,
         [Parameter(Mandatory=$false)][switch]$AsDataSet, #data to be retrieved with the Get-CognosDataSet cmdlet.
         [Parameter(Mandatory=$false)][int]$PageSize = 2500, #data to be retrieved with the Get-CognosDataSet cmdlet.
-        [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][switch]$Trim,
+        [Parameter(Mandatory=$false)][switch]$Trim,
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][switch]$ReturnUID,
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][switch]$ExcludeJSON,
         [Parameter(Mandatory=$false)][switch]$StartOnly,
@@ -1458,10 +1468,21 @@ function Get-CogSqlData {
                 return ($data | Select-Object -ExcludeProperty uid)
             }
         } else {
-            if ($page -ne 'version' -and $data.version -eq '23.5.23') {
+            if ($page -ne 'version' -and $data.version -match '\d+\.\d+\.\d+') {
                 Write-Verbose ($data | ConvertTo-Json)
-                Throw "Incorrect page specified."
+                Write-Error "Incorrect page specified." -ErrorAction Stop
             } else {
+                
+                if ($Trim) {
+                    $data | ForEach-Object {  
+                        $_.PSObject.Properties | ForEach-Object {
+                            if ($null -ne $_.Value -and $_.Value.GetType().Name -eq 'String') {
+                                $_.Value = $_.Value.Trim()
+                            }
+                        }
+                    }
+                }
+
                 return $data
             }
         }
