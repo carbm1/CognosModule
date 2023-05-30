@@ -695,7 +695,7 @@ function Save-CognosReport {
         [parameter(Mandatory=$false,ParameterSetName="default")] #If you need to download the same report multiple times but with different parameters we have to use a random temp file so they don't conflict.
         [parameter(Mandatory=$false,ParameterSetName="conversation")]    
             [switch]$RandomTempFile,
-        [parameter(Mandatory=$true,ParameterSetName="conversation")] #Provide a conversationID if you already started one via Start-CognosReport
+        [parameter(Mandatory=$true,ParameterSetName="conversation",ValueFromPipelineByPropertyName=$True)] #Provide a conversationID if you already started one via Start-CognosReport
             $conversationID
     )
 
