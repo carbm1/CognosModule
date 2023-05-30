@@ -1433,7 +1433,7 @@ function Get-CogSqlData {
         
         if ($AsDataSet) {
             $Conversation = Start-CognosReport @params
-            $data = (Get-CognosDataSet -conversationID $Conversation.ConversationID)
+            $data = (Get-CognosDataSet -conversationID $Conversation.ConversationID -PageSize $Conversation.PageSize)
 
             if ($data.value -eq "No Data Available") {
                 Write-Warning "No Data Available"
