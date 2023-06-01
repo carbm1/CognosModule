@@ -595,7 +595,8 @@ function Get-CognosDataSet {
             [string]$conversationID,
         [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)][int]$pageSize = 2500,
         [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)][int]$ReturnAfter,
-        [parameter(Mandatory=$false)][Alias("Server")][switch]$Trim
+        [parameter(Mandatory=$false)][Alias("Server")][switch]$Trim,
+        [parameter(Mandatory=$false)][switch]$DisableProgress
     )
 
     $baseURL = "https://adecognos.arkansas.gov"
@@ -611,7 +612,9 @@ function Get-CognosDataSet {
 
     try {
 
-        Write-Progress -Activity "Downloading Report Data" -Status "Report Started." -PercentComplete 0
+        if (-Not($DisableProgress)) {
+            Write-Progress -Activity "Downloading Report Data" -Status "Report Started." -PercentComplete 0
+        }
 
         do {
 
@@ -641,7 +644,9 @@ function Get-CognosDataSet {
                 $conversation = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID)/next?v=3" -WebSession $CognosSession -ErrorAction Stop
                 #$conversationID = $conversation.receipt.conversationID
                 #Write-Verbose $conversationID
-                Write-Progress -Activity "Downloading Report Data" -Status "$($results.count) rows downloaded." -PercentComplete 0
+                if (-Not($DisableProgress)) {
+                    Write-Progress -Activity "Downloading Report Data" -Status "$($results.count) rows downloaded." -PercentComplete 0
+                }
             }
 
             #You would process this externally. Then pass this right back to this cmdlet to continue where you left off.
@@ -656,7 +661,9 @@ function Get-CognosDataSet {
             
         } until ( $morePages -eq $False )
 
-        Write-Progress -Activity "Downloading Report Data" -Status "$($results.count) rows downloaded." -Completed
+        if (-Not($DisableProgress)) {
+            Write-Progress -Activity "Downloading Report Data" -Status "$($results.count) rows downloaded." -Completed
+        }
 
         if ($ReturnAfter -ge 1) {
             return [PSCustomObject]@{
@@ -1510,12 +1517,19 @@ function Get-CogSqlData {
                 conversationID = $Conversation.ConversationID
                 PageSize = $Conversation.PageSize
                 ReturnAfter = $Conversation.PageSize #Each time we run this its going to return a data object.
+                DisableProgress = $true
+            }
+
+            if ($Trim) {
+                $DataSetParams.Trim = $True
             }
 
             if ($RawCSV) {
                 $RawCSVHeaders = $False
+                $dataCounter = 0
             } else {
-                $data = [System.Collections.Generic.List[Object]]::new()    
+                $data = [System.Collections.Generic.List[Object]]::new()
+                $dataCounter = 0
             }
             
             
@@ -1542,7 +1556,10 @@ function Get-CogSqlData {
                 if ((($dataSet.data).Count) -lt $PageSize) {
                     $Done = $True
                 }
-                
+
+                $dataCounter += ($dataSet.Data).Count
+                Write-Progress -Activity "Downloading Report Data" -Status "$($dataCounter) rows downloaded." -PercentComplete 0
+
                 if ($RawCSV) {
                     if ($RawCSVHeaders -eq $False) {
                         #first iteration includes the headers.
@@ -1557,6 +1574,11 @@ function Get-CogSqlData {
                 }
 
             } until ($Done)
+
+            if ($RawCSV) {
+                #return the raw CSV string.
+                return $data
+            }
 
         } else {
             $data = (Get-CognosReport @params)
