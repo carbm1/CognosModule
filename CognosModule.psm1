@@ -592,7 +592,7 @@ function Get-CognosDataSet {
         [parameter(Mandatory=$false,ParameterSetName="Default")] #If the report is in the Team Content folder we have to switch paths.
             [switch]$TeamContent,
         [parameter(Mandatory=$false,ParameterSetName="conversation",ValueFromPipelineByPropertyName=$True)] #Provide a conversationID if you already started one via Start-CognosReport
-            $conversationID,
+            [string]$conversationID,
         [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)][int]$pageSize = 2500,
         [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)][int]$ReturnAfter,
         [parameter(Mandatory=$false)][Alias("Server")][switch]$Trim
@@ -629,14 +629,6 @@ function Get-CognosDataSet {
 
             Write-Verbose "$($data.Count) records returned"
             
-            #This is for Get-CogSqlData. If you have mulitple pages then it pages through all of them. Even the default.
-            if ($data.Count -eq 1) {
-                if ($data.Version -match '\d+\.\d+\.\d+') {
-                    Write-Verbose "Version page returned. We are done."
-                    break
-                }
-            }
-
             $data | ForEach-Object {
                 $results.Add($PSItem)
             }
@@ -666,7 +658,17 @@ function Get-CognosDataSet {
 
         Write-Progress -Activity "Downloading Report Data" -Status "$($results.count) rows downloaded." -Completed
 
-        return $results
+        if ($ReturnAfter -ge 1) {
+            return [PSCustomObject]@{
+                ConversationID = $conversationID
+                data = $results
+                ReturnAfter = $ReturnAfter
+                PageSize = $pageSize
+            }
+        } else {
+            return $results
+        }
+        
 
     } catch {
         Write-Error "$($PSItem)" -ErrorAction STOP
@@ -846,7 +848,9 @@ function Start-CognosReport {
         [parameter(Mandatory=$false)] #Reference ID for specific request. Useful if you have to run the same report multiple times with different parameters.
             [string]$RefID,
         [parameter(Mandatory=$false)] #PageSize for JSON DataSet.
-            [int]$PageSize = 2500
+            [int]$PageSize = 2500,
+        [parameter(Mandatory=$false)] #ReturnAfter for Get-CognosDataSet. #This is not used here.
+            [int]$ReturnAfter
     )
 
     $baseURL = "https://adecognos.arkansas.gov"
@@ -1342,7 +1346,8 @@ function Get-CogSqlData {
         [Parameter(Mandatory=$false)][switch]$StartOnly,
         [Parameter(Mandatory=$false)][string]$RefId, #to be used with StartOnly to reference the report again.
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")]$PKColumns, #override with string '[STUDENT_ID],CONVERT(date,[ATTENDANCE_DATE])'
-        [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][int]$Top
+        [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][int]$Top,
+        [Parameter(Mandatory=$false)][switch]$RawCSV #return the data as a string instead of objects.
     )
 
     function Get-Hash {
@@ -1495,19 +1500,64 @@ function Get-CogSqlData {
     } else {
         
         if ($AsDataSet) {
+
+            #We have to return the data set after each run so we can decide what to do with it. The automation
+            #reports in Cognos will always return one more page of data being the version page.
+
             $Conversation = Start-CognosReport @params
 
             $DataSetParams = @{
                 conversationID = $Conversation.ConversationID
                 PageSize = $Conversation.PageSize
+                ReturnAfter = $Conversation.PageSize #Each time we run this its going to return a data object.
             }
 
-            $data = (Get-CognosDataSet @DataSetParams)
-
-            if ($data.value -eq "No Data Available") {
-                Write-Warning "No Data Available"
-                return
+            if ($RawCSV) {
+                $RawCSVHeaders = $False
+            } else {
+                $data = [System.Collections.Generic.List[Object]]::new()    
             }
+            
+            
+            #This will loop through all the pages until we get the version page.
+            do {
+                
+                $dataSet = (Get-CognosDataSet @DataSetParams)
+
+                Write-Verbose ($dataSet | ConvertTo-Json)
+
+                if ($dataSet.value -eq "No Data Available") {
+                    Write-Warning "No Data Available"
+                    return #return null.
+                }
+
+                #This is for Get-CogSqlData. If you have mulitple pages then it pages through all of them. Even the default.
+                if (($dataSet.Data).Count -eq 1) {
+                    if (($dataSet.Data).Version -match '\d+\.\d+\.\d+') {
+                        Write-Verbose "Version page returned. We are done."
+                        break
+                    }
+                }
+
+                if ((($dataSet.data).Count) -lt $PageSize) {
+                    $Done = $True
+                }
+                
+                if ($RawCSV) {
+                    if ($RawCSVHeaders -eq $False) {
+                        #first iteration includes the headers.
+                        $RawCSVHeaders = $True
+                        $data += $dataSet.data | ConvertTo-CSV
+                    } else {
+                        #no headers afterwards.
+                        $data += $dataSet.data | ConvertTo-Csv | Select-Object -Skip 1
+                    }
+                } else {
+                    $data.Add($dataSet.data)
+                }
+
+            } until ($Done)
+
         } else {
             $data = (Get-CognosReport @params)
         }
@@ -1532,9 +1582,17 @@ function Get-CogSqlData {
             }
 
             if ($ReturnUID -or $ExcludeJSON) {
-                return $data
+                if ($RawCSV) {
+                    return $data | ConvertTo-Csv
+                } else {
+                    return $data
+                }
             } else {
-                return ($data | Select-Object -ExcludeProperty uid)
+                if ($RawCsv) {
+                    return ($data | Select-Object -ExcludeProperty uid) | ConvertTo-Csv
+                } else {
+                    return ($data | Select-Object -ExcludeProperty uid)
+                }
             }
         } else {
             if ($page -ne 'version' -and $data.version -match '\d+\.\d+\.\d+') {
@@ -1554,7 +1612,11 @@ function Get-CogSqlData {
                     }
                 }
 
-                return $data
+                if ($RawCSV) {
+                    return $data | ConvertTo-Csv
+                } else {
+                    return $data
+                }
             }
         }
     }
