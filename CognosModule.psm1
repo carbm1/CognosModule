@@ -594,7 +594,8 @@ function Get-CognosDataSet {
         [parameter(Mandatory=$false,ParameterSetName="conversation",ValueFromPipelineByPropertyName=$True)] #Provide a conversationID if you already started one via Start-CognosReport
             $conversationID,
         [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)][int]$pageSize = 2500,
-        [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)][int]$ReturnAfter
+        [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)][int]$ReturnAfter,
+        [parameter(Mandatory=$false)][Alias("Server")][switch]$Trim
     )
 
     $baseURL = "https://adecognos.arkansas.gov"
@@ -616,10 +617,12 @@ function Get-CognosDataSet {
 
             $data = Get-CognosReport -conversationID $conversationID -DisableProgress
 
-            $data | ForEach-Object {  
-                $PSItem.PSObject.Properties | ForEach-Object {
-                    if ($null -ne $PSItem.Value -and $PSItem.Value.GetType().Name -eq 'String') {
-                        $PSItem.Value = $PSItem.Value.Trim()
+            if ($Trim) {
+                $data | ForEach-Object {  
+                    $PSItem.PSObject.Properties | ForEach-Object {
+                        if ($null -ne $PSItem.Value -and $PSItem.Value.GetType().Name -eq 'String') {
+                            $PSItem.Value = $PSItem.Value.Trim()
+                        }
                     }
                 }
             }
@@ -731,7 +734,7 @@ function Save-CognosReport {
             [switch]$TeamContent,
         [parameter(Mandatory=$false,ParameterSetName="default")] #Remove Spaces in CSV files. This requires Powershell 7.1+
         [parameter(Mandatory=$false,ParameterSetName="conversation")]
-            [switch]$TrimCSVWhiteSpace,
+            [Alias('Trim')][switch]$TrimCSVWhiteSpace,
         [parameter(Mandatory=$false,ParameterSetName="default")] #If you Trim CSV White Space do you want to wrap everything in quotes?
         [parameter(Mandatory=$false,ParameterSetName="conversation")]
             [switch]$CSVUseQuotes,
@@ -1333,7 +1336,7 @@ function Get-CogSqlData {
         [Parameter(Mandatory=$false,ParameterSetName="default")][string]$ReportParams,
         [Parameter(Mandatory=$false)][switch]$AsDataSet, #data to be retrieved with the Get-CognosDataSet cmdlet.
         [Parameter(Mandatory=$false)][int]$PageSize = 2500, #data to be retrieved with the Get-CognosDataSet cmdlet.
-        [Parameter(Mandatory=$false)][switch]$Trim,
+        [Parameter(Mandatory=$false)][Alias('TrimCSVWhiteSpace')][switch]$Trim,
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][switch]$ReturnUID,
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][switch]$ExcludeJSON,
         [Parameter(Mandatory=$false)][switch]$StartOnly,
