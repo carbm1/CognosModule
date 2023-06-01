@@ -33,7 +33,7 @@ function Update-CognosModule {
             Import-Module CognosModule -Force
         }
     } catch {
-        Throw "Failed to update module. $PSitem"
+        Throw "Failed to update module. $PSItem"
     }
 
 }
@@ -68,7 +68,7 @@ function Set-CognosConfig {
     Param(
         [parameter(Mandatory = $false)]
         [ValidateScript( {
-                if ($_ -notmatch '^[a-zA-Z]+[a-zA-Z0-9]*$') {
+                if ($PSItem -notmatch '^[a-zA-Z]+[a-zA-Z0-9]*$') {
                     throw "You must specify a ConfigName that starts with a letter and does not contain any spaces, otherwise the Configuration could break."
                 } else {
                     $true
@@ -120,11 +120,11 @@ function Show-CognosConfig {
         $configList = [System.Collections.Generic.List[PSObject]]@()
         
         $configs | ForEach-Object { 
-            $config = Get-Content $PSitem.FullName | ConvertFrom-Json | Select-Object -Property ConfigName,username,eFinanceUsername,dsnname,fileName
-            $config.fileName = $PSitem.FullName
+            $config = Get-Content $PSItem.FullName | ConvertFrom-Json | Select-Object -Property ConfigName,username,eFinanceUsername,dsnname,fileName
+            $config.fileName = $PSItem.FullName
 
             if ($config.ConfigName -ne $PSItem.BaseName) {
-                Write-Error "ConfigName should match the file name. $($PSitem.FullName) is invalid."
+                Write-Error "ConfigName should match the file name. $($PSItem.FullName) is invalid."
             } else {
                 $configList.Add($config)
             }
@@ -302,7 +302,7 @@ function Connect-ToCognos {
         } catch {
             $failedlogin++            
             if ($failedlogin -ge 2) {
-                Write-Error "Unable to authenticate and switch into $dsnname. $($_)" -ErrorAction STOP
+                Write-Error "Unable to authenticate and switch into $dsnname. $($PSItem)" -ErrorAction STOP
             } else {
                 #Unfortuantely we are still having an issue authenticating to Cognos. So we need to make another attemp after a random number of seconds.
                 Write-Host "Failed to authenticate. Attempting again..." -ForegroundColor Red
@@ -351,7 +351,9 @@ function Get-CognosReport {
         [parameter(Mandatory=$false,ParameterSetName="Default")] #If the report is in the Team Content folder we have to switch paths.
             [switch]$TeamContent,
         [parameter(Mandatory=$false,ParameterSetName="conversation",ValueFromPipelineByPropertyName=$True)] #Provide a conversationID if you already started one via Start-CognosReport
-            $conversationID
+            $conversationID,
+        [parameter(Mandatory=$false)]
+            [switch]$DisableProgress
     )
 
     try {
@@ -360,7 +362,9 @@ function Get-CognosReport {
 
         #If the conversationID has already been supplied then we will use that.
         if (-Not($conversationID)) {
-            Write-Progress -Activity "Downloading Report" -Status "Starting Report." -PercentComplete 100
+            if (-Not($DisableProgress)) {
+                Write-Progress -Activity "Downloading Report" -Status "Starting Report." -PercentComplete 100
+            }
             $conversation = Start-CognosReport @PSBoundParameters
             $conversationID = $conversation.conversationID
         }
@@ -446,14 +450,21 @@ function Get-CognosReport {
                                     }
 
                                 }
+
+                                throw [System.ArgumentNullException]::New('Missing Cognos Rquired Report Parameter.')
                             }
 
                         }
+                        
+                        # return $response
 
                         Write-Error $errorMessage -ErrorAction Stop
+
                     } else {
                         #Complete.
-                        Write-Progress -Activity "Downloading Report" -Status "Ready" -Completed
+                        if (-Not($DisableProgress)) {
+                            Write-Progress -Activity "Downloading Report" -Status "Ready" -Completed
+                        }
                     }
                 }
 
@@ -469,15 +480,36 @@ function Get-CognosReport {
                         $timeoutPercentage = 0
                     }
 
-                    Write-Progress -Activity "Downloading Report" -Status "Report is still processing. $($secondsLeft) seconds until timeout." -PercentComplete $timeoutPercentage
+                    if (-Not($DisableProgress)) {
+                        Write-Progress -Activity "Downloading Report" -Status "Report is still processing. $($secondsLeft) seconds until timeout." -PercentComplete $timeoutPercentage
+                    }
                     Start-Sleep -Seconds 1
 
                 }
 
                 default {
 
-                    #anything else should be an error.
-                    Write-Error "$(([xml]$response.Content).error.message)" -ErrorAction Stop
+                    #anything else should be an XML Error.
+                    $errorResponse = [xml]$response.Content
+                    $errorMessage = "$($errorResponse.error.message)"
+                        
+
+                    if ($errorMessage -match "RDS-ERR-(\d+) ") {
+
+                        #1018 = Params/SqlPrepare Error
+                        #1021 = Missing Required Parameters.
+                        #1023 = FileSize limit of 50MB exceeded.
+
+                        if ($Matches.1 -eq '1023') {
+                            Throw [System.DataMisalignedException] "Arbitrary RDS 50MB File Size Limit"
+                        }
+
+                    }
+                    
+                    if ($errorResponse.error.trace) {
+                        Write-Warning "$($errorResponse.error.trace)"
+                    }
+                    Write-Error "$($errorResponse.error.message)" -ErrorAction Stop
 
                 }
                 
@@ -562,7 +594,7 @@ function Get-CognosDataSet {
         [parameter(Mandatory=$false,ParameterSetName="conversation",ValueFromPipelineByPropertyName=$True)] #Provide a conversationID if you already started one via Start-CognosReport
             $conversationID,
         [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)][int]$pageSize = 2500,
-        [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)][int]$ReturnAfter 
+        [parameter(Mandatory=$false,ValueFromPipelineByPropertyName=$True)][int]$ReturnAfter
     )
 
     $baseURL = "https://adecognos.arkansas.gov"
@@ -582,31 +614,42 @@ function Get-CognosDataSet {
 
         do {
 
-            $data = Get-CognosReport -conversationID $conversationID
+            $data = Get-CognosReport -conversationID $conversationID -DisableProgress
 
             $data | ForEach-Object {  
-                $_.PSObject.Properties | ForEach-Object {
-                    if ($null -ne $_.Value -and $_.Value.GetType().Name -eq 'String') {
-                        $_.Value = $_.Value.Trim()
+                $PSItem.PSObject.Properties | ForEach-Object {
+                    if ($null -ne $PSItem.Value -and $PSItem.Value.GetType().Name -eq 'String') {
+                        $PSItem.Value = $PSItem.Value.Trim()
                     }
                 }
             }
+
+            Write-Verbose "$($data.Count) records returned"
             
+            #This is for Get-CogSqlData. If you have mulitple pages then it pages through all of them. Even the default.
+            if ($data.Count -eq 1) {
+                if ($data.Version -match '\d+\.\d+\.\d+') {
+                    Write-Verbose "Version page returned. We are done."
+                    break
+                }
+            }
+
             $data | ForEach-Object {
-                $results.Add($PSitem)
+                $results.Add($PSItem)
             }
 
             if (($data).Count -lt $pageSize) {
                 $morePages = $False
             } else {
                 #next page.
-                $conversation = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID)/next?v=3" -WebSession $CognosSession
-                $conversationID = $conversation.receipt.conversationID
-                Write-Verbose $conversationID
+                Write-Verbose "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID)/next?v=3"
+                $conversation = Invoke-RestMethod -Uri "$($baseURL)/ibmcognos/bi/v1/disp/rds/sessionOutput/conversationID/$($conversationID)/next?v=3" -WebSession $CognosSession -ErrorAction Stop
+                #$conversationID = $conversation.receipt.conversationID
+                #Write-Verbose $conversationID
                 Write-Progress -Activity "Downloading Report Data" -Status "$($results.count) rows downloaded." -PercentComplete 0
             }
 
-            #You would process this externally. Then pass this right back to this cmdlet.
+            #You would process this externally. Then pass this right back to this cmdlet to continue where you left off.
             if ($ReturnAfter -ge 1 -and $results.Count -ge $ReturnAfter) {
                 return [PSCustomObject]@{
                     ConversationID = $conversationID
@@ -661,7 +704,7 @@ function Save-CognosReport {
         [parameter(Mandatory=$false,HelpMessage="Folder to save report to.",ParameterSetName="default")]
         [parameter(Mandatory=$false,HelpMessage="Folder to save report to.",ParameterSetName="conversation")]
             [ValidateScript( {
-                if ([System.IO.Directory]::Exists("$PSitem")) {
+                if ([System.IO.Directory]::Exists("$PSItem")) {
                     $True
                 } else {
                     Throw "Unable to find folder $PSItem"
@@ -730,8 +773,8 @@ function Save-CognosReport {
         
         if ($TrimCSVWhiteSpace) {
             $data | Foreach-Object {  
-                $_.PSObject.Properties | Foreach-Object {
-                    $_.Value = $_.Value.Trim()
+                $PSItem.PSObject.Properties | Foreach-Object {
+                    $PSItem.Value = $PSItem.Value.Trim()
                 }
             }
         }
@@ -929,7 +972,7 @@ function Start-CognosReport {
         }
 
     } catch {
-        Write-Error "$($_)" -ErrorAction STOP
+        Write-Error "$($PSItem)" -ErrorAction STOP
     }
 
 }
@@ -949,7 +992,7 @@ function Get-CogSqlData {
     [CmdletBinding(DefaultParametersetName="default")]
     Param(
         [Parameter(Mandatory=$true,ParameterSetName="default")]
-        [ValidateSet('version','tblDefinitions','colDefinitions','employee','person','clstable','payrate','assignment','hrm_locn','_tblStateCourses','API_AUTH_LOG','API_CALLER_CFG','API_CALLER_CFG_OPTIONS','API_CALLER_SECURE_DET','API_CALLER_SUBSCRIBE','API_DELTA_CACHE','API_DISTRICT_DEFINED',
+        [ValidateSet('version','tblDefinitions','colDefinitions','tblDefinitionsFMS','colDefinitionsFMS','employee','person','clstable','payrate','assignment','hrm_locn','_tblStateCourses','API_AUTH_LOG','API_CALLER_CFG','API_CALLER_CFG_OPTIONS','API_CALLER_SECURE_DET','API_CALLER_SUBSCRIBE','API_DELTA_CACHE','API_DISTRICT_DEFINED',
         'API_GUID_GB_ASMT','API_GUID_GB_SCORE','API_LOG','API_PROGRAMS','API_RULE_DET','API_RULE_HDR','API_RULE_SCOPES','API_RULE_SUBQUERY_JOIN','AR_CLASS_DOWN','AR_DOWN_ALE_DAYS',
         'AR_DOWN_ATTEND','AR_DOWN_CAL','AR_DOWN_DISCIPLINE','AR_DOWN_DISTRICT','AR_DOWN_EC','AR_DOWN_EIS1','AR_DOWN_EIS2','AR_DOWN_EMPLOYEE','AR_DOWN_GRADUATE','AR_DOWN_HEARING',
         'AR_DOWN_JOBASSIGN','AR_DOWN_REFERRAL','AR_DOWN_REGISTER','AR_DOWN_SCHL_AGE','AR_DOWN_SCHOOL','AR_DOWN_SCOLIOSIS','AR_DOWN_SE_STAFF','AR_DOWN_STU','AR_DOWN_STU_ID',
@@ -1280,6 +1323,7 @@ function Get-CogSqlData {
         'TAC_MENU_ITEMS','TAC_MESSAGES','TAC_MS_SCHD','TAC_MSG_CRS_DATES','TAC_PRINT_RC','TAC_SEAT_CRS_DET','TAC_SEAT_CRS_HDR','TAC_SEAT_HRM_DET','TAC_SEAT_HRM_HDR','TAC_SEAT_PER_DET',
         'TAC_SEAT_PER_HDR','TACTB_ISSUE','TACTB_ISSUE_ACTION','TACTB_ISSUE_LOCATION','tmp_medtb_vis_exam_ark','WSSecAuthenticationLogTbl')]
         [string]$Table,
+        [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][switch]$eFinance,
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][string]$SQLWhere, #no not include where at the beginning.
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][string]$Columns, #single string '[STUDENT_ID],[DISTRICT]'
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][string]$dtEquals,
@@ -1307,7 +1351,7 @@ function Get-CogSqlData {
         
         $StringBuilder = New-Object System.Text.StringBuilder
         [System.Security.Cryptography.HashAlgorithm]::Create($Hash).ComputeHash([System.Text.Encoding]::UTF8.GetBytes($String))| ForEach-Object {
-            [Void]$StringBuilder.Append($_.ToString("x2"))
+            [Void]$StringBuilder.Append($PSItem.ToString("x2"))
         }
         
         return ($StringBuilder.ToString())
@@ -1324,7 +1368,11 @@ function Get-CogSqlData {
             Write-Error "You need to run Update-CogTableDefinitions first." -ErrorAction Stop
         }
 
-        $tblDefinitions = Import-Csv "$($HOME)\.config\Cognos\espTables.csv" | Group-Object -Property name -AsHashTable
+        if (-Not(Test-Path "$($HOME)\.config\Cognos\efpTables.csv")) {
+            Write-Error "You need to run Update-CogTableDefinitions first." -ErrorAction Stop
+        }
+
+        $tblDefinitions = Import-Csv "$($HOME)\.config\Cognos\espTables.csv","$($HOME)\.config\Cognos\efpTables.csv" | Group-Object -Property name -AsHashTable
     }
 
     $params = @{
@@ -1335,7 +1383,11 @@ function Get-CogSqlData {
     }
 
     if ($awesomeSauce) {
-        $params.reportparams = "p_page=awesomeSauce&p_tblName=[$($table)]"
+        if ($eFinance) {
+            $params.reportparams = "p_page=awesomeSauceFMS&p_tblName=[$($table)]"
+        } else {
+            $params.reportparams = "p_page=awesomeSauce&p_tblName=[$($table)]"
+        }
 
         if ($ExcludeJSON) {
             $params.reportparams += "&p_excludeJson=true"
@@ -1344,6 +1396,14 @@ function Get-CogSqlData {
         if ($Top) {
             $params.reportparams += "&p_top=TOP $($Top)"
         }
+
+        # if ($OrderBy) {
+        #     if ($OrderBy.Substring(0,9) -ne "ORDER BY ") {
+        #         $params.reportparams += "&p_orderby= ORDER BY $($OrderBy) "
+        #     } else {
+        #         $params.reportparams += "&p_orderby= $($OrderBy) "
+        #     }
+        # }
 
         #uniqueness from the table definitions.
         if ($PKColumns) {
@@ -1355,7 +1415,7 @@ function Get-CogSqlData {
                 } elseif ($PSItem -eq '[DISTRICT]') {
                     #do nothing.
                 } elseif ($PSItem -like "*DATE*") {
-                    "CONVERT(date,$PSitem)"
+                    "CONVERT(date,$PSItem)"
                 } else {
                     $PSItem
                 }
@@ -1433,7 +1493,13 @@ function Get-CogSqlData {
         
         if ($AsDataSet) {
             $Conversation = Start-CognosReport @params
-            $data = (Get-CognosDataSet -conversationID $Conversation.ConversationID -PageSize $Conversation.PageSize)
+
+            $DataSetParams = @{
+                conversationID = $Conversation.ConversationID
+                PageSize = $Conversation.PageSize
+            }
+
+            $data = (Get-CognosDataSet @DataSetParams)
 
             if ($data.value -eq "No Data Available") {
                 Write-Warning "No Data Available"
@@ -1454,9 +1520,9 @@ function Get-CogSqlData {
 
             if ($Trim) {
                 $data | ForEach-Object {  
-                    $_.PSObject.Properties | ForEach-Object {
-                        if ($null -ne $_.Value -and $_.Value.GetType().Name -eq 'String') {
-                            $_.Value = $_.Value.Trim()
+                    $PSItem.PSObject.Properties | ForEach-Object {
+                        if ($null -ne $PSItem.Value -and $PSItem.Value.GetType().Name -eq 'String') {
+                            $PSItem.Value = $PSItem.Value.Trim()
                         }
                     }
                 }
@@ -1469,15 +1535,17 @@ function Get-CogSqlData {
             }
         } else {
             if ($page -ne 'version' -and $data.version -match '\d+\.\d+\.\d+') {
+                Write-Verbose "Version page returned."
+                return @()
                 Write-Verbose ($data | ConvertTo-Json)
                 Write-Error "Incorrect page specified." -ErrorAction Stop
             } else {
                 
                 if ($Trim) {
                     $data | ForEach-Object {  
-                        $_.PSObject.Properties | ForEach-Object {
-                            if ($null -ne $_.Value -and $_.Value.GetType().Name -eq 'String') {
-                                $_.Value = $_.Value.Trim()
+                        $PSItem.PSObject.Properties | ForEach-Object {
+                            if ($null -ne $PSItem.Value -and $PSItem.Value.GetType().Name -eq 'String') {
+                                $PSItem.Value = $PSItem.Value.Trim()
                             }
                         }
                     }
@@ -1495,15 +1563,21 @@ function Update-CogTableDefinitions {
         [Parameter(Mandatory=$false)]$eFinance
     )
 
-    $params = @{
-        page = 'tblDefinitions'
-    }
-
     if ($eFinance) {
         $fileName = 'efpTables.csv'
-        $params.eFinance = $true
+    
+        $params = @{
+            page = 'tblDefinitionsFMS'
+            eFinance = $true
+        }
+
     } else {
         $fileName = 'espTables.csv'
+
+        $params = @{
+            page = 'tblDefinitions'
+        }
+
     }
 
     $definitions = Get-CogSqlData @params
@@ -1761,7 +1835,7 @@ function Get-CogStuSchedule {
             }
 
             $students | Group-Object -Property 'Student_id' | ForEach-Object {
-                $schedules.Add($PSitem.Group)
+                $schedules.Add($PSItem.Group)
             }
 
             return $schedules
@@ -1788,7 +1862,7 @@ function Get-CogStuSchedule {
 
         Write-Verbose "$($parameters.reportparams)"
         (Get-CognosReport @parameters -TeamContent) | Group-Object -Property 'Student_id' | ForEach-Object {
-            $schedules.Add($PSitem.Group)
+            $schedules.Add($PSItem.Group)
         }
 
         return $schedules
@@ -1929,7 +2003,7 @@ function Get-CogStuAttendance {
 
         if ($ExcludePeriodsByNames.Count -ge 1) {
             $excludePeriodsByNames | Foreach-Object {
-                $parameters.reportparams += "p_ExcludePeriodsByName=$($PSitem)&"
+                $parameters.reportparams += "p_ExcludePeriodsByName=$($PSItem)&"
             }
         }
   
@@ -1961,7 +2035,7 @@ function Get-CogStuAttendance {
         
         if ($buildingIds.Count -ge 1) {
             $buildingIds | ForEach-Object {
-                $parameters.reportparams += "p_building=$($PSitem)&"
+                $parameters.reportparams += "p_building=$($PSItem)&"
             }
         }
     
@@ -1995,10 +2069,10 @@ function Start-CognosBrowser {
     $files = Select-Xml -Xml ([xml]$foldercontents.Content) -XPath '//x:service' -Namespace @{ x = "http://schemas.xmlsoap.org/ws/2001/10/inspection/" }
 
     #process folders.
-    $folders.Node | Where-Object { $null -ne $PSitem.name } | ForEach-Object {
+    $folders.Node | Where-Object { $null -ne $PSItem.name } | ForEach-Object {
 
-        $name = $PSitem.abstract
-        $location = $PSitem.location -replace 'http://adecognos.arkansas.gov:80','https://adecognos.arkansas.gov'
+        $name = $PSItem.abstract
+        $location = $PSItem.location -replace 'http://adecognos.arkansas.gov:80','https://adecognos.arkansas.gov'
 
         $results.Add(
             [PSCustomObject]@{
@@ -2013,10 +2087,10 @@ function Start-CognosBrowser {
 
     }
 
-    $files.Node | Where-Object { $null -ne $PSitem.name } | ForEach-Object {
+    $files.Node | Where-Object { $null -ne $PSItem.name } | ForEach-Object {
 
-        $name = $PSitem.Name
-        $location = $PSitem.description.location -replace 'http://adecognos.arkansas.gov:80','https://adecognos.arkansas.gov'
+        $name = $PSItem.Name
+        $location = $PSItem.description.location -replace 'http://adecognos.arkansas.gov:80','https://adecognos.arkansas.gov'
 
         $results.Add(
             [PSCustomObject]@{
@@ -2078,7 +2152,7 @@ function Start-CognosBrowser {
                         $reportDetails.error | Format-List -
                     }
                 } catch {
-                    $PSitem
+                    $PSItem
                     
                 }
 
