@@ -799,7 +799,7 @@ function Save-CognosReport {
         }
 
     } elseif ($extension -eq "csv") {
-        $data | Out-File -Path $fullfilepath -Force
+        $data | Out-File -Path $fullfilepath -Force -NoNewline
     } else {
         $data | Set-Content -Path $fullFilePath -AsByteStream -Force
     }
