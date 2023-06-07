@@ -1,6 +1,10 @@
 {
     "versions": [
         {
+            "version": "23.6.7",
+            "description": "Save-CognosReport -NoNewline Fix."
+        },
+        {
             "version": "23.5.30",
             "description": "So many goodies. Rewrite for Get-CognosReport, Save-CognosReport. Pipe Reports to Get-CognosReport and Get-CognosDataSet."
         },
