@@ -291,13 +291,15 @@ function Connect-ToCognos {
             $global:CognoseFPUsername = $efpusername
             $global:CognosUsername = $username
 
-            $global:CognosModuleSession = @{
-                CognosSession = $session
-                CognosProfile = $ConfigName
-                CognosDSN = $dsnname
-                CognoseFPUsername = $efpusername
-                CognosUsername = $username
-            }
+            # I want to eventually move to a single variable for all properties.
+            # However, at this point its a breaking change and not one I'm ready to tackle yet.
+            # $global:CognosModuleSession = @{
+            #     CognosSession = $session
+            #     CognosProfile = $ConfigName
+            #     CognosDSN = $dsnname
+            #     CognoseFPUsername = $efpusername
+            #     CognosUsername = $username
+            # }
 
         } catch {
             $failedlogin++            
@@ -879,19 +881,14 @@ function Start-CognosReport {
     #To measure for a timeout.
     $startTime = Get-Date
 
-    if ($eFinance) {
-        $camName = "efp" #efp for eFinance
-        $dsnparam = "spi_db_name"
-        $dsnname = $CognosDSN.SubString(0,$CognosDSN.Length - 3) + 'fms'
+    if ($cognosDSN -like "*fms") {
+        #eFinance
         if ($CognoseFPUsername) {
             $camid = "CAMID(""efp_x003Aa_x003A$($CognoseFPUsername)"")"
         } else {
             $camid = "CAMID(""efp_x003Aa_x003A$($CognosUsername)"")"
         }
     } else {
-        $camName = "esp"    #esp for eSchool
-        $dsnparam = "dsn"
-        $dsnname = $CognosDSN
         $camid = "CAMID(""esp_x003Aa_x003A$($CognosUsername)"")"
     }
 
