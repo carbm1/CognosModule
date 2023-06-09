@@ -536,7 +536,7 @@ function Get-CognosReport {
 
                     #CognosDataSet
                     'application/json; charset=utf-8' {
-                        return (($response.Content) -replace '_x005f','_' <#-replace '__','_'#> | ConvertFrom-Json).dataSet.dataTable.Row
+                        return (($response.Content) -replace '_x005f','_' -replace '__','_' | ConvertFrom-Json).dataSet.dataTable.Row
                     }
 
                     #Excel
