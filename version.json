@@ -1,6 +1,10 @@
 {
     "versions": [
         {
+            "version": "23.6.9",
+            "description": "eFinance Username Fix"
+        },
+        {
             "version": "23.6.7",
             "description": "Save-CognosReport -NoNewline Fix."
         },
