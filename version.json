@@ -1,6 +1,26 @@
 {
     "versions": [
         {
+            "version": "23.6.9",
+            "description": "eFinance Username Fix"
+        },
+        {
+            "version": "23.6.7",
+            "description": "Save-CognosReport -NoNewline Fix."
+        },
+        {
+            "version": "23.5.30",
+            "description": "So many goodies. Rewrite for Get-CognosReport, Save-CognosReport. Pipe Reports to Get-CognosReport and Get-CognosDataSet."
+        },
+        {
+            "version": "23.5.25",
+            "description": "Added Get-CogSqlData and Update-CogTableDefintions. Use Write-Progress for waiting on Report."
+        },
+        {
+            "version": "23.5.22",
+            "description": "Added RefID to Start-CognosReport to reference a ConversationID. Added Get-CognosDataSet."
+        },
+        {
             "version": "22.7.4",
             "description": "Fix for Save-CognosReport timeout on larger reports."
         },
