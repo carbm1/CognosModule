@@ -1380,11 +1380,13 @@ function Get-CogSqlData {
             Write-Error "You need to run Update-CogTableDefinitions first." -ErrorAction Stop
         }
 
-        if (-Not(Test-Path "$($HOME)\.config\Cognos\efpTables.csv")) {
-            Write-Error "You need to run Update-CogTableDefinitions first." -ErrorAction Stop
-        }
+        $tblDefinitions = Import-Csv "$($HOME)\.config\Cognos\espTables.csv" | Group-Object -Property name -AsHashTable
 
-        $tblDefinitions = Import-Csv "$($HOME)\.config\Cognos\espTables.csv","$($HOME)\.config\Cognos\efpTables.csv" | Group-Object -Property name -AsHashTable
+        # if (-Not(Test-Path "$($HOME)\.config\Cognos\efpTables.csv")) {
+        #     Write-Error "You need to run Update-CogTableDefinitions first." -ErrorAction Stop
+        # }
+
+        # $tblDefinitions = Import-Csv "$($HOME)\.config\Cognos\espTables.csv","$($HOME)\.config\Cognos\efpTables.csv" | Group-Object -Property name -AsHashTable
     }
 
     $params = @{
@@ -1643,8 +1645,13 @@ function Get-CogSqlData {
 }
 
 function Update-CogTableDefinitions {
+    <#
+    .DESCRIPTION
+    The FMS side of this isn't ready yet.
+    #>
+
     Param(
-        [Parameter(Mandatory=$false)]$eFinance
+        [Parameter(Mandatory=$false)][switch]$eFinance
     )
 
     if ($eFinance) {
