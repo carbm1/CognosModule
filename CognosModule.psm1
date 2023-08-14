@@ -1421,7 +1421,7 @@ function Get-CogSqlData {
 
         #uniqueness from the table definitions.
         if ($PKColumns) {
-            $params.reportparams += "&p_tblUniqId=CONCAT($($PKColumns))"
+            $params.reportparams += "&p_tblUniqId=CONCAT($($PKColumns),'')"
         } else {
             $PKColumns = ($tblDefinitions.$table.PKColumns).Split(',') | ForEach-Object {
                 if ($PSItem -eq '[STUDENT_ID]') {
@@ -2003,6 +2003,7 @@ function Get-CogStuAttendance {
         [parameter(Mandatory=$false)]$ExcludePeriodsByName,
         [parameter(Mandatory=$false)][datetime]$date=(Get-Date),
         [parameter(Mandatory=$false)][string]$dateafter,
+        [parameter(Mandatory=$false)][switch]$IncludeComments, #Include the commented reason for the absence
         [parameter(Mandatory=$false)][switch]$All #Everything for this year.
     )
 
@@ -2098,6 +2099,10 @@ function Get-CogStuAttendance {
             }
         }
   
+        if ($IncludeComments) {
+            $parameters.reportparams += "p_page=attendance_with_comments&"
+        }
+
         if ($studentIds.Count -ge 1) {
 
             #75 seems like a good break point and keeps us under the url limit. We need to make multiple queries.
