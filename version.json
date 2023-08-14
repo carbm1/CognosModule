@@ -1,6 +1,10 @@
 {
     "versions": [
         {
+            "version": "23.8.14",
+            "description": "Get-CogStuAttendance -IncludeComments, Get-CogSqlData -AsDataSet array return fix."
+        },
+        {
             "version": "23.6.9",
             "description": "eFinance Username Fix"
         },

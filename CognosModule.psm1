@@ -1380,11 +1380,13 @@ function Get-CogSqlData {
             Write-Error "You need to run Update-CogTableDefinitions first." -ErrorAction Stop
         }
 
-        if (-Not(Test-Path "$($HOME)\.config\Cognos\efpTables.csv")) {
-            Write-Error "You need to run Update-CogTableDefinitions first." -ErrorAction Stop
-        }
+        $tblDefinitions = Import-Csv "$($HOME)\.config\Cognos\espTables.csv" | Group-Object -Property name -AsHashTable
 
-        $tblDefinitions = Import-Csv "$($HOME)\.config\Cognos\espTables.csv","$($HOME)\.config\Cognos\efpTables.csv" | Group-Object -Property name -AsHashTable
+        # if (-Not(Test-Path "$($HOME)\.config\Cognos\efpTables.csv")) {
+        #     Write-Error "You need to run Update-CogTableDefinitions first." -ErrorAction Stop
+        # }
+
+        # $tblDefinitions = Import-Csv "$($HOME)\.config\Cognos\espTables.csv","$($HOME)\.config\Cognos\efpTables.csv" | Group-Object -Property name -AsHashTable
     }
 
     $params = @{
@@ -1419,7 +1421,7 @@ function Get-CogSqlData {
 
         #uniqueness from the table definitions.
         if ($PKColumns) {
-            $params.reportparams += "&p_tblUniqId=CONCAT($($PKColumns))"
+            $params.reportparams += "&p_tblUniqId=CONCAT($($PKColumns),'')"
         } else {
             $PKColumns = ($tblDefinitions.$table.PKColumns).Split(',') | ForEach-Object {
                 if ($PSItem -eq '[STUDENT_ID]') {
@@ -1567,7 +1569,11 @@ function Get-CogSqlData {
                         $data += $dataSet.data | ConvertTo-Csv | Select-Object -Skip 1
                     }
                 } else {
-                    $data.Add($dataSet.data)
+                    #add each row to the original list array. Otherwise you end up with an array of arrays.
+                    # $data.Add($dataSet.data)
+                    $dataSet.data | ForEach-Object {
+                        $data.Add($PSItem)
+                    }
                 }
 
             } until ($Done)
@@ -1643,8 +1649,13 @@ function Get-CogSqlData {
 }
 
 function Update-CogTableDefinitions {
+    <#
+    .DESCRIPTION
+    The FMS side of this isn't ready yet.
+    #>
+
     Param(
-        [Parameter(Mandatory=$false)]$eFinance
+        [Parameter(Mandatory=$false)][switch]$eFinance
     )
 
     if ($eFinance) {
@@ -1996,6 +2007,7 @@ function Get-CogStuAttendance {
         [parameter(Mandatory=$false)]$ExcludePeriodsByName,
         [parameter(Mandatory=$false)][datetime]$date=(Get-Date),
         [parameter(Mandatory=$false)][string]$dateafter,
+        [parameter(Mandatory=$false)][switch]$IncludeComments, #Include the commented reason for the absence
         [parameter(Mandatory=$false)][switch]$All #Everything for this year.
     )
 
@@ -2091,6 +2103,10 @@ function Get-CogStuAttendance {
             }
         }
   
+        if ($IncludeComments) {
+            $parameters.reportparams += "p_page=attendance_with_comments&"
+        }
+
         if ($studentIds.Count -ge 1) {
 
             #75 seems like a good break point and keeps us under the url limit. We need to make multiple queries.
