@@ -1569,7 +1569,11 @@ function Get-CogSqlData {
                         $data += $dataSet.data | ConvertTo-Csv | Select-Object -Skip 1
                     }
                 } else {
-                    $data.Add($dataSet.data)
+                    #add each row to the original list array. Otherwise you end up with an array of arrays.
+                    # $data.Add($dataSet.data)
+                    $dataSet.data | ForEach-Object {
+                        $data.Add($PSItem)
+                    }
                 }
 
             } until ($Done)
