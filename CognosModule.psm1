@@ -2382,3 +2382,139 @@ function Start-CognosBrowser {
     }
 
 }
+
+function Index-CognosFolder {
+        
+    Param(
+        [parameter(Mandatory=$true)][string]$url
+    )
+
+    $results = [System.Collections.Generic.List[PSObject]]@()
+    try {
+        $foldercontents = Invoke-WebRequest -Uri "$url" -WebSession $CognosSession
+    } catch {
+        #because sometimes Cognos simply doesn't reply.
+        Start-Sleep -Seconds 1
+    } finally {
+        $foldercontents = Invoke-WebRequest -Uri "$url" -WebSession $CognosSession
+    }
+    $folders = Select-Xml -Xml ([xml]$foldercontents.Content) -XPath '//x:link' -Namespace @{ x = "http://schemas.xmlsoap.org/ws/2001/10/inspection/" }
+    $reports = Select-Xml -Xml ([xml]$foldercontents.Content) -XPath '//x:service' -Namespace @{ x = "http://schemas.xmlsoap.org/ws/2001/10/inspection/" }
+
+    Write-Verbose "Found: $($folders.Count) folders and $($reports.Count) reports."
+
+    #process folders.
+    $folders.Node | Where-Object { $null -ne $PSItem.name } | ForEach-Object {
+
+        $name = $PSItem.abstract
+        $location = $PSItem.location -replace 'http://adecognos.arkansas.gov:80','https://adecognos.arkansas.gov'
+
+        $results.Add(
+            [PSCustomObject]@{
+                name = $name
+                type = 'folder'
+                url = $location
+            }
+        )
+
+    }
+
+    $reports.Node | Where-Object { $null -ne $PSItem.name } | ForEach-Object {
+
+        $name = $PSItem.Name
+        $location = $PSItem.description.location -replace 'http://adecognos.arkansas.gov:80','https://adecognos.arkansas.gov'
+
+        $results.Add(
+            [PSCustomObject]@{
+                name = $name
+                type = 'report'
+                url = $location
+            }
+        )
+
+    }
+
+    Write-Verbose ($results | ConvertTo-Json)
+
+    return $results
+
+}
+
+function Index-CognosTeamContent {
+
+    Param(
+        [parameter(Mandatory=$false)][string]$url="https://adecognos.arkansas.gov/ibmcognos/bi/v1/disp/rds/wsil/path/Team%20Content"
+    )
+
+    $indexedFolders = @{}
+    $allReports = [System.Collections.Generic.List[PSObject]]@()
+    $allFolders = [System.Collections.Generic.List[PSObject]]@()
+
+    do {
+        Write-Host "$url"
+
+        $index = Index-CognosFolder -url $url
+
+        $reports = $index | Where-Object -Property type -EQ 'report'
+        
+        $reports | ForEach-Object {
+            $allReports.Add($PSItem)
+        }
+        
+        $folders = $index | Where-Object -Property type -EQ 'folder'
+        
+        $folders | ForEach-Object {
+            $allFolders.Add($PSItem)
+        }
+
+        Write-Host "Found $($reports.Count) reports and $($folders.Count) folders."
+
+        #this folder has been indexed.
+        $indexedFolders."$($url)" = $True
+
+        #find the next folder that needs indexed and let this loop continue.
+        $url = $allFolders | Where-Object { $indexedFolders.Keys -notcontains $PSItem.url } | Select-Object -First 1 -ExpandProperty url
+
+    } while ($url)
+
+    return $allReports
+
+}
+
+function Get-CognosReportMetaData {
+    
+    Param(
+        [parameter(Mandatory=$true)][string]$url
+    )
+
+    $url = $url -replace '/wsdl/','/atom/'
+
+    Write-Verbose ($url)
+
+    try {
+        $reportDetails = Invoke-RestMethod -Uri $url -WebSession $CognosSession
+    } catch {
+        Start-Sleep -Seconds 1
+    } finally {
+        $reportDetails = Invoke-RestMethod -Uri $url -WebSession $CognosSession
+    }
+    
+    $reportIDMatch = $reportDetails.feed.thumbnailURL -match "/report/(.{33})\?"
+    $reportID = $Matches.1
+
+    return (
+        [PSCustomObject]@{
+            Title = $reportDetails.feed.title
+            Location = $reportDetails.feed.location
+            Description = $reportDetails.feed.description
+            Author = $reportDetails.feed.author.name
+            Contact = $reportDetails.feed.contact
+            Owner = $reportDetails.feed.owner
+            Updated = $reportDetails.feed.updated
+            ReportID = $reportID
+            CSV = $null #"=HYPERLINK(""https://adecognos.arkansas.gov/ibmcognos/bi/v1/disp/rds/outputFormat/report/$($reportID)/CSV?v=3"",""Download CSV"")"
+            Excel = $null #"=HYPERLINK(""https://adecognos.arkansas.gov/ibmcognos/bi/v1/disp/rds/outputFormat/report/$($reportID)/spreadsheetML?v=3"",""Download Excel"")"
+        }
+    )
+
+}
