@@ -769,9 +769,9 @@ function Save-CognosReport {
     }
 
     if ($extension -eq 'csv' -and (-Not($TrimCSVWhiteSpace -or $CSVUseQuotes))) {
-        $data = Get-CognosReport -conversationID $conversationID -Raw
+        $data = Get-CognosReport -conversationID $conversationID -Raw -Timeout $Timeout
     } else {
-        $data = Get-CognosReport -conversationID $conversationID
+        $data = Get-CognosReport -conversationID $conversationID -Timeout $Timeout
     }
 
     #We should have the actual file now in $data. We need to test if a previous file exists and back it up first.
