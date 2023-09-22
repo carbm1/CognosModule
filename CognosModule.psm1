@@ -2383,7 +2383,7 @@ function Start-CognosBrowser {
 
 }
 
-function Index-CognosFolder {
+function Invoke-IndexCognosFolder {
         
     Param(
         [parameter(Mandatory=$true)][string]$url
@@ -2434,13 +2434,17 @@ function Index-CognosFolder {
 
     }
 
-    Write-Verbose ($results | ConvertTo-Json)
-
-    return $results
+    if ($results) {
+        Write-Verbose ($results | ConvertTo-Json)
+        return $results
+    } else {
+        Write-Warning "Empty folder."
+        return $null
+    }
 
 }
 
-function Index-CognosTeamContent {
+function Invoke-IndexCognosTeamContent {
 
     Param(
         [parameter(Mandatory=$false)][string]$url="https://adecognos.arkansas.gov/ibmcognos/bi/v1/disp/rds/wsil/path/Team%20Content"
@@ -2453,7 +2457,7 @@ function Index-CognosTeamContent {
     do {
         Write-Host "$url"
 
-        $index = Index-CognosFolder -url $url
+        $index = Invoke-IndexCognosFolder -url $url
 
         $reports = $index | Where-Object -Property type -EQ 'report'
         
@@ -2505,15 +2509,16 @@ function Get-CognosReportMetaData {
     return (
         [PSCustomObject]@{
             Title = $reportDetails.feed.title
-            Location = $reportDetails.feed.location
+            Location = $reportDetails.feed.location -replace 'Team Content > Student management System > ',''
+            Preview = $reportID ? "=HYPERLINK(""https://adecognos.arkansas.gov/ibmcognos/bi/?perspective=classicviewer&objRef=$($reportID)&action=run&format=HTML"",""Preview"")" : $null
+            CSV = $reportID ? "=HYPERLINK(""https://adecognos.arkansas.gov/ibmcognos/bi/?perspective=classicviewer&objRef=$($reportID)&action=run&format=CSV"",""CSV"")" : $null
+            Excel = $reportID ? "=HYPERLINK(""https://adecognos.arkansas.gov/ibmcognos/bi/?perspective=classicviewer&objRef=$($reportID)&action=run&format=spreadsheetML"",""Excel"")" : $null
             Description = $reportDetails.feed.description
             Author = $reportDetails.feed.author.name
             Contact = $reportDetails.feed.contact
             Owner = $reportDetails.feed.owner
             Updated = $reportDetails.feed.updated
             ReportID = $reportID
-            CSV = $null #"=HYPERLINK(""https://adecognos.arkansas.gov/ibmcognos/bi/v1/disp/rds/outputFormat/report/$($reportID)/CSV?v=3"",""Download CSV"")"
-            Excel = $null #"=HYPERLINK(""https://adecognos.arkansas.gov/ibmcognos/bi/v1/disp/rds/outputFormat/report/$($reportID)/spreadsheetML?v=3"",""Download Excel"")"
         }
     )
 
