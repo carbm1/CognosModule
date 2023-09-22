@@ -347,6 +347,7 @@ function Get-CognosReport {
         [parameter(Mandatory=$false,ParameterSetName="Default")]
             [switch]$SavePrompts, #Interactive submitting and saving of complex prompts.
         [parameter(Mandatory=$false,ParameterSetName="Default")] #How long in minutes are you willing to let CognosDownloader run for said report? 5 mins is default and gives us a way to error control.
+        [parameter(Mandatory=$false,ParameterSetName="conversation")]
             [int]$Timeout = 5,
         [parameter(Mandatory=$false)] #This will dump the raw CSV data to the terminal.
             [switch]$Raw,
