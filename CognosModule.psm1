@@ -347,6 +347,7 @@ function Get-CognosReport {
         [parameter(Mandatory=$false,ParameterSetName="Default")]
             [switch]$SavePrompts, #Interactive submitting and saving of complex prompts.
         [parameter(Mandatory=$false,ParameterSetName="Default")] #How long in minutes are you willing to let CognosDownloader run for said report? 5 mins is default and gives us a way to error control.
+        [parameter(Mandatory=$false,ParameterSetName="conversation")]
             [int]$Timeout = 5,
         [parameter(Mandatory=$false)] #This will dump the raw CSV data to the terminal.
             [switch]$Raw,
@@ -769,9 +770,9 @@ function Save-CognosReport {
     }
 
     if ($extension -eq 'csv' -and (-Not($TrimCSVWhiteSpace -or $CSVUseQuotes))) {
-        $data = Get-CognosReport -conversationID $conversationID -Raw
+        $data = Get-CognosReport -conversationID $conversationID -Raw -Timeout $Timeout
     } else {
-        $data = Get-CognosReport -conversationID $conversationID
+        $data = Get-CognosReport -conversationID $conversationID -Timeout $Timeout
     }
 
     #We should have the actual file now in $data. We need to test if a previous file exists and back it up first.
@@ -2380,5 +2381,146 @@ function Start-CognosBrowser {
     } else {
         Start-CognosBrowser -url $url
     }
+
+}
+
+function Invoke-IndexCognosFolder {
+        
+    Param(
+        [parameter(Mandatory=$true)][string]$url
+    )
+
+    $results = [System.Collections.Generic.List[PSObject]]@()
+    try {
+        $foldercontents = Invoke-WebRequest -Uri "$url" -WebSession $CognosSession
+    } catch {
+        #because sometimes Cognos simply doesn't reply.
+        Start-Sleep -Seconds 1
+    } finally {
+        $foldercontents = Invoke-WebRequest -Uri "$url" -WebSession $CognosSession
+    }
+    $folders = Select-Xml -Xml ([xml]$foldercontents.Content) -XPath '//x:link' -Namespace @{ x = "http://schemas.xmlsoap.org/ws/2001/10/inspection/" }
+    $reports = Select-Xml -Xml ([xml]$foldercontents.Content) -XPath '//x:service' -Namespace @{ x = "http://schemas.xmlsoap.org/ws/2001/10/inspection/" }
+
+    Write-Verbose "Found: $($folders.Count) folders and $($reports.Count) reports."
+
+    #process folders.
+    $folders.Node | Where-Object { $null -ne $PSItem.name } | ForEach-Object {
+
+        $name = $PSItem.abstract
+        $location = $PSItem.location -replace 'http://adecognos.arkansas.gov:80','https://adecognos.arkansas.gov'
+
+        $results.Add(
+            [PSCustomObject]@{
+                name = $name
+                type = 'folder'
+                url = $location
+            }
+        )
+
+    }
+
+    $reports.Node | Where-Object { $null -ne $PSItem.name } | ForEach-Object {
+
+        $name = $PSItem.Name
+        $location = $PSItem.description.location -replace 'http://adecognos.arkansas.gov:80','https://adecognos.arkansas.gov'
+
+        $results.Add(
+            [PSCustomObject]@{
+                name = $name
+                type = 'report'
+                url = $location
+            }
+        )
+
+    }
+
+    if ($results) {
+        Write-Verbose ($results | ConvertTo-Json)
+        return $results
+    } else {
+        Write-Warning "Empty folder."
+        return $null
+    }
+
+}
+
+function Invoke-IndexCognosTeamContent {
+
+    Param(
+        [parameter(Mandatory=$false)][string]$url="https://adecognos.arkansas.gov/ibmcognos/bi/v1/disp/rds/wsil/path/Team%20Content"
+    )
+
+    $indexedFolders = @{}
+    $allReports = [System.Collections.Generic.List[PSObject]]@()
+    $allFolders = [System.Collections.Generic.List[PSObject]]@()
+
+    do {
+        Write-Host "$url"
+
+        $index = Invoke-IndexCognosFolder -url $url
+
+        $reports = $index | Where-Object -Property type -EQ 'report'
+        
+        $reports | ForEach-Object {
+            $allReports.Add($PSItem)
+        }
+        
+        $folders = $index | Where-Object -Property type -EQ 'folder'
+        
+        $folders | ForEach-Object {
+            $allFolders.Add($PSItem)
+        }
+
+        Write-Host "Found $($reports.Count) reports and $($folders.Count) folders."
+
+        #this folder has been indexed.
+        $indexedFolders."$($url)" = $True
+
+        #find the next folder that needs indexed and let this loop continue.
+        $url = $allFolders | Where-Object { $indexedFolders.Keys -notcontains $PSItem.url } | Select-Object -First 1 -ExpandProperty url
+
+    } while ($url)
+
+    return $allReports
+
+}
+
+function Get-CognosReportMetaData {
+    
+    Param(
+        [parameter(Mandatory=$true)][string]$url
+    )
+
+    $url = $url -replace '/wsdl/','/atom/'
+
+    Write-Verbose ($url)
+
+    try {
+        $reportDetails = Invoke-RestMethod -Uri $url -WebSession $CognosSession
+    } catch {
+        Start-Sleep -Seconds 1
+    } finally {
+        $reportDetails = Invoke-RestMethod -Uri $url -WebSession $CognosSession
+    }
+    
+    $reportIDMatch = $reportDetails.feed.thumbnailURL -match "/report/(.{33})\?"
+    $reportID = $Matches.1
+
+    return (
+        [PSCustomObject]@{
+            Title = $reportDetails.feed.title
+            Location = $reportDetails.feed.location -replace 'Team Content > Student management System > ',''
+            Preview = $reportID ? "=HYPERLINK(""https://adecognos.arkansas.gov/ibmcognos/bi/?perspective=classicviewer&objRef=$($reportID)&action=run&format=HTML"",""Preview"")" : $null
+            CSV = $reportID ? "=HYPERLINK(""https://adecognos.arkansas.gov/ibmcognos/bi/?perspective=classicviewer&objRef=$($reportID)&action=run&format=CSV"",""CSV"")" : $null
+            Excel = $reportID ? "=HYPERLINK(""https://adecognos.arkansas.gov/ibmcognos/bi/?perspective=classicviewer&objRef=$($reportID)&action=run&format=spreadsheetML"",""Excel"")" : $null
+            Description = $reportDetails.feed.description
+            Author = $reportDetails.feed.author.name
+            Contact = $reportDetails.feed.contact
+            Owner = $reportDetails.feed.owner
+            Updated = $reportDetails.feed.updated
+            ReportID = $reportID
+        }
+    )
 
 }

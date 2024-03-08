@@ -1,6 +1,10 @@
 {
     "versions": [
         {
+            "version": "24.3.8",
+            "description": "Cognos Timeout Fix, Get-CognosReportMetaData, Index Cognos Folders Functions."
+        },
+        {
             "version": "23.8.14",
             "description": "Get-CogStuAttendance -IncludeComments, Get-CogSqlData -AsDataSet array return fix."
         },
