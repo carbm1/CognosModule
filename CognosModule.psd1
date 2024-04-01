@@ -10,7 +10,7 @@
     RootModule = 'CognosModule.psm1'
     
     # Version number of this module.
-    ModuleVersion = '24.3.8'
+    ModuleVersion = '24.4.1'
     
     # ID used to uniquely identify this module
     GUID = 'ff7a47df-5c0a-4a90-bba4-816b16290f27'

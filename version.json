@@ -1,6 +1,10 @@
 {
     "versions": [
         {
+            "version": "24.4.1",
+            "description": "That typo that was driving me nuts. New Get-CogSqlData reports."
+        },
+        {
             "version": "24.3.8",
             "description": "Cognos Timeout Fix, Get-CognosReportMetaData, Index Cognos Folders Functions."
         },
