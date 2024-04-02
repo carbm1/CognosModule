@@ -1323,7 +1323,8 @@ function Get-CogSqlData {
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")]$PKColumns, #override with string '[STUDENT_ID],[STUDENT_GUID]'
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][int]$Top,
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][string]$OrderBy, # STUDENT_ID DESC
-        [Parameter(Mandatory=$false)][switch]$RawCSV #return the data as a string instead of objects.
+        [Parameter(Mandatory=$false)][switch]$RawCSV, #return the data as a string instead of objects.
+        [Parameter(Mandatory=$false)][Switch]$DoNotLimitSchoolYear #by default all queries, if table has SCHOOL_YEAR, will be limited to the current school year.
     )
 
     function Get-Hash {
@@ -1400,7 +1401,7 @@ function Get-CogSqlData {
                 Write-Warning "Table $Table does not contain ROW_IDENTITY or PRIMARY KEYS. We will match on all columns instead."
                 $primaryKeysMatch = Get-eSPTableColumns -Table $Table | ForEach-Object {
                     "$($PSItem) = t.$($PSItem)"
-                }    
+                }
             }
 
             #joinKeys is the left join match. Primary Keys are required but it can also be a custom list.
@@ -1451,13 +1452,26 @@ function Get-CogSqlData {
         }
     }
 
+    #default to using the current school year unless specified.
+    if (-Not($DoNotLimitSchoolYear)) {
+        if ((Get-eSPTableColumns -Table $Table) -contains 'SCHOOL_YEAR') {
+            if ($SQLWhere) {
+                #append to existing where clause.
+                $SQLWhere += " AND SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GETDATE()) > 6 THEN YEAR(DATEADD(year,1,GetDate())) ELSE YEAR(GetDate()) END) "
+            } else {
+                #create a new where clause.
+                $SQLWhere = " SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GETDATE()) > 6 THEN YEAR(DATEADD(year,1,GetDate())) ELSE YEAR(GetDate()) END) "
+            }
+        }
+    }
+
     if ($SQLWhere -or $dtSql) {
         if ($SQLWhere -and $dtSql) {
             $SQLWhere += " AND $dtSql "
         } elseif ($dtSql) {
             $SQLWhere += " $dtSql "
         }
-
+        
         # WHERE is already on the REPORT.
         # if ($SQLWhere.Substring(0,6) -ne "where ") {
         #     $SQLWhere = "WHERE " + $SQLWhere
