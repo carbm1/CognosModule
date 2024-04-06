@@ -1044,7 +1044,7 @@ function Get-CogSqlData {
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][int]$Top,
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][string]$OrderBy, # STUDENT_ID DESC
         [Parameter(Mandatory=$false)][switch]$RawCSV, #return the data as a string instead of objects.
-        [Parameter(Mandatory=$false)][Switch]$DoNotLimitSchoolYear #by default all queries, if table has SCHOOL_YEAR OR SECTION_ID, will be limited to the current school year.
+        [Parameter(Mandatory=$false)][Switch]$DoNotLimitSchoolYear #by default all queries, if table has SCHOOL_YEAR OR SECTION_KEY, will be limited to the current school year.
     )
 
     function Get-Hash {
@@ -1207,7 +1207,7 @@ function Get-CogSqlData {
             }
         }
 
-        if ((Get-CogTableDefinitions -Table $Table -TableColumns) -contains 'SECTION_ID') {
+        if ((Get-CogTableDefinitions -Table $Table -TableColumns) -contains 'SECTION_KEY') {
             if ($SQLWhere) {
                 #append to existing where clause.
                 $SQLWhere += " AND SECTION_KEY IN (SELECT SECTION_KEY FROM SCHD_MS WHERE SCHOOL_YEAR = (SELECT CASE WHEN MONTH(GETDATE()) > 6 THEN YEAR(DATEADD(YEAR,1,GETDATE())) ELSE YEAR(GETDATE()) END)) "
