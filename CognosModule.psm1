@@ -1020,7 +1020,7 @@ function Get-CogSqlData {
         [Parameter(Mandatory=$true,ParameterSetName="awesomeSauce")]
         [ValidateScript( {
             #we have to validate each side.
-            if ((Get-CogTableDefinitions).name -contains $PSItem) {
+            if ((Get-CogTableDefinitions -All).name -contains $PSItem) {
                 return $true
             } else {
                 Throw "The specified table $Table was not found in the eSchool/eFinance definitions."
@@ -2270,6 +2270,7 @@ function Get-CogTableDefinitions {
 
     [CmdletBinding(DefaultParametersetName="columns")]
     Param(
+        [Parameter(Mandatory=$false,ParameterSetName="All")][Switch]$All, #return the entire thing. Must be specified alone.
         [Parameter(Mandatory=$false)][Switch]$eFinance, #will filter down to "db" = "eFin"
         [Parameter(Mandatory=$false)][String]$Table, #return only a specific table.
         [Parameter(Mandatory=$false,ParameterSetName="PK")][Switch]$PKColumns, #return only the primary key columns
@@ -22400,7 +22401,9 @@ $dbDefinitions = @'
 ]
 '@
 
-    if ($eFinance) {
+    if ($All) {
+        return $dbDefinitions
+    } elseif ($eFinance) {
         $database = $dbDefinitions | ConvertFrom-Json | Where-Object -Property db -EQ 'eFin'
     } else {
         $database = $dbDefinitions | ConvertFrom-Json | Where-Object -Property db -EQ 'eSch'
