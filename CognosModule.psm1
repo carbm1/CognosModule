@@ -1117,7 +1117,7 @@ function Get-CogSqlData {
             $tblParams = @{
                 Table = $Table
                 PKColumns = $true #return an array of primary keys.
-                TableColumns = $false #do not return the columns.
+                #TableColumns = $false #do not return the columns. Can not mix parameters. Will have to redefine $tblParams.
                 eFinance = $eFinance ? $true : $false #if eFinance is specified then set to true.
             }
 
@@ -1131,8 +1131,11 @@ function Get-CogSqlData {
                 #some tables have no ROW_IDENTIY or PRIMARY KEYS. This is a problem and must be matched on all columns OR a uniquely generated identifying column.
                 Write-Warning "Table $Table does not contain ROW_IDENTITY or PRIMARY KEYS. We will match on all columns instead."
 
-                $tblParams.PKColumns = $false
-                $tblParams.Columns = $true
+                $tblParams = @{
+                    Table = $Table
+                    TableColumns = $true
+                    eFinance = $eFinance ? $true : $false #if eFinance is specified then set to true.
+                }
 
                 $primaryKeysMatch = Get-CogTableDefinitions @tblParams | ForEach-Object {
                     "$($PSItem) = t.$($PSItem)"
@@ -22413,11 +22416,16 @@ $dbDefinitions = @'
         $tblDefinition = $database | Where-Object -Property name -EQ "$Table"
         
         if ($PKColumns) {
-            if ($AsString) {
-                return $tblDefinition.PKColumns
+            #if returned an empty string then return null.
+            if ($tblDefinition.PKColumns -ne '') {
+                if ($AsString) {
+                    return $tblDefinition.PKColumns
+                } else {
+                    # return an array of primary key columns.
+                    return ($tblDefinition.PKColumns).Split(',')
+                }
             } else {
-                # return an array of primary key columns. This could potentially be null.
-                return ($tblDefinition.PKColumns).Split(',')
+                return $null
             }
         } elseif ($TableColumns) {
             if ($AsString) {
