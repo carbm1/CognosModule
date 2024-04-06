@@ -22402,7 +22402,7 @@ $dbDefinitions = @'
 '@
 
     if ($All) {
-        return $dbDefinitions
+        return $dbDefinitions | ConvertFrom-Json
     } elseif ($eFinance) {
         $database = $dbDefinitions | ConvertFrom-Json | Where-Object -Property db -EQ 'eFin'
     } else {
