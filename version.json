@@ -1,6 +1,10 @@
 {
     "versions": [
         {
+            "version": "24.6.5",
+            "description": "Get-CogSqlData join keys on tables without primary keys."
+        },
+        {
             "version": "24.4.2",
             "description": "Get-CogSqlData will default to filtering to the current SCHOOL_YEAR if the column exists on the table."
         },
