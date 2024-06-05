@@ -1142,11 +1142,12 @@ function Get-CogSqlData {
                 }
             }
 
-            #joinKeys is the left join match. Primary Keys are required but it can also be a custom list.
-            $joinKeys = $primaryKeysMatch -join ' AND '
-            $params.reportparams += "&p_joinKeys=$($joinKeys)"
-
         }
+
+        #m.hayes - 6/5/2024
+        #joinKeys is the left join match. Primary Keys are required but it can also be a custom list.
+        $joinKeys = $primaryKeysMatch -join ' AND '
+        $params.reportparams += "&p_joinKeys=$($joinKeys)"
 
         Write-Verbose ($params.reportparams)
 
