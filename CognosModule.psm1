@@ -2035,7 +2035,7 @@ function Start-CognosBrowser {
                                 Write-Host "Info: No required prompts were found for this report. Optional prompts still require the prompt page to be sumitted. Please use ""p_fake=1""."
                             }
 
-                            $parameters.reportparams = Read-Host "Please enter the prompts values. Should look something like ""p_year=2022&studentid=105966"""
+                            $parameters.reportparams = Read-Host "Please enter the prompts values. Should look something like ""p_year=2022&p_studentid=105966"""
                         
                             if (@('p','preview') -contains $fileAction) {
                                 if ($teamContent) {
