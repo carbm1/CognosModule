@@ -113,6 +113,22 @@ function Show-CognosConfig {
         Show-CognosConfig
 
     #>
+    
+    Get-CognosConfig | Format-Table
+}
+
+function Get-CognosConfig {
+    <#
+        .SYNOPSIS
+        Display saved Cognos Configurations
+
+        .DESCRIPTION
+        Display saved Cognos Configurations
+
+        .EXAMPLE
+        Get-CognosConfig
+
+    #>
     $configs = Get-ChildItem "$($HOME)\.config\Cognos\*.json" -File
 
     if ($configs) {
@@ -130,7 +146,7 @@ function Show-CognosConfig {
             }
         }
 
-        $configList | Format-Table
+        return $configList
 
     } else {
         Throw "No configuration files found."
@@ -1044,7 +1060,8 @@ function Get-CogSqlData {
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][int]$Top,
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][string]$OrderBy, # STUDENT_ID DESC
         [Parameter(Mandatory=$false)][switch]$RawCSV, #return the data as a string instead of objects.
-        [Parameter(Mandatory=$false)][Switch]$DoNotLimitSchoolYear #by default all queries, if table has SCHOOL_YEAR OR SECTION_KEY, will be limited to the current school year.
+        [Parameter(Mandatory=$false)][Switch]$DoNotLimitSchoolYear, #by default all queries, if table has SCHOOL_YEAR OR SECTION_KEY, will be limited to the current school year.
+        [Parameter(Mandatory=$false)][string]$cognosfolder
     )
 
     function Get-Hash {
@@ -1075,7 +1092,7 @@ function Get-CogSqlData {
         report = (Get-Hash $CognosDSN -Hash SHA256).Substring(0,24)
         reportparams = ''
         TeamContent = $True
-        cognosfolder = "_Shared Data File Reports\automation"
+        cognosfolder = $cognosfolder -eq '' ? "_Shared Data File Reports\automation" : $cognosfolder
     }
 
     if ($awesomeSauce) {
@@ -2307,20 +2324,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "aca_aggregate_ale",
-    "PKColumns": "",
-    "TableColumns": "eid,taxyr,aggr_ale_name,aggr_ale_eid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "aca_ben_class",
-    "PKColumns": "",
-    "TableColumns": "type,start_date,end_date,class",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "aca_ben_deduct",
     "PKColumns": "",
     "TableColumns": "type,start_date,end_date,ded_cd,plan_title,covg_group,low_prem_ind",
@@ -2352,13 +2355,6 @@ $dbDefinitions = @'
     "name": "aca_cov_ind",
     "PKColumns": "",
     "TableColumns": "taxyr,empl_no,empl_ssn,seq_no,batch_no,depend_no,f_name,l_name,m_name,name_suffix,ssn,birthdate,covered_all,covered_jan,covered_feb,covered_mar,covered_apr,covered_may,covered_jun,covered_jul,covered_aug,covered_sep,covered_oct,covered_nov,covered_dec,data_source,data_sourced_date,ben_dep_key,full_name",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "aca_empl_ovrd",
-    "PKColumns": "",
-    "TableColumns": "empl_no,offer_code_all,offer_code_jan,offer_code_feb,offer_code_mar,offer_code_apr,offer_code_may,offer_code_jun,offer_code_jul,offer_code_aug,offer_code_sep,offer_code_oct,offer_code_nov,offer_code_dec,emp_share_all,emp_share_jan,emp_share_feb,emp_share_mar,emp_share_apr,emp_share_may,emp_share_jun,emp_share_jul,emp_share_aug,emp_share_sep,emp_share_oct,emp_share_nov,emp_share_dec,safe_harbor_all,safe_harbor_jan,safe_harbor_feb,safe_harbor_mar,safe_harbor_apr,safe_harbor_may,safe_harbor_jun,safe_harbor_jul,safe_harbor_aug,safe_harbor_sep,safe_harbor_oct,safe_harbor_nov,safe_harbor_dec,paper_1095c",
     "TableHasChangeDT": ""
   },
   {
@@ -2405,30 +2401,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "acct4table",
-    "PKColumns": "",
-    "TableColumns": "acct,acctkeyup,accttitle",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "accttype",
-    "PKColumns": "",
-    "TableColumns": "acctnum,description",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "activtbl",
     "PKColumns": "",
     "TableColumns": "activity,description",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "actor",
-    "PKColumns": "",
-    "TableColumns": "row_id,uid,supervisor_id,lvl,super_flag,role_id,notify_type,alt_super_id,link_id,approval_group",
     "TableHasChangeDT": ""
   },
   {
@@ -2489,13 +2464,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "addempldetail",
-    "PKColumns": "",
-    "TableColumns": "row_id,proc_step,empl_no,complete,navigation,lastupddate,lastupdtime,lastupduid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "addemplroles",
     "PKColumns": "",
     "TableColumns": "row_id,title,groupheader,spidefined",
@@ -2513,6 +2481,2855 @@ $dbDefinitions = @'
     "name": "addemplsteps",
     "PKColumns": "",
     "TableColumns": "proc_step,description,required,step_order,page_no,hrm_type",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "AMCodes",
+    "PKColumns": "Unique_Key",
+    "TableColumns": "CodeCategory,CodeValue,CodeFlag,CodeStatus,ShortDescription,LongDescription,Create_When,Create_Who,Update_When,Update_Who,Unique_Key",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "AMSetting",
+    "PKColumns": "Unique_Key",
+    "TableColumns": "SettingKey,SettingGroup,Text1,Text2,Text3,Text4,Text5,Num1,Num2,Num3,Date1,Date2,Date3,Decimal1,Decimal2,Decimal3,TextBlock,Unique_Key",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "approval",
+    "PKColumns": "",
+    "TableColumns": "app_group,description,app_chgord,notify_app,notify_req,notify_alt",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "asntable",
+    "PKColumns": "",
+    "TableColumns": "code,desc_x,eeo,state_assign_num,hq_area,core_flag,fin_field1,fin_field2,fin_field3,fin_field4,fin_field5,user_1",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "AspNetRoles",
+    "PKColumns": "Id",
+    "TableColumns": "Id,Name,NormalizedName,ConcurrencyStamp",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "assetif",
+    "PKColumns": "rec_no",
+    "TableColumns": "acqdate,des,vendor,dept,po_no,line_no,unitsx,unitcost,initcost,recvd,commodity,check_no,rec_no,vend_no,invoice",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "assets",
+    "PKColumns": "",
+    "TableColumns": "tagno,improvement_num,acqdate,des,fund_source,vendor,insurer,mfr,model,serial_no,dept,loccode,grantx,catcode,cat_class,cond,po,checkno,unitsx,unitcost,initcost,salvage,insvalue,sale_amt,accdep,estlife,deplife,post_togl,invent,maint,retdate,stats,user_1,user_2,user_3,user_4,user_5,dep_flag,dep_method,curdep,depdate,dep_basis,last_post_date,prop_fund,cap_asset",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "assign_tbl",
+    "PKColumns": "tbl_name",
+    "TableColumns": "tbl_name,nxt_num",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "assignment",
+    "PKColumns": "empl_no,indx",
+    "TableColumns": "empl_no,asncode,perc_time,period,location,primary_asn,class_cd,position,hqarea,hqreason,num_classes,fin_field1,fin_field2,fin_field3,fin_field4,fin_field5,user_1,user_2,user_3,user_4,user_5,user_6,user_7,user_8,user_9,gradepk,gradekg,grade01,grade02,grade03,grade04,grade05,grade06,grade07,grade08,grade09,grade10,grade11,grade12,sif_job_class,sif_program_type,sif_funding_source,grade13,grade14,grade15,grade16,grade17,grade18,grade19,grade20,grade21,grade22,grade23,grade24,grade25,indx",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "attach_detail",
+    "PKColumns": "row_id",
+    "TableColumns": "row_id,form_name,column_name,field_name,field_type,notes",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "attach_master",
+    "PKColumns": "form_name",
+    "TableColumns": "form_name,table_name,notes",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "attend",
+    "PKColumns": "row_id",
+    "TableColumns": "empl_no,pay_code,start_date,stop_date,lv_hrs,remarks,check_date,status_flg,lv_code,pay_run,post_flg,sub_id,sub_pay_code,sub_pay_class,sub_pay_rate,sub_amt_paid,sub_loc,sub_tax_ind,sub_orgn,sub_acct,cal_val,row_id,sub_start,sub_stop,sub_hrs,dataset_instance_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "attrep_truncation_safeguard",
+    "PKColumns": "latchTaskName,latchMachineGUID,LatchKey",
+    "TableColumns": "latchTaskName,latchMachineGUID,LatchKey,latchLocker",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "audit1099",
+    "PKColumns": "",
+    "TableColumns": "userid,change_date,change_time,change_type,tax_yr,vend_no,field_changed,orig_data,new_data,form_1099,alt_vend_no,row_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "backup_checksum",
+    "PKColumns": "",
+    "TableColumns": "tablename,package,rowarchive,timestamp",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "backup_log",
+    "PKColumns": "",
+    "TableColumns": "backupid,package,optype,username,requestdate,requesttime,tablecount,status",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bank_layout",
+    "PKColumns": "",
+    "TableColumns": "layout_cd,description,rec_type,file_pos,delimit,fld_name,fld_format,literal,pos_start,pos_stop,fld_length,batch_rec,cnt_sum,cnt_rec1,cnt_rec2,cnt_rec3,cnt_rec4,cnt_rec5,cnt_rec6,incl_decimal",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bankacct_dtl",
+    "PKColumns": "bankacct,key_orgn,account",
+    "TableColumns": "bankacct,fullacct,key_orgn,account,cash_flag,fee_flag,interest_flag,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bankacct_hdr",
+    "PKColumns": "bankacct",
+    "TableColumns": "bankacct,bankacct_name,disb_fullacct,disb_gl_key_orgn,disb_account,print_ap_checks,check_bankacct,change_date_time,change_uid,print_payroll_checks",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bdemo",
+    "PKColumns": "empl_no",
+    "TableColumns": "eff_date,empl_no,ssn,l_name,f_name,addr1,addr2,city,zip,hire_date,home_orgn,birthdate,base_loc,state_id,orig_hire,prev_lname,email_addr,info_rlease,home_phone,work_phone,emer_cont,emer_phone,phys_name,phys_phone,spouse_name,spouse_phone,post_flg,operator,date_chg,email_voucher,personal_email,cell_phone,other_phone,emer_cell_phone,m_name,name_suffix,preferred_name,gender_identity,ethnicity",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bempact",
+    "PKColumns": "",
+    "TableColumns": "empl_no,date_chg,table_name,field_name,old_value,new_value,operator,pay_ded_code,pay_ded_desc,time_chg",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bexpledgr",
+    "PKColumns": "",
+    "TableColumns": "yr,key_orgn,account,budget_orgn,budget_acct,freeze,bud3,act3,bud2,act2,bud1,act1,bud_curr,act_ytd,act_prop,dept_base,dept_new,rec_base,rec_new,app_base,app_new,year2,year3,year4,year5,title,budget_title",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_attend",
+    "PKColumns": "",
+    "TableColumns": "empl_no,pay_code,start_date,stop_date,lv_hrs,remarks,check_date,status_flg,lv_code,pay_run,post_flg,sub_id,sub_pay_code,sub_pay_class,sub_pay_rate,sub_amt_paid,sub_loc,sub_tax_ind,sub_orgn,sub_acct,cal_val,row_id,sub_start,sub_stop,sub_hrs,dataset_instance_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_dedtable",
+    "PKColumns": "",
+    "TableColumns": "ded_cd,title,ck_title,freq,arrears,emp_meth,rate,low_max,mid_rate,mid_max,high_rate,with_acct,frng_meth,frng_rate,frng_acct,frng_dist,frng_orgn,frng_proj,fed_exp,sta_exp,fic_exp,loc_exp,fed_fexp,sta_fexp,fic_fexp,loc_fexp,max_meth,vend_no,vend_pay_freq,bond_flag,max_ded,max_ben,caf_flag,encumber,enc_num_times,enc_remaining,use_gross_field,eac_whatif,mandatory_flag,child_sup_flag,copy_bank_info,calc_pr_add_with,frng_liab_acct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_deduct",
+    "PKColumns": "",
+    "TableColumns": "empl_no,ded_cd,status,account,start_x,stop_x,beff_date,ded_amt,max_amt,max_fringe,arrears,cont_amt,num_deds,chk_ind,taken_c,taken_m,taken_q,taken_y,taken_i,taken_f,cont_c,cont_m,cont_q,cont_y,cont_i,cont_f,sal_c,sal_m,sal_q,sal_y,sal_f,bank,bt_code,bank_acct,enc_remaining,addl_ded_gross,addl_frng_gross",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_empuser",
+    "PKColumns": "",
+    "TableColumns": "empl_no,page_no,ftext1,ftext2,ftext3,ftext4,ftext5,ftext6,ftext7,ftext8,ftext9,ftext10,tcode1,tcode2,tcode3,tcode4,tcode5,tcode6,tcode7,tcode8,tcode9,tcode10,comment1,comment2",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_menu_applications",
+    "PKColumns": "app_id",
+    "TableColumns": "app_id,title,package,subpackage,func,spi_defined",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_menu_groups",
+    "PKColumns": "app_id,tab_id,group_id",
+    "TableColumns": "app_id,tab_id,group_id,title,package,subpackage,func,spi_defined",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_menu_options",
+    "PKColumns": "app_id,tab_id,group_id,option_id",
+    "TableColumns": "app_id,tab_id,group_id,option_id,title,progcall,callpath,package,subpackage,func,is_fglrun,is_sub_system,spi_defined",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_menu_tabs",
+    "PKColumns": "tab_id",
+    "TableColumns": "tab_id,title,package,subpackage,func,spi_defined",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_pay2file",
+    "PKColumns": "",
+    "TableColumns": "empl_no,ssn,l_name,f_name,chk_locn,addr1,addr2,addr3,zip,home_orgn,voucher,end_date,start_date,m_name,name_suffix",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_paycode",
+    "PKColumns": "",
+    "TableColumns": "empl_no,pay_code,p_amt,p_hours,mtd_amt,mtd_hours,qtd_amt,ytd_amt,cal_cycle_units,cal_cycle_amt",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_payfile",
+    "PKColumns": "",
+    "TableColumns": "empl_no,home_orgn,pdf,code,amount,fringe,orgn,proj,acct,pacct,arrears,check_no,hours,classify,dedgross,frngross,tax_ind,bank,bt_code,bank_acct,pay_cycle,chk_ind,flsa_flg,payrate",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_paygroups",
+    "PKColumns": "",
+    "TableColumns": "group_x,def_hours,pay_run,end_date,cur_run,run_desc,proc_sumfisc,start_date",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_payrate",
+    "PKColumns": "",
+    "TableColumns": "empl_no,rate_no,primry,group_x,pay_hours,days_worked,hours_day,incl_dock,no_pays,fte,pay_method,pay_cycle,pay_cd,classify,occupied,cal_type,range,step_x,rate,dock_rate,cont_flg,cont_days,override,annl_sal,cont_lim,cont_bal,cont_paid,cont_start,cont_end,pay_start,pay_end,summer_pay,status_x,pyo_date,pyo_rem_pay,pyo_days,pyo_rate,pyo_amt,dock_arrears_amt,dock_pays_remain",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_payroll",
+    "PKColumns": "",
+    "TableColumns": "empl_no,pay_freq,card_requ,sp1_amt,sp1_cd,sp2_amt,sp2_cd,sp3_amt,sp3_cd,chk_locn,last_paid,fed_exempt,fed_marital,fed_dep,add_fed,sta_exempt,state_id,pr_state,sta_marital,sta_dep,add_state,loc_exempt,locl,pr_local,loc_marital,loc_dep,add_local,fic_exempt,earn_inc,lv_date,lv1_cd,lv1_bal,lv1_tak,lv1_ear,lv2_cd,lv2_bal,lv2_tak,lv2_ear,lv3_cd,lv3_bal,lv3_tak,lv3_ear,lv4_cd,lv4_bal,lv4_tak,lv4_ear,lv5_cd,lv5_bal,lv5_tak,lv5_ear,lv6_cd,lv6_bal,lv6_tak,lv6_ear,lv7_cd,lv7_bal,lv7_tak,lv7_ear,lv8_cd,lv8_bal,lv8_tak,lv8_ear,lv9_cd,lv9_bal,lv9_tak,lv9_ear,lv10_cd,lv10_bal,lv10_tak,lv10_ear,tearn_c,tearn_m,tearn_q,tearn_y,tearn_ft,ftearn_c,ftearn_m,ftearn_q,ftearn_y,ftearn_ft,fiearn_c,fiearn_m,fiearn_q,fiearn_y,fiearn_ft,mdearn_c,mdearn_m,mdearn_q,mdearn_y,mdearn_ft,stearn_c,stearn_m,stearn_q,stearn_y,stearn_ft,s2earn_c,s2earn_m,l2earn_y,s2earn_y,s2earn_ft,loearn_c,loearn_m,loearn_q,loearn_y,loearn_ft,allow_c,allow_m,allow_q,allow_y,allow_ft,nocash_c,nocash_m,nocash_q,nocash_y,nocash_ft,fedtax_c,fedtax_m,fedtax_q,fedtax_y,fedtax_ft,fictax_c,fictax_m,fictax_q,fictax_y,fictax_ft,medtax_c,medtax_m,medtax_q,medtax_y,medtax_ft,statax_c,statax_m,statax_q,statax_y,statax_ft,st2tax_c,st2tax_m,lt2tax_y,st2tax_y,st2tax_ft,loctax_c,loctax_m,loctax_q,loctax_y,loctax_ft,eic_c,eic_m,eic_q,eic_y,eic_ft,rfiearn_y,rfictax_y,rmdearn_y,rmedtax_y,flsa_cycle_y,flsa_cycle_hrs,flsa_hours,flsa_amount,rfiearn_c,rfiearn_m,rfiearn_q,rfiearn_ft,rfictax_c,rfictax_m,rfictax_q,rfictax_ft,rmdearn_c,rmdearn_m,rmdearn_q,rmdearn_ft,rmedtax_c,rmedtax_m,rmedtax_q,rmedtax_ft,fed_tax_calc_cd,w4_sub_date,non_res_alien,ann_other_inc,ann_deductions,ann_tax_credit,pays_per_year",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_timecard",
+    "PKColumns": "",
+    "TableColumns": "empl_no,pay_code,hours,payrate,amount,orgn,account,proj,pacct,classify,pay_cycle,tax_ind,pay_run,subtrack_id,reported,user_chg,date_chg,flsa_cycle,flsa_flg,flsa_carry_ovr,ret_pers_code,loctaxcd",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_wkrdept",
+    "PKColumns": "",
+    "TableColumns": "work_cd,orgn,reg_sal,ot_sal",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bk_wkrtable",
+    "PKColumns": "",
+    "TableColumns": "work_cd,title,rate,reg_sal,ot_sal,with_acct,fringe_acct,encumber,frng_liab_acct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bnk_fld_name",
+    "PKColumns": "",
+    "TableColumns": "fld_code,description,tabl,col",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bnktable",
+    "PKColumns": "",
+    "TableColumns": "code,desc_x,ck_title,bank_code",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "brevledgr",
+    "PKColumns": "",
+    "TableColumns": "yr,key_orgn,account,freeze,bud3,act3,bud2,act2,bud1,act1,bud_curr,act_ytd,act_prop,dept_base,dept_new,rec_base,rec_new,app_base,app_new,year2,year3,year4,year5,title",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bubudacct",
+    "PKColumns": "",
+    "TableColumns": "yr,acct,sub_1_acct,sub_2_acct,sub_3_acct,title,pr_acct,pos,posit_per,curr_yr,dept_base,rec_base,yr2_per,yr3_per,yr4_per,yr5_per,month1,month2,month3,month4,month5,month6,month7,month8,month9,month10,month11,month12,month13,proll_flg,reqpur_flg,war_flg,local_use",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bubudorgn",
+    "PKColumns": "",
+    "TableColumns": "yr,key_orgn,lvl,fund,orgn1,orgn2,orgn3,orgn4,orgn5,orgn6,orgn7,orgn8,orgn9,title,enterprise,cash,budget,req_enc,disb_fund,total_rec,pr_orgn,curr_yr,dept_base,rec_base,yr2_per,yr3_per,yr4_per,yr5_per,proj_link,project,local_use",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "bud_prof",
+    "PKColumns": "",
+    "TableColumns": "yr,sdate,edate,client,system,company,low_exp,hi_exp,low_rev,hi_rev,wbr,wpr,fund_title,orgn1_title,orgn2_title,orgn3_title,orgn4_title,orgn5_title,orgn6_title,orgn7_title,orgn8_title,orgn9_title,low_orgn,proj1_title,proj2_title,low_proj,e_full_acct,r_full_acct,proj3_title,proj4_title,proj5_title,proj6_title,proj7_title,proj8_title",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "budactv",
+    "PKColumns": "",
+    "TableColumns": "empl_no,classify,pos,ded_cd,date_chg,table_name,field_name,old_value,new_value,operator",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "budpayr",
+    "PKColumns": "",
+    "TableColumns": "classify,pos,freeze,empl_no,l_name,f_name,rate_no,primry,group_x,pay_hours,days_worked,hours_day,no_pays,fte,pay_method,pay_cd,cal_type,range,step_x,curr_rate,curr_sal,bud_dock,cont_flg,cont_days,override,cont_start,cont_end,summer_pay,sp1_cd,sp1_amt,sp2_cd,sp2_amt,sp3_cd,sp3_amt,prcnt_incr_a,amt_incr_a,bud_rate,bud_base,spec_base,incr_base,mdyr_incr_a,occupied,date_incr_a,date_incr_b,prcnt_incr_b,amt_incr_b,mdyr_incr_b,curr_date_a,curr_prcnt_a,curr_date_b,curr_prcnt_b",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "business_rule_type",
+    "PKColumns": "rule_type",
+    "TableColumns": "rule_type,description,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "calendar",
+    "PKColumns": "",
+    "TableColumns": "cal_type,description,start_date,end_date,pay_start,pay_end,no_days",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "capital",
+    "PKColumns": "",
+    "TableColumns": "low_capital,hi_capital,min_value,max_value,cap_flag",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "category",
+    "PKColumns": "",
+    "TableColumns": "catcode,cat_class,catdesc,accum_dep",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "cert_area",
+    "PKColumns": "",
+    "TableColumns": "code,desc_x,core_area",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "cert_type",
+    "PKColumns": "",
+    "TableColumns": "code,desc_x",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "chart_type",
+    "PKColumns": "",
+    "TableColumns": "chart_type,filename",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "check_ded",
+    "PKColumns": "",
+    "TableColumns": "empl_no,check_no,ded_cd,taken_y,taken_f,taken_i,cont_y,cont_f,cont_i,bank,bt_code",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "check_leave",
+    "PKColumns": "",
+    "TableColumns": "empl_no,check_no,lv_code,lv_bal,lv_tak,lv_ear,lv_nbr",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "check_paycode",
+    "PKColumns": "",
+    "TableColumns": "empl_no,check_no,pay_code,ytd_amt",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "check_record",
+    "PKColumns": "",
+    "TableColumns": "yr,period,disb_gl_key_orgn,gl_cash_key_orgn,account,check_no,check_date,trans_date,vend_no,alt_vend_no,ven_name,amount,check_status,clear_date,check_bankacct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "check_ytd",
+    "PKColumns": "",
+    "TableColumns": "empl_no,check_no,chk_locn,email_voucher,fed_marital,fed_dep,add_fed,sta_marital,sta_dep,add_state,loc_marital,loc_dep,tearn_y,ftearn_y,tearn_ft,allow_y,nocash_y,dock_arrears_amt",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "checkhi2",
+    "PKColumns": "",
+    "TableColumns": "empl_no,check_no,earn_ded,code,amt,fringe,orgn,proj,acct,classify,hours,dedgross,frngross,flsa_flg,group_x,payrate",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "checkhis",
+    "PKColumns": "",
+    "TableColumns": "empl_no,check_no,iss_date,trans_date,dirdep,man_void,pay_run,status_cd,home_orgn,start_date",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "checkrec",
+    "PKColumns": "",
+    "TableColumns": "check_no,empl_no,iss_date,amount,bank,cleared,man_void",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "chkstat",
+    "PKColumns": "rundate,disp_fund,check_no,chk_status,check_bankacct",
+    "TableColumns": "rundate,disp_fund,check_no,vend_no,vend_name,chk_status,amount,description,check_bankacct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "clstable",
+    "PKColumns": "",
+    "TableColumns": "class_cd,title,schedule,wkr_comp,civil_ser,union_cd,division,contract_title,cal_type,ded_cd1,ded_cd2,ded_cd3,ded_cd4,ded_cd5,ded_cd6,ded_cd7,ded_cd8,ded_cd9,ded_cd10,lv1_cd,lv2_cd,lv3_cd,lv4_cd,lv5_cd,lv6_cd,lv7_cd,lv8_cd,lv9_cd,lv10_cd,pay_cd,pay_method,group_x,bar_unit",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "clstable_data2",
+    "PKColumns": "",
+    "TableColumns": "class_cd,job_type,job_descript",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "color_table",
+    "PKColumns": "",
+    "TableColumns": "color_name,color_code",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "cont_misc_fields",
+    "PKColumns": "col_friendly_name",
+    "TableColumns": "col_friendly_name,db_table,db_column,future_yr",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "contract_adjust",
+    "PKColumns": "",
+    "TableColumns": "empl_no,pay_run,check_no,chk_ind,classify,adj_amt",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "crdc_cert_area",
+    "PKColumns": "",
+    "TableColumns": "code,crdc_spec",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "crdc_cert_type",
+    "PKColumns": "",
+    "TableColumns": "code,exclude_cred",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "crdc_levtable",
+    "PKColumns": "",
+    "TableColumns": "lv_code,unit_type,crdc_include",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "crdc_lv_hist",
+    "PKColumns": "empl_no,yr,seq_no,reason_code",
+    "TableColumns": "empl_no,yr,save_date,seq_no,lv1_cd,lv1_bal,lv1_tak,lv1_ear,lv2_cd,lv2_bal,lv2_tak,lv2_ear,lv3_cd,lv3_bal,lv3_tak,lv3_ear,lv4_cd,lv4_bal,lv4_tak,lv4_ear,lv5_cd,lv5_bal,lv5_tak,lv5_ear,lv6_cd,lv6_bal,lv6_tak,lv6_ear,lv7_cd,lv7_bal,lv7_tak,lv7_ear,lv8_cd,lv8_bal,lv8_tak,lv8_ear,lv9_cd,lv9_bal,lv9_tak,lv9_ear,lv10_cd,lv10_bal,lv10_tak,lv10_ear,reason_code",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "crdc_specializations",
+    "PKColumns": "",
+    "TableColumns": "spec_code,description",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "crn_cfg",
+    "PKColumns": "",
+    "TableColumns": "available,crn_version,crn_desc,crn_server,gateway_server,gateway_url,add_params,district,use_ssl,change_date_time,change_uid,dsn_name,cat_db_name,cat_server_info",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "crn_cfg_renamed",
+    "PKColumns": "",
+    "TableColumns": "available,crn_version,crn_desc,crn_server,gateway_server,gateway_url,add_params,dsn_name,use_ssl,district,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "dash_header",
+    "PKColumns": "",
+    "TableColumns": "plus_user_id,number_columns,col1_desc,col1_color,col2_desc,col2_color,col3_desc,col3_color,color_code_1,color_code_2,color_code_3,color_code_4,color_code_5,color_code_6,color_code_7,color_code_8,color_code_9,color_code_10,color_code_11,color_code_12,color_code_13,background_color",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "data_mask",
+    "PKColumns": "",
+    "TableColumns": "code,mask_desc,data_mask",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "dedfreqtable",
+    "PKColumns": "",
+    "TableColumns": "freq,title,no_times",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "dedtable",
+    "PKColumns": "ded_cd",
+    "TableColumns": "ded_cd,title,ck_title,freq,arrears,emp_meth,rate,low_max,mid_rate,mid_max,high_rate,with_acct,frng_meth,frng_rate,frng_acct,frng_dist,frng_orgn,frng_proj,fed_exp,sta_exp,fic_exp,loc_exp,fed_fexp,sta_fexp,fic_fexp,loc_fexp,max_meth,vend_no,vend_pay_freq,bond_flag,max_ded,max_ben,caf_flag,encumber,enc_num_times,enc_remaining,use_gross_field,eac_whatif,mandatory_flag,child_sup_flag,copy_bank_info,calc_pr_add_with,frng_liab_acct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "deduct",
+    "PKColumns": "empl_no,ded_cd",
+    "TableColumns": "empl_no,ded_cd,status,account,start_x,stop_x,beff_date,ded_amt,max_amt,max_fringe,arrears,cont_amt,num_deds,chk_ind,taken_c,taken_m,taken_q,taken_y,taken_i,taken_f,cont_c,cont_m,cont_q,cont_y,cont_i,cont_f,sal_c,sal_m,sal_q,sal_y,sal_f,bank,bt_code,bank_acct,enc_remaining,addl_ded_gross,addl_frng_gross",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "degtable",
+    "PKColumns": "",
+    "TableColumns": "code,desc_x,deglvl,state_degree,lcredit,hcredit",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "department",
+    "PKColumns": "",
+    "TableColumns": "dept,dept_title",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "dephist",
+    "PKColumns": "",
+    "TableColumns": "fiscal_yr,tagno,improvement_num,fund_type,func_name,activity,dep_orgn,dep_acct,accum_dep_acct,dep_amt,post_mth,post_year,post_date,post_togl",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "dept",
+    "PKColumns": "code",
+    "TableColumns": "code,desc_x",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "detdist",
+    "PKColumns": "rec_no",
+    "TableColumns": "empl_no,pay_date,rec_type,orgn_proj,acct,offset,code,amount,check_no,paygroup,void_man,pay_run,redist,classify,rec_no,orgn_offset,fullacct,offset_fullacct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "dist_orgn",
+    "PKColumns": "",
+    "TableColumns": "empl_no,rate_no,classify,pos,orgn,acct,prcent",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "dtytable",
+    "PKColumns": "",
+    "TableColumns": "code,desc_x,prcent,dollar",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ear_assetif",
+    "PKColumns": "rec_no",
+    "TableColumns": "rec_no,qty_rcvd,account_no",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ear_atrs_empr",
+    "PKColumns": "",
+    "TableColumns": "empr_cd,empr_name,addr1,addr2,city,state,zipcode",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ear_calenpay",
+    "PKColumns": "",
+    "TableColumns": "cal_type,pay_run,start_date,end_date,no_days",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ear_clstable",
+    "PKColumns": "",
+    "TableColumns": "class_cd,cls_type",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ear_cont_detail",
+    "PKColumns": "",
+    "TableColumns": "empl_no,classify,cont_type,field_name,field_no,field_value",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ear_dedtable",
+    "PKColumns": "",
+    "TableColumns": "ded_cd,ret_group,type,linked_cd,certified",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ear_emp_contract",
+    "PKColumns": "",
+    "TableColumns": "empl_no,classify,group_x,schedule,cont_type",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ear_fam_prof",
+    "PKColumns": "",
+    "TableColumns": "city_per,city_max,state_per,state_max,county_per,county_max,fund_bal_low,fund_bal_hi,cust1,cust2,cust3,cust4,cust5,cust6,cust7,cust8,cust9,cust10",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ear_health",
+    "PKColumns": "",
+    "TableColumns": "ded_cd,health_ins",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ear_levtable",
+    "PKColumns": "",
+    "TableColumns": "lv_code,cost_of_sub",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ear_pbsuser",
+    "PKColumns": "",
+    "TableColumns": "empl_no,cls_crt",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ear_qtr_retire",
+    "PKColumns": "",
+    "TableColumns": "dist_no,trans_date,plan_opt,ssn,full_name,reg_salary_c,reg_salary_n,reg_cont,fed_cont,tot_cont,days_service,fed_salary_c,fed_salary_n,non_teach_sal,cls_type,err_msg,address,city,state,zip",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ear_trs_data",
+    "PKColumns": "",
+    "TableColumns": "empr_cd,rpt_month,rpt_year,empl_no,rec_type,ssn,l_name,f_name,m_name,suffix,sex,addr1,addr2,home_phone,city,state,zip,birthdate,cont_flg,cont_days,cont_lim,empl_type,hire_date,cont_start,cont_end,home_orgn,part_time,class,summer_pay,atrs_status,apscn_status,disabled,qtd_serv_days,service_credit,term_code,term_date,days_worked,hours_day,aesd_exempt,start_x,stop_x,pay_cd,no_pays,rate,match_fed,match_reg,contrib_reg,contrib_fed,sal_reg,sal_fed,purchase,tot_grs,ded_cd,last_paid,pay_freq,amt_rate6,amt_rate12,suppl_date,arrears,service,rpt_date,tot_sal,ctrl_sal,err_msg",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ear_trs_load",
+    "PKColumns": "",
+    "TableColumns": "rpt_date,load_type,load_start,load_end,payrun1,payrun2,payrun3,payrun4,payrun5,payrun6,payrun7,payrun8,payrun9,payrun10,payrun11,payrun12,payrun13,payrun14,payrun15,payrun16,payrun17,payrun18,payrun19,payrun20,payrun21,payrun22,payrun23,payrun24,payrun25,payrun26,payrun27,payrun28,payrun29,payrun30,payrun31,payrun32,payrun33,payrun34,payrun35,payrun36,payrun37,payrun38,payrun39,payrun40,payrun41,payrun42,payrun43,payrun44,payrun45,payrun46,payrun47,payrun48,payrun49,payrun50,payrun51,payrun52,payrun53,payrun54,payrun55,payrun56,payrun57,payrun58,payrun59,payrun60,payrun61,payrun62,payrun63,payrun64,payrun65,payrun66,payrun67,payrun68,payrun69,payrun70,payrun71,payrun72,payrun73,payrun74,payrun75,payrun76,payrun77,payrun78,payrun79,payrun80",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ebd_count",
+    "PKColumns": "",
+    "TableColumns": "run_date,lea,empl_no,status,caf_ded_cd,caf_amt,cc_ded_cd,cc_amt",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ebd_daily",
+    "PKColumns": "",
+    "TableColumns": "lea,empl_no,status,caf_ded_cd,caf_amt,cc_ded_cd,cc_amt",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "efp_profile",
+    "PKColumns": "key_name",
+    "TableColumns": "package,key_name,description,category,prof_type,state_id,custom,val,min_sw_version,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "eft_dest",
+    "PKColumns": "",
+    "TableColumns": "description,def_flag,eft_tax_id,eft_dest_name,eft_dest_bank_code,eft_trans_desc,eft_bank_debit,eft_site_bank_acct,fund,opt_trans_rec1,opt_trans_rec2,eft_file_format,eft_email_addr,email_subject,bcc_email_addr,email_body,eft_dest_num,imm_orig_num,imm_orig_name,company_id_hdr,company_id_ctrl,orig_dfi_id,check_bankacct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "eic2tabl",
+    "PKColumns": "",
+    "TableColumns": "pay_freq,marital,ear,amt,per",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "eictable",
+    "PKColumns": "",
+    "TableColumns": "pay_freq,marital,account,max_gross",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "emp_certificate",
+    "PKColumns": "empl_no,indx",
+    "TableColumns": "empl_no,number,iss_date,exp_date,reg_date,c_type,c_area,primary_cert,indx",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "emp_crs_stat_tbl",
+    "PKColumns": "course_stat_cd",
+    "TableColumns": "course_stat_cd,descx,create_who,create_when,update_who,update_when,unique_id,unique_key",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "emp_degree",
+    "PKColumns": "empl_no,indx",
+    "TableColumns": "empl_no,dtype,highest,school,major,minor,deg_date,credits,gpa,user_1,indx",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "emp_qualify",
+    "PKColumns": "",
+    "TableColumns": "empl_no,qual_code,eff_date,exp_date,exp_comp_date,misc_info,qual_meth,qual_stat,active",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "emp_require",
+    "PKColumns": "",
+    "TableColumns": "empl_no,req_code,eff_date,exp_date,exp_comp_date,misc_info",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "empact",
+    "PKColumns": "",
+    "TableColumns": "empl_no,date_chg,table_name,field_name,old_value,new_value,operator,pay_ded_code,pay_ded_desc,time_chg",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "empl_races",
+    "PKColumns": "",
+    "TableColumns": "empl_no,race_code,indx,race_order,race_prcnt",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "employee",
+    "PKColumns": "empl_no",
+    "TableColumns": "empl_no,ssn,l_name,f_name,addr1,addr2,city,zip,hire_date,home_orgn,birthdate,base_loc,state_id,orig_hire,prev_lname,email_addr,info_rlease,email_voucher,uid,supervisor_id,personal_email,m_name,name_suffix,preferred_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "employee_renamed",
+    "PKColumns": "empl_no",
+    "TableColumns": "empl_no,ssn,l_name,f_name,m_name,addr1,addr2,city,zip,hire_date,home_orgn,birthdate,base_loc,state_id,orig_hire,prev_lname,email_addr,info_rlease,email_voucher,uid,supervisor_id,personal_email,name_suffix",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "employee_type",
+    "PKColumns": "code",
+    "TableColumns": "code,desc_x",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "emplsoundex",
+    "PKColumns": "",
+    "TableColumns": "soundcode,empl_no,l_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "empuser",
+    "PKColumns": "empl_no,page_no",
+    "TableColumns": "empl_no,page_no,ftext1,ftext2,ftext3,ftext4,ftext5,ftext6,ftext7,ftext8,ftext9,ftext10,tcode1,tcode2,tcode3,tcode4,tcode5,tcode6,tcode7,tcode8,tcode9,tcode10,comment1,comment2",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "empuser_snapshot",
+    "PKColumns": "",
+    "TableColumns": "add_date,uid,clear_code,month,qtr,year,empl_no,page_no,ftext1,ftext2,ftext3,ftext4,ftext5,ftext6,ftext7,ftext8,ftext9,ftext10,tcode1,tcode2,tcode3,tcode4,tcode5,tcode6,tcode7,tcode8,tcode9,tcode10,comment1,comment2",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "epay_format",
+    "PKColumns": "",
+    "TableColumns": "epay_code,format_descr,bank_trans_descr,check_char1,clear_vouchers,allow_email,seq_number,eaccount,lia_acct,addr1,addr2,city,state,zip,debit_credit,sec_code,filesource,shortname,expirydays,filesequence,cc_email,notes",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "esc_employee",
+    "PKColumns": "empl_no",
+    "TableColumns": "empl_no,admin_flag,block_flag,inv_login_attempts,acct_locked_date_time",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "esc_prof",
+    "PKColumns": "",
+    "TableColumns": "site_logo,site_bgcolor,site_txtcolor,default_pg,email_server,email_port,admin_email,hr_email,payr_email,emplinfo_notify,benefits_notify,name_flg,addr_flg,email_flg,dates_flg,ssn_flg,pie_flg,fedfrm_name,stafrm_name,locfrm_name,fedtax_flg,statax_flg,loctax_flg,link_fed,link_sta,link_loc,instr_fed,instr_sta,instr_loc,leave_unit,leave_disclaim,cal_flg,cal_workday,cal_nonwork,cal_leave1,cal_leave2,cal_leave3,cal_leave4,cal_leave5,cal_leave6,cal_leave7,cal_leave8,cal_leave9,cal_leave10,enrol_disclaim,enrol_start,enrol_end,enrol_eff_date,upd_ben_flg,upd_dep_flg,degree_flg,certif_flg,certno_flg,certdate_flg,skills_flg,skills_title1,skills_title2,login_meth,payded_inact_flag,wphone_fmt_flag",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "esmfiscal",
+    "PKColumns": "",
+    "TableColumns": "begin_month,begin_day",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "et_crosswalk",
+    "PKColumns": "",
+    "TableColumns": "field_name,cur_value,new_value,group_cd",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ethnic_table",
+    "PKColumns": "",
+    "TableColumns": "ethnic_code,description",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ets_except_list",
+    "PKColumns": "",
+    "TableColumns": "except_code,except_desc",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ex_curricular",
+    "PKColumns": "",
+    "TableColumns": "code,desc_x",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "expbudgt",
+    "PKColumns": "yr,key_orgn,account",
+    "TableColumns": "yr,key_orgn,account,bud1,exp1,enc1,bud2,exp2,enc2,bud3,exp3,enc3,bud4,exp4,enc4,bud5,exp5,enc5,bud6,exp6,enc6,bud7,exp7,enc7,bud8,exp8,enc8,bud9,exp9,enc9,bud10,exp10,enc10,bud11,exp11,enc11,bud12,exp12,enc12,bud13,exp13,enc13,inv_bal,req_bal,pay_encum,bud_adj,title",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "expledgr",
+    "PKColumns": "yr,key_orgn,account",
+    "TableColumns": "yr,key_orgn,account,budget_orgn,budget_acct,bud1,exp1,enc1,bud2,exp2,enc2,bud3,exp3,enc3,bud4,exp4,enc4,bud5,exp5,enc5,bud6,exp6,enc6,bud7,exp7,enc7,bud8,exp8,enc8,bud9,exp9,enc9,bud10,exp10,enc10,bud11,exp11,enc11,bud12,exp12,enc12,bud13,exp13,enc13,pay_encum,active,title",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "export_group",
+    "PKColumns": "group_id",
+    "TableColumns": "group_id,group_name,change_date_time,change_uid,friendly_group_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "export_group_tables",
+    "PKColumns": "table_id",
+    "TableColumns": "table_id,table_name,group_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "export_modules",
+    "PKColumns": "module_id",
+    "TableColumns": "module_id,group_id,package,subpack",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "export_table_joins",
+    "PKColumns": "",
+    "TableColumns": "primary_table_name,primary_column_name,child_table_name,child_column_name,change_date_time,change_uid,join_type,is_condition,group_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "f_profact",
+    "PKColumns": "",
+    "TableColumns": "date_chg,table_name,field_name,old_value,new_value,operator",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "faaccount",
+    "PKColumns": "",
+    "TableColumns": "acct,sub_1_acct,sub_2_acct,sub_3_acct,title,proll_flg,reqpur_flg,war_flg,local_use",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fam_prof",
+    "PKColumns": "",
+    "TableColumns": "trans_date,period,yr,client,system,company,disb_fund,pay_fund,cash_account,pay_cash,a_p,fund_bal,exp_bud_control,rev_bud_control,res_for_enc,act_fund_bal,enc_control,pay_res_enc,pen_control,exp_control,rev_control,tax_payable,low_asset,hi_asset,low_lia,hi_lia,low_equ,hi_equ,low_exp,hi_exp,low_rev,hi_rev,enc_title,fund_title,orgn1_title,orgn2_title,orgn3_title,orgn4_title,orgn5_title,orgn6_title,orgn7_title,orgn8_title,orgn9_title,low_orgn,proj1_title,proj2_title,proj3_title,proj4_title,proj5_title,proj6_title,proj7_title,proj8_title,low_proj,user_req,next_reqno,user_po,next_pono,user_je,next_jeno,user_vendor,next_vndno,purch_encum,dup_invoice,high_lev,min_amount,purch,fixed_assets,inv_control,ven_bidding,check_sort,e_full_acct,r_full_acct,portrait,chk_frmt,det_sum,prior_year,sum_enc_flg,app_by_group,app_group,comm_mask,comm_used,pre_encum,city,state_id,zip,buyer,payb4recv,autobal,jetofrom,p_f,opay_warning,opay_type,opay_amount,opay_percent,sep_old_je,next_old_jeno,user_bt,next_btno,def_vnd_due,key_sum,sep_nyr_req,next_nyr_reqno,sep_nyr_po,next_nyr_pono,dist_method,len_reqno,len_pono,ap_pdf,po_pdf,deft_appgrp_pay,deft_appgrp_comm,deft_appgrp_load,ap_appr_po_pay,ap_appr_no_po,ap_appr_po_thres,purch_email,bud_approve,tax_freight,exceed_payroll_bud,apcheck_form,po_form,pyrl_venpay_cash,req_po_def,copy_req_notes,flag1,flag2,flag3,flag4,flag5,flag6,flag7,flag8,flag9,flag10,fisc_start_date,fisc_end_date,compl_req_only,prevnt_upd_cvt_req",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fam_ref",
+    "PKColumns": "",
+    "TableColumns": "prefx,code,desc_x",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "famstate",
+    "PKColumns": "",
+    "TableColumns": "state1,state2,state3,state4,state5,state6,state7,state8,state9,state10,state11,state12,state13,state14,state15,state16,state17,state18,state19,state20,state21,state22,state23,state24,state25,state26,state27,state28,state29,state30,state31,state32,state33,state34,state35,state36,state37,state38,state39,state40,state41,state42,state43,state44,state45,state46,state47,state48,state49,state50,state51,state52,state53,state54,state55,state56,state57,state58,state59,state60,state61,state62,state63,state64,state65,state66,state67,state68,state69,state70,state71,state72,state73,state74,state75,state76,state77,state78,state79,state80,state81,state82,state83,state84,state85,state86,state87,state88,state89,state90,state91,state92,state93,state94,state95,state96,state97,state98,state99,state100,state101,state102",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "faorgn",
+    "PKColumns": "",
+    "TableColumns": "yr,key_orgn,lvl,fund,orgn1,orgn2,orgn3,orgn4,orgn5,orgn6,orgn7,orgn8,orgn9,title,enterprise,cash,budget,req_enc,pr_orgn,disb_fund,total_rec,proj_link,project,local_use",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fe2table",
+    "PKColumns": "",
+    "TableColumns": "pay_freq,marital,ear,amt,per,with_rate_sched_cd",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fed_race_codes",
+    "PKColumns": "",
+    "TableColumns": "fed_code,description",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fed_tax_calc",
+    "PKColumns": "code",
+    "TableColumns": "code,description,active",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fedtable",
+    "PKColumns": "",
+    "TableColumns": "pay_freq,marital,account,depend,supp_per,with_rate_sched_cd,pays_per_year,nonres_alien_adj1,nonres_alien_adj2,std_allowance",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fictable",
+    "PKColumns": "",
+    "TableColumns": "fic_med,emp_per,emp_max,empr_per,empr_max,lia_acct,frg_acct,frng_dist,frng_orgn,encumber,frng_liab_acct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "filing_type",
+    "PKColumns": "",
+    "TableColumns": "type_cd,description",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "finauditlinks",
+    "PKColumns": "audit_no,field_no",
+    "TableColumns": "audit_no,field_no,char_id,num_id,date_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "finaudittrail",
+    "PKColumns": "audit_no",
+    "TableColumns": "pkg,change_date,change_time,change_type,change_note,tabname,colname,old_val,new_val,spiuser,audit_no",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fincustom",
+    "PKColumns": "",
+    "TableColumns": "key_name,description,proj_no,install_date,install_programmer,orig_programmer,orig_flg,enable_flg,udf1,udf2,udf3,udf4,udf5",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fips_codes",
+    "PKColumns": "",
+    "TableColumns": "code,desc_x,state_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fix_locn",
+    "PKColumns": "",
+    "TableColumns": "loccode,locdesc",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fix_num",
+    "PKColumns": "",
+    "TableColumns": "next_asset",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fix_prof",
+    "PKColumns": "",
+    "TableColumns": "client,system,company,user_1,user_2,user_3,user_4,user_5,low_capital,hi_capital,fix_min_amt,user_asset,next_asset,yr_start_date,fiscal_yr,cafr_yr_end",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "flsa_payroll",
+    "PKColumns": "",
+    "TableColumns": "empl_no,cycle_code",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fms_user_fields",
+    "PKColumns": "screen_type,screen_number,field_number",
+    "TableColumns": "screen_type,screen_number,field_number,field_label,field_order,required_field,field_type,data_type,number_type,data_length,field_scale,field_precision,default_value,default_table,default_column,validation_list,validation_table,code_column,description_column,spi_table,spi_column,spi_screen_number,spi_field_number,spi_field_type,sec_package,sec_subpackage,sec_feature,locked,visible,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fms_user_screen",
+    "PKColumns": "screen_type,screen_number",
+    "TableColumns": "screen_type,screen_number,form_type,list_type,columns,description,required_screen,sec_package,sec_subpackage,sec_feature,reserved,state_flag,wf_screen,wf_model_id,wf_model_version,dataset_id,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fmsnxtno",
+    "PKColumns": "tab_name",
+    "TableColumns": "tab_name,next_no",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "functbl",
+    "PKColumns": "",
+    "TableColumns": "func_name,description",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fxhist",
+    "PKColumns": "",
+    "TableColumns": "tagno,improvement_num,trans_date,trans_time,field_name,old_value,new_value,user_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "fxhistmult",
+    "PKColumns": "",
+    "TableColumns": "act,tagno,improvement_num,trans_date,trans_time,user_id,func_name,activity,deporgn,depacct,dep_pct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "gasb_fx",
+    "PKColumns": "",
+    "TableColumns": "fiscal_yr,fund_type,func_name,activity,major_class,beg_bal,adj,additions,deletions,end_bal,accum_dep_bb,accum_dep_adj,accum_dep_add,accum_dep_del,accum_dep_end,change_time,change_date,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "gender_identity_tbl",
+    "PKColumns": "",
+    "TableColumns": "code,title,federal_code,state_code,report_1_code,report_2_code,report_3_code,report_4_code,report_5_code",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "genledgr",
+    "PKColumns": "yr,gl_key_orgn,account",
+    "TableColumns": "yr,gl_key_orgn,account,gl_bal1,gl_bal2,gl_bal3,gl_bal4,gl_bal5,gl_bal6,gl_bal7,gl_bal8,gl_bal9,gl_bal10,gl_bal11,gl_bal12,gl_bal13,title",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "hdeduct",
+    "PKColumns": "",
+    "TableColumns": "capture_date,empl_no,ded_cd,status,account,start_x,stop_x,beff_date,ded_amt,max_amt,max_fringe,arrears,cont_amt,num_deds,chk_ind,taken_c,taken_m,taken_q,taken_y,taken_i,taken_f,cont_c,cont_m,cont_q,cont_y,cont_i,cont_f,sal_c,sal_m,sal_q,sal_y,sal_f,bank,bt_code,bank_acct,enc_remaining,addl_ded_gross,addl_frng_gross",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "hemployee",
+    "PKColumns": "",
+    "TableColumns": "capture_date,empl_no,ssn,l_name,f_name,addr1,addr2,city,zip,hire_date,home_orgn,birthdate,base_loc,state_id,orig_hire,prev_lname,email_addr,info_rlease,email_voucher,uid,supervisor_id,personal_email,m_name,name_suffix,preferred_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "hemployee_renamed",
+    "PKColumns": "",
+    "TableColumns": "capture_date,empl_no,ssn,l_name,f_name,m_name,addr1,addr2,city,zip,hire_date,home_orgn,birthdate,base_loc,state_id,orig_hire,prev_lname,email_addr,info_rlease,email_voucher,uid,supervisor_id,personal_email,name_suffix",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "holiday",
+    "PKColumns": "cal_type,h_date",
+    "TableColumns": "cal_type,h_date,w_flag",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "home_fav_groups",
+    "PKColumns": "fav_grp_id",
+    "TableColumns": "fav_grp_id,fav_grp_title,user_id,is_display_menu_path",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "home_fav_items",
+    "PKColumns": "fav_item_id",
+    "TableColumns": "fav_item_id,fav_grp_id,fav_item_name,fav_item_order,callpath,progcall,is_fglrun,is_sub_system",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "home_panel_types",
+    "PKColumns": "panel_type",
+    "TableColumns": "panel_type,panel_name,panel_min_rows,panel_max_rows,panel_min_cols,panel_max_cols",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "home_session_docs",
+    "PKColumns": "session_id,index_id",
+    "TableColumns": "session_id,index_id,rpt_name,rpt_path,rpt_create_date,rpt_size,rpt_deleted",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "home_user_panel",
+    "PKColumns": "tab_id,panel_order",
+    "TableColumns": "tab_id,panel_order,user_id,panel_type,fav_grp_id,panel_title,panel_icon,panel_num_rows,panel_num_cols",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "home_user_ses_hist",
+    "PKColumns": "",
+    "TableColumns": "session_id,user_id,create_time,expire_time,process_id,client_ip,user_agent",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "home_user_session",
+    "PKColumns": "session_id",
+    "TableColumns": "session_id,user_id,create_time,process_id,client_ip,user_agent,rpt_status",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "home_user_tab",
+    "PKColumns": "tab_id",
+    "TableColumns": "tab_id,user_id,tab_order,tab_title",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "hpayrate",
+    "PKColumns": "",
+    "TableColumns": "capture_date,empl_no,rate_no,primry,group_x,pay_hours,days_worked,hours_day,incl_dock,no_pays,fte,pay_method,pay_cycle,pay_cd,classify,occupied,cal_type,range,step_x,rate,dock_rate,cont_flg,cont_days,override,annl_sal,cont_lim,cont_bal,cont_paid,cont_start,cont_end,pay_start,pay_end,summer_pay,status_x,pyo_date,pyo_rem_pay,pyo_days,pyo_rate,pyo_amt,dock_arrears_amt,dock_pays_remain",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "hpayroll",
+    "PKColumns": "",
+    "TableColumns": "capture_date,empl_no,pay_freq,card_requ,sp1_amt,sp1_cd,sp2_amt,sp2_cd,sp3_amt,sp3_cd,chk_locn,last_paid,fed_exempt,fed_marital,fed_dep,add_fed,sta_exempt,state_id,pr_state,sta_marital,sta_dep,add_state,loc_exempt,locl,pr_local,loc_marital,loc_dep,add_local,fic_exempt,earn_inc,lv_date,lv1_cd,lv1_bal,lv1_tak,lv1_ear,lv2_cd,lv2_bal,lv2_tak,lv2_ear,lv3_cd,lv3_bal,lv3_tak,lv3_ear,lv4_cd,lv4_bal,lv4_tak,lv4_ear,lv5_cd,lv5_bal,lv5_tak,lv5_ear,lv6_cd,lv6_bal,lv6_tak,lv6_ear,lv7_cd,lv7_bal,lv7_tak,lv7_ear,lv8_cd,lv8_bal,lv8_tak,lv8_ear,lv9_cd,lv9_bal,lv9_tak,lv9_ear,lv10_cd,lv10_bal,lv10_tak,lv10_ear,tearn_c,tearn_m,tearn_q,tearn_y,tearn_ft,ftearn_c,ftearn_m,ftearn_q,ftearn_y,ftearn_ft,fiearn_c,fiearn_m,fiearn_q,fiearn_y,fiearn_ft,mdearn_c,mdearn_m,mdearn_q,mdearn_y,mdearn_ft,stearn_c,stearn_m,stearn_q,stearn_y,stearn_ft,s2earn_c,s2earn_m,l2earn_y,s2earn_y,s2earn_ft,loearn_c,loearn_m,loearn_q,loearn_y,loearn_ft,allow_c,allow_m,allow_q,allow_y,allow_ft,nocash_c,nocash_m,nocash_q,nocash_y,nocash_ft,fedtax_c,fedtax_m,fedtax_q,fedtax_y,fedtax_ft,fictax_c,fictax_m,fictax_q,fictax_y,fictax_ft,medtax_c,medtax_m,medtax_q,medtax_y,medtax_ft,statax_c,statax_m,statax_q,statax_y,statax_ft,st2tax_c,st2tax_m,lt2tax_y,st2tax_y,st2tax_ft,loctax_c,loctax_m,loctax_q,loctax_y,loctax_ft,eic_c,eic_m,eic_q,eic_y,eic_ft,rfiearn_y,rfictax_y,rmdearn_y,rmedtax_y,flsa_cycle_y,flsa_cycle_hrs,flsa_hours,flsa_amount,rfiearn_c,rfiearn_m,rfiearn_q,rfiearn_ft,rfictax_c,rfictax_m,rfictax_q,rfictax_ft,rmdearn_c,rmdearn_m,rmdearn_q,rmdearn_ft,rmedtax_c,rmedtax_m,rmedtax_q,rmedtax_ft,fed_tax_calc_cd,w4_sub_date,non_res_alien,ann_other_inc,ann_deductions,ann_tax_credit,pays_per_year",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "hq_qualify",
+    "PKColumns": "",
+    "TableColumns": "qual_code,qual_desc",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "hq_require",
+    "PKColumns": "",
+    "TableColumns": "req_code,req_desc",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "hrm_aca_audit",
+    "PKColumns": "",
+    "TableColumns": "user_id,change_date,change_time,change_type,empl_no,classify,pay_code,start_date,check_no,field_changed,orig_data,new_data,row_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "hrm_aca_hours",
+    "PKColumns": "",
+    "TableColumns": "empl_no,pay_run,check_no,empl_type,group_x,classify,pay_code,cal_type,start_date,end_date,work_hours,aca_status,row_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "hrm_locn",
+    "PKColumns": "",
+    "TableColumns": "code,desc_x,addr1,addr2,city,state_id,zip,sch_numb,sch_annx,enroll,pk,kg,g1,g2,g3,g4,g5,g6,g7,g8,g9,g10,g11,g12,un,se,has_prin,full_pt,gender,teach,race,sch_building,state_locn_code,sis_code",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "hrm_prof",
+    "PKColumns": "",
+    "TableColumns": "trans_date,client,system,company,payroll,personnel,pos_cont,insure,applicant,fundacct,low_orgn_title,low_proj_title,tc_attn,journ_srt,wkrcomp,netpay,np_acct,cr_vend_paymnts,fedtax_id,immdest,dest_name,trans_desc,bank_db,bank_acct,bank_code,emp_name,emp_add,emp_city,emp_state,emp_zip,rpt_year,site_code,misc1,misc2,school_yr,dist_id,add_rte,dollar_rnd,default_ssn,ratnposhst,print_net,tc_sec_check,eeo_def,client_type,p_dedvend,imm_orig_num,opt_trans_rec1,opt_trans_rec2,assign_empl,empl_start,empl_incre,assign_appl,appl_start,appl_incre,print_ytd_ded,leave_processing,retro_dock_code,lien_wage_code,retro_pay_code,ssn_mask_method,paycheck_form,from_addr,bcc_addr,email_subject,attach_pdf,email_body,imm_orig_name,company_id_hdr,company_id_ctrl,orig_dfi_id,dept_location,paycd_list,flag1,flag2,flag3,flag4,flag5,flag6,flag7,flag8,flag9,flag10,print_dirdep,sum_fisc_accr,disable_dock,child_support,adjust_neg_gross",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "hrmstate",
+    "PKColumns": "",
+    "TableColumns": "state1,state2,state3,state4,state5,state6,state7,state8,state9,state10,state11,state12,state13,state14,state15,state16,state17,state18,state19,state20,state21,state22,state23,state24,state25,state26,state27,state28,state29,state30,state31,state32,state33,state34,state35,state36,state37,state38,state39,state40,state41,state42,state43,state44,state45,state46,state47,state48,state49,state50,state51,state52,state53,state54,state55,state56,state57,state58,state59,state60",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "hrmstate2",
+    "PKColumns": "",
+    "TableColumns": "state1,state2,state3,state4,state5,state6,state7,state8,state9,state10,state11,state12,state13,state14,state15,state16,state17,state18,state19,state20",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "integration_fields",
+    "PKColumns": "table_name,field_name",
+    "TableColumns": "table_name,field_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "irs_country_codes",
+    "PKColumns": "",
+    "TableColumns": "country_cd,country_name,addr_format",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "irs_employersetup",
+    "PKColumns": "",
+    "TableColumns": "emplr_fedtaxid,emplr_name,trade_name,address1,address2,city,state,zip,f_country_code,f_province,f_postal,group_x,deposit_sched",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "irs_form_definition",
+    "PKColumns": "",
+    "TableColumns": "usage_start_date,usage_end_date,box_order,box_number,box_label,box_calcs,box_validation,box_field_type",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "irs_scheduleb",
+    "PKColumns": "",
+    "TableColumns": "rpt_yr,rpt_qtr,emplr_fedtaxid,tax_liability,liability_date",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "irs941_data",
+    "PKColumns": "",
+    "TableColumns": "rpt_year,rpt_qtr,emplr_fedtaxid,emplr_name,trade_name,address1,address2,city,state,zip,f_country_code,f_province,f_postal,check_start_date,check_end_date,void_start_date,void_end_date,payrun,emp_FICA_per,empr_FICA_per,emp_med_per,empr_med_per,emp_med_addlgross,emp_med_addlper,form_data,load_date",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "je_nums",
+    "PKColumns": "",
+    "TableColumns": "code,je_number,yr",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "kpi_expbudact",
+    "PKColumns": "key_orgn,account",
+    "TableColumns": "key_orgn,account,fund,orgn1,orgn2,orgn3,orgn4,orgn5,orgn6,orgn7,orgn8,orgn9,key_title,acct_title,bud,per,enc,exp,act,bal,create_date",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "lastcalc",
+    "PKColumns": "",
+    "TableColumns": "pay_run,indicator,calc_date,calc_time,calc_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "levtable",
+    "PKColumns": "lv_code",
+    "TableColumns": "lv_code,title,ck_title,acc_type,acc_rate,lwop_acct,max_acc,years,exc_meth,roll_lim,roll_code,max_earn,unused_pay_meth,unused_pay,lv_unit,emp_status,prt_flg",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "libattachstatus",
+    "PKColumns": "",
+    "TableColumns": "group_desc,key_field1,key_field2,key_field3,key_field4,key_field5,num_attach",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "libcolcheck",
+    "PKColumns": "colcheckno",
+    "TableColumns": "colcheckno,coltable,colcolumn,colcheckprop,colchecksql1,colerrorif1,colerrormsg1,colchecksql2,colerrorif2,colerrormsg2,colchecksql3,colerrorif3,colerrormsg3,colcheckval,colerrorifv,colerrormsgv,coldefaultsql,coldefaultval,colchecknull",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "librefcolumns",
+    "PKColumns": "refcolumn",
+    "TableColumns": "refcolumn,refcolumnname,refcolumndisplay,reftable,createuserid,createstamp,changeuserid,changestamp",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "libreftables",
+    "PKColumns": "reftable",
+    "TableColumns": "reftable,reftablename,reftabledisplay,reftabledesc,reftablegrp,createuserid,createstamp,changeuserid,changestamp",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "mapckhld",
+    "PKColumns": "",
+    "TableColumns": "vend_no,check_no,check_dt,disb_fund,check_bankacct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "mapckhst",
+    "PKColumns": "",
+    "TableColumns": "user_id,old_chk_no,new_chk_bo,prt_date,disb_fund,check_bankacct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "mchkhist",
+    "PKColumns": "",
+    "TableColumns": "user_id,old_chkno,new_chkno,prt_date",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "mchkhld",
+    "PKColumns": "",
+    "TableColumns": "srt_no,check_no,iss_date,empl_no",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menu_applications",
+    "PKColumns": "app_id",
+    "TableColumns": "app_id,title,package,subpackage,func,spi_defined",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menu_custom_opts",
+    "PKColumns": "base_progcall,base_callpath",
+    "TableColumns": "base_progcall,base_callpath,cust_progcall,cust_callpath,enable_flg,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menu_groups",
+    "PKColumns": "app_id,tab_id,group_id",
+    "TableColumns": "app_id,tab_id,group_id,title,package,subpackage,func,spi_defined",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menu_options",
+    "PKColumns": "app_id,tab_id,group_id,option_id",
+    "TableColumns": "app_id,tab_id,group_id,option_id,title,progcall,callpath,package,subpackage,func,is_fglrun,is_sub_system,spi_defined",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menu_options_lic",
+    "PKColumns": "id",
+    "TableColumns": "id,app_id,app_title,app_package,app_subpackage,app_func,app_spi_defined,tab_id,tab_title,tab_package,tab_subpackage,tab_func,tab_spi_defined,group_id,group_title,group_package,group_subpackage,group_func,group_spi_defined,option_id,option_title,progcall,callpath,package,subpackage,func,is_fglrun,is_sub_system,spi_defined,sectb_license_id,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menu_persnl_grps",
+    "PKColumns": "",
+    "TableColumns": "grp_num,grp_title,uid,package,exe_location",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menu_persnl_opts",
+    "PKColumns": "",
+    "TableColumns": "grp_num,uid,opt_num,option_name,callpath,progcall,desk_icon,package,btn_num",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menu_tabs",
+    "PKColumns": "tab_id",
+    "TableColumns": "tab_id,title,package,subpackage,func,spi_defined",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menutb_cfg",
+    "PKColumns": "",
+    "TableColumns": "customer,change_date,change_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menutb_items",
+    "PKColumns": "",
+    "TableColumns": "menu_path,choice,choicedesc,progcall,callpath,run_command,package,subpack,func,change_date,change_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menutb_lock",
+    "PKColumns": "",
+    "TableColumns": "package,subpack,func,num_users",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menutb_printers",
+    "PKColumns": "",
+    "TableColumns": "building,description,pr_command,quiet_mode,copies_opt,change_date,change_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menutb_rebuild",
+    "PKColumns": "",
+    "TableColumns": "spiuser,package,subpack,func",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menutb_termtype",
+    "PKColumns": "",
+    "TableColumns": "term_type,seq_132,seq_80",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menutb_titles",
+    "PKColumns": "",
+    "TableColumns": "menu_path,title,menuid,change_date,change_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menutool",
+    "PKColumns": "choice",
+    "TableColumns": "choice,group_id,choiceparent,action_index,action_name,description,image,comment,item_type,showtoolitem",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menutool_groups",
+    "PKColumns": "group_id",
+    "TableColumns": "group_id,group_type,group_name,parent_group_id,gdc_order,gwc_order,gdc_title,gwc_title,group_orientation",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "menutool_items",
+    "PKColumns": "item_id",
+    "TableColumns": "item_id,gdc_group_id,gwc_group_id,item_type,action_name,action_desc,gdc_order,gwc_order,gdc_image,gwc_image,gdc_showtoolitem,gwc_showtoolitem,gwc_toolbar_order,item_orientation,tooltiptext",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "migration",
+    "PKColumns": "id",
+    "TableColumns": "id,name,project_name,run_date",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "multiasset",
+    "PKColumns": "",
+    "TableColumns": "tagno,improvement_num,func_name,activity,deporgn,depacct,dep_pct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "netdist2",
+    "PKColumns": "",
+    "TableColumns": "fund,gross,tax_deds,ret_deds,oth_deds,fringe",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "non_work",
+    "PKColumns": "cal_type,n_date",
+    "TableColumns": "cal_type,n_date,w_flag",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "old_assets",
+    "PKColumns": "",
+    "TableColumns": "tagno,improvement_num,dept,catcode,func_name,activity,deporgn,depacct,multifunc",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "old_department",
+    "PKColumns": "",
+    "TableColumns": "dept,dept_title,catcode,activity_code,prior_yr_amt,cur_yr_amt",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "old_source",
+    "PKColumns": "",
+    "TableColumns": "fund_source,fund_source_desc,prior_yr_amt,cur_yr_amt",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "optio_manager",
+    "PKColumns": "",
+    "TableColumns": "format_id,format_name,active_format,site_code,district_code,format_code,format_type,printer,address_1,address_1_v,address_1_h,address_2,address_2_v,address_2_h,address_3,address_3_v,address_3_h,address_4,address_4_v,address_4_h,address_5,address_5_v,address_5_h,voucher_text,voucher_text_v,voucher_text_h,check_text,check_text_v,check_text_h,return_address_1,return_address_1_v,return_address_1_h,return_address_2,return_address_2_v,return_address_2_h,return_address_3,return_address_3_v,return_address_3_h,return_address_4,return_address_4_v,return_address_4_h,logo,logo_v,logo_h,logo_file,signature_1,signature_1_v,signature_1_h,signature_1_file,title_1,title_1_v,title_1_h,signature_2,signature_2_v,signature_2_h,signature_2_file,title_2,title_2_v,title_2_h,signature_3,signature_3_v,signature_3_h,signature_3_file,title_3,title_3_v,title_3_h,bank_address_1,bank_address_1_v,bank_address_1_h,bank_address_2,bank_address_2_v,bank_address_2_h,bank_address_3,bank_address_3_v,bank_address_3_h,bank_address_4,bank_address_4_v,bank_address_4_h,bank_address_5,bank_address_5_v,bank_address_5_h,fraction,fraction_v,fraction_h,micr_prefix,micr_prefix_v,micr_prefix_h,micr_routing,micr_routing_v,micr_routing_h,micr_account,micr_account_v,micr_account_h,top_text_1,top_text_1_v,top_text_1_h,top_text_2,top_text_2_v,top_text_2_h,bottom_text_1,bottom_text_1_v,bottom_text_1_h,bottom_text_2,bottom_text_2_v,bottom_text_2_h,bottom_text_3,bottom_text_3_v,bottom_text_3_h,bottom_text_4,bottom_text_4_v,bottom_text_4_h,bottom_text_5,bottom_text_5_v,bottom_text_5_h,bottom_text_6,bottom_text_6_v,bottom_text_6_h,bottom_text_7,bottom_text_7_v,bottom_text_7_h,bottom_text_8,bottom_text_8_v,bottom_text_8_h,bottom_text_9,bottom_text_9_v,bottom_text_9_h,bottom_text_10,bottom_text_10_v,bottom_text_10_h,bottom_text_11,bottom_text_11_v,bottom_text_11_h,bottom_text_12,bottom_text_12_v,bottom_text_12_h,bottom_text_13,bottom_text_13_v,bottom_text_13_h,bottom_text_14,bottom_text_14_v,bottom_text_14_h,bottom_text_15,bottom_text_15_v,bottom_text_15_h,copy_1_name,copy_1_name_v,copy_1_name_h,copy_2_name,copy_2_name_v,copy_2_name_h,copy_3_name,copy_3_name_v,copy_3_name_h,copy_4_name,copy_4_name_v,copy_4_name_h,copy_5_name,copy_5_name_v,copy_5_name_h,num_copies,change_date,change_time,change_uid,check_number_v,check_number_h,check_date_v,check_date_h,check_date_label_v,check_date_label_h,po_watermark,from_email_address,email_subject,email_body,payee_label_1,payee_label_1_v,payee_label_1_h,payee_label_2,payee_label_2_v,payee_label_2_h,payee_addr_v,payee_addr_h,payee_venchkloc,payee_venchkloc_v,payee_venchkloc_h",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "orgbudexp",
+    "PKColumns": "",
+    "TableColumns": "yr,gl_key_orgn,key_orgn,acct,amount",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "orgbudrev",
+    "PKColumns": "",
+    "TableColumns": "yr,gl_key_orgn,key_orgn,acct,amount",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "P360_NotificationRule",
+    "PKColumns": "PNR_ID",
+    "TableColumns": "PNR_ID,PNR_TStamp,PNR_LastUser,PNR_District,PNR_Name,PNR_Description,PNR_SourceApplication,PNR_RemoteSecurityApplication,PNR_RemoteSecurityType,PNR_RequiredSecurity,PNR_RuleType,PNR_Rule,PNR_Category,PNR_FilterSQL,PNR_HighestRequiredLevel,PNR_ShortMessage,PNR_LongMessage,PNR_LongMessageRemote,PNR_LinkToPageTitle,PNR_LinkToPageURL,PNR_LinkToPageMethod,PNR_AlertEveryTime,PNR_Subquery,PNR_Subquery_ID,PNR_Active",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "P360_NotificationRuleUser",
+    "PKColumns": "PNRU_ID",
+    "TableColumns": "PNRU_ID,PNRU_TStamp,PNRU_LastUser,PNRU_District,PNRU_PNR_ID,PNRU_Level,PNRU_Actor,PNRU_SubscribeStatus,PNRU_DeliveryMethod,PNRU_InstantAlert,PNRU_Active",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "P360_NotificationUserCriteria",
+    "PKColumns": "PNUC_ID",
+    "TableColumns": "PNUC_ID,PNUC_TStamp,PNUC_LastUser,PNUC_District,PNUC_PNR_ID,PNUC_PNRU_ID,PNUC_CriteriaType,PNUC_CriteriaVariable,PNUC_CriteriaValue",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "padd_rate",
+    "PKColumns": "",
+    "TableColumns": "empl_no,classify,pos,indx,code,salary,fte",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pat_sit",
+    "PKColumns": "",
+    "TableColumns": "sit_type,secure_type,lv_cd_ref,udef1_name,udef1_type,udef1_len,udef1_tab_ref,udef2_name,udef2_type,udef2_len,udef2_tab_ref,udef3_name,udef3_type,udef3_len,udef3_tab_ref,udef4_name,udef4_type,udef4_len,udef4_tab_ref,udef5_name,udef5_type,udef5_len,udef5_tab_ref,udef6_name,udef6_type,udef6_len,udef6_tab_ref,udef7_name,udef7_type,udef7_len,udef7_tab_ref,udef8_name,udef8_type,udef8_len,udef8_tab_ref,udef9_name,udef9_type,udef9_len,udef9_tab_ref,udef10_name,udef10_type,udef10_len,udef10_tab_ref,udef11_name,udef11_type,udef11_len,udef11_tab_ref,udef12_name,udef12_type,udef12_len,udef12_tab_ref,udef13_name,udef13_type,udef13_len,udef13_tab_ref,udef14_name,udef14_type,udef14_len,udef14_tab_ref,udef15_name,udef15_type,udef15_len,udef15_tab_ref,udef16_name,udef16_type,udef16_len,udef16_tab_ref,udef17_name,udef17_type,udef17_len,udef17_tab_ref,udef18_name,udef18_type,udef18_len,udef18_tab_ref,udef19_name,udef19_type,udef19_len,udef19_tab_ref,udef20_name,udef20_type,udef20_len,udef20_tab_ref,short_sit_type",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pay_code",
+    "PKColumns": "",
+    "TableColumns": "screen_no,scr_desc,pay_code1,fy1,pay_code2,fy2,pay_code3,fy3,pay_code4,fy4,pay_code5,fy5,pay_code6,fy6,pay_code7,fy7,pay_code8,fy8,pay_code9,fy9,pay_code10,fy10",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pay_freq",
+    "PKColumns": "",
+    "TableColumns": "vend_pay_freq,pay_run,due_date,period,yr",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pay_log",
+    "PKColumns": "",
+    "TableColumns": "pay_run,uid,chg_date,chg_time",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pay_runf",
+    "PKColumns": "",
+    "TableColumns": "pay_run,pay_cycle,freq_type,freq_code,adv_pay",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pay_stax",
+    "PKColumns": "",
+    "TableColumns": "pay_run,pay_cycle,s_fed_tax,s_sta_tax,s_loc_tax",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pay2file",
+    "PKColumns": "",
+    "TableColumns": "empl_no,ssn,l_name,f_name,chk_locn,addr1,addr2,addr3,zip,home_orgn,voucher,end_date,start_date,m_name,name_suffix",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "payab_asset",
+    "PKColumns": "",
+    "TableColumns": "payab_src,row_id,rec_no",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "paychk_sel",
+    "PKColumns": "",
+    "TableColumns": "pay_run,selection_type,data_type,begin_chknum,lastgood_chknum,restart_chknum,iss_date,sort_ord,begin_evchnum,msg_line1,msg_line2,run_date,run_time,run_user,format_id,print_zerogross",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "paycode",
+    "PKColumns": "",
+    "TableColumns": "empl_no,pay_code,p_amt,p_hours,mtd_amt,mtd_hours,qtd_amt,ytd_amt,cal_cycle_units,cal_cycle_amt",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "payer",
+    "PKColumns": "",
+    "TableColumns": "vend_no,ven_name,alpha_name,b_addr_1,b_addr_2,b_addr_3,b_zip,b_phone,date_last,receivables,payments",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "payfile",
+    "PKColumns": "",
+    "TableColumns": "empl_no,home_orgn,pdf,code,amount,fringe,orgn,proj,acct,pacct,arrears,check_no,hours,classify,dedgross,frngross,tax_ind,bank,bt_code,bank_acct,pay_cycle,chk_ind,flsa_flg,payrate",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "paygroups",
+    "PKColumns": "",
+    "TableColumns": "group_x,def_hours,pay_run,end_date,cur_run,run_desc,proc_sumfisc,start_date",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "paygrouptable",
+    "PKColumns": "group_x",
+    "TableColumns": "group_x,title",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "payrate",
+    "PKColumns": "empl_no,rate_no",
+    "TableColumns": "empl_no,rate_no,primry,group_x,pay_hours,days_worked,hours_day,incl_dock,no_pays,fte,pay_method,pay_cycle,pay_cd,classify,occupied,cal_type,range,step_x,rate,dock_rate,cont_flg,cont_days,override,annl_sal,cont_lim,cont_bal,cont_paid,cont_start,cont_end,pay_start,pay_end,summer_pay,status_x,pyo_date,pyo_rem_pay,pyo_days,pyo_rate,pyo_amt,dock_arrears_amt,dock_pays_remain",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "payrhist",
+    "PKColumns": "",
+    "TableColumns": "empl_no,classify,pos,rangex,stepx,ratex,annl_sal,eff_date,operator_id,group_x,cont_days,days_worked,fte,cont_lim,cont_paid,cont_bal,hours_day,pay_hours,pay_cd,remain_pay,cal_type,pay_method,dock_rate,dock_units,dock_amt,ext_lv_units,ext_lv_amt,dock_arrears_amt,dock_pays_remain",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "payroll",
+    "PKColumns": "empl_no",
+    "TableColumns": "empl_no,pay_freq,card_requ,sp1_amt,sp1_cd,sp2_amt,sp2_cd,sp3_amt,sp3_cd,chk_locn,last_paid,fed_exempt,fed_marital,fed_dep,add_fed,sta_exempt,state_id,pr_state,sta_marital,sta_dep,add_state,loc_exempt,locl,pr_local,loc_marital,loc_dep,add_local,fic_exempt,earn_inc,lv_date,lv1_cd,lv1_bal,lv1_tak,lv1_ear,lv2_cd,lv2_bal,lv2_tak,lv2_ear,lv3_cd,lv3_bal,lv3_tak,lv3_ear,lv4_cd,lv4_bal,lv4_tak,lv4_ear,lv5_cd,lv5_bal,lv5_tak,lv5_ear,lv6_cd,lv6_bal,lv6_tak,lv6_ear,lv7_cd,lv7_bal,lv7_tak,lv7_ear,lv8_cd,lv8_bal,lv8_tak,lv8_ear,lv9_cd,lv9_bal,lv9_tak,lv9_ear,lv10_cd,lv10_bal,lv10_tak,lv10_ear,tearn_c,tearn_m,tearn_q,tearn_y,tearn_ft,ftearn_c,ftearn_m,ftearn_q,ftearn_y,ftearn_ft,fiearn_c,fiearn_m,fiearn_q,fiearn_y,fiearn_ft,mdearn_c,mdearn_m,mdearn_q,mdearn_y,mdearn_ft,stearn_c,stearn_m,stearn_q,stearn_y,stearn_ft,s2earn_c,s2earn_m,l2earn_y,s2earn_y,s2earn_ft,loearn_c,loearn_m,loearn_q,loearn_y,loearn_ft,allow_c,allow_m,allow_q,allow_y,allow_ft,nocash_c,nocash_m,nocash_q,nocash_y,nocash_ft,fedtax_c,fedtax_m,fedtax_q,fedtax_y,fedtax_ft,fictax_c,fictax_m,fictax_q,fictax_y,fictax_ft,medtax_c,medtax_m,medtax_q,medtax_y,medtax_ft,statax_c,statax_m,statax_q,statax_y,statax_ft,st2tax_c,st2tax_m,lt2tax_y,st2tax_y,st2tax_ft,loctax_c,loctax_m,loctax_q,loctax_y,loctax_ft,eic_c,eic_m,eic_q,eic_y,eic_ft,rfiearn_y,rfictax_y,rmdearn_y,rmedtax_y,flsa_cycle_y,flsa_cycle_hrs,flsa_hours,flsa_amount,rfiearn_c,rfiearn_m,rfiearn_q,rfiearn_ft,rfictax_c,rfictax_m,rfictax_q,rfictax_ft,rmdearn_c,rmdearn_m,rmdearn_q,rmdearn_ft,rmedtax_c,rmedtax_m,rmedtax_q,rmedtax_ft,fed_tax_calc_cd,w4_sub_date,non_res_alien,ann_other_inc,ann_deductions,ann_tax_credit,pays_per_year",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "paytab_activity",
+    "PKColumns": "",
+    "TableColumns": "table_name,key_field,field_name,old_value,new_value,operator,date_chg,time_chg",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "paytable",
+    "PKColumns": "pay_code",
+    "TableColumns": "pay_code,title,ck_title,pay_type,percent_x,account,fed_exempt,sta_exempt,fic_exempt,loc_exempt,ded1_exempt,ded2_exempt,ded3_exempt,ded4_exempt,ded5_exempt,ded6_exempt,ded7_exempt,ded8_exempt,ded9_exempt,ded10_exempt,lv_add,lv_sub,time_type,frequency,wkr_comp,encum,pc_track,flsa_calc_type,flsa_ovt,exc_retro,add_factor,time_flag,app_level,ded11_exempt,ded12_exempt,ded13_exempt,ded14_exempt,ded15_exempt,ded16_exempt,ded17_exempt,ded18_exempt,ded19_exempt,ded20_exempt,ded21_exempt,ded22_exempt,ded23_exempt,ded24_exempt,ded25_exempt,ded26_exempt,ded27_exempt,ded28_exempt,ded29_exempt,ded30_exempt,ded31_exempt,ded32_exempt,ded33_exempt,ded34_exempt,ded35_exempt,ded36_exempt,ded37_exempt,ded38_exempt,ded39_exempt,ded40_exempt,include_notif",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pcd_enc_no",
+    "PKColumns": "",
+    "TableColumns": "prefix,next_enc_no",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pclstable",
+    "PKColumns": "",
+    "TableColumns": "class_cd,title,schedule,wkr_comp,cal_type,ded_cd1,ded_cd2,ded_cd3,ded_cd4,ded_cd5,ded_cd6,ded_cd7,ded_cd8,ded_cd9,ded_cd10,pay_cd,pay_method,group_x,range,step_x,av_an_sal,hours_day,days_worked,no_pays,bud_rate,pos_ctrl,bar_unit,anniv_incr",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pclstable_data2",
+    "PKColumns": "",
+    "TableColumns": "class_cd,job_type,job_descript",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pdedtable",
+    "PKColumns": "",
+    "TableColumns": "ded_cd,title,no_pays,frng_meth,frng_rate,frng_acct,fic_fexp,frng_dist,frng_orgn,frng_proj,use_gross_field",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pdeduct",
+    "PKColumns": "",
+    "TableColumns": "classify,pos,empl_no,ded_cd,cont_amt,max_fringe,bud_amt,freeze,addl_frng_gross",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pdist_orgn",
+    "PKColumns": "",
+    "TableColumns": "empl_no,rate_no,classify,pos,orgn,acct,prcent",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pdtytable",
+    "PKColumns": "",
+    "TableColumns": "code,desc_x,prcent,dollar",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "person",
+    "PKColumns": "empl_no",
+    "TableColumns": "empl_no,home_phone,listed,work_phone,emer_cont,emer_phone,phys_name,phys_phone,yrs_district,yrs_state,yrs_total,last_tb,tenure_date,senior_date,empl_type,location,sex,race,eeo,eeo_group,part_time,status,stat_date,hand,job_1,job_2,job_3,job_4,job_5,bargain,comp_code,term_date,term_code,ex_curr1,ex_curr2,ex_curr3,ex_curr4,ex_curr5,ex_curr6,curr_date,prior_class,prior_date,prior2_class,prior2_date,incr_per,incr_date,incr2_per,incr2_date,incr3_per,incr3_date,eeo_func,lastday_worked,cell_phone,other_phone,emer_cell_phone,ethnic_code,staff_state_id,inc_sum_fisc_accr,gender_identity",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pfictable",
+    "PKColumns": "",
+    "TableColumns": "fic_med,empr_per,empr_max,frg_acct,frng_dist,frng_orgn",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ppaytable",
+    "PKColumns": "",
+    "TableColumns": "pay_code,title,pay_type,percent_x,account,fic_exempt,wkr_comp,ded1_exempt,ded2_exempt,ded3_exempt,ded4_exempt,ded5_exempt,ded6_exempt,ded7_exempt,ded8_exempt,ded9_exempt,ded10_exempt,no_pays,ded11_exempt,ded12_exempt,ded13_exempt,ded14_exempt,ded15_exempt,ded16_exempt,ded17_exempt,ded18_exempt,ded19_exempt,ded20_exempt,ded21_exempt,ded22_exempt,ded23_exempt,ded24_exempt,ded25_exempt,ded26_exempt,ded27_exempt,ded28_exempt,ded29_exempt,ded30_exempt,ded31_exempt,ded32_exempt,ded33_exempt,ded34_exempt,ded35_exempt,ded36_exempt,ded37_exempt,ded38_exempt,ded39_exempt,ded40_exempt",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "proc_detail",
+    "PKColumns": "",
+    "TableColumns": "proc_type,proc_step,proc_def,complete,navigation",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "proc_header",
+    "PKColumns": "",
+    "TableColumns": "proc_type,proc_step,description,required,step_order",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "purge_dist_orgn",
+    "PKColumns": "",
+    "TableColumns": "empl_no,rate_no,classify,pos,orgn,acct,prcent,purge_date",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "purge_payrate",
+    "PKColumns": "",
+    "TableColumns": "empl_no,rate_no,primry,group_x,pay_hours,days_worked,hours_day,incl_dock,no_pays,fte,pay_method,pay_cycle,pay_cd,classify,occupied,cal_type,range,step_x,rate,dock_rate,cont_flg,cont_days,override,annl_sal,cont_lim,cont_bal,cont_paid,cont_start,cont_end,pay_start,pay_end,summer_pay,status_x,pyo_date,pyo_rem_pay,pyo_days,pyo_rate,pyo_amt,purge_date,dock_arrears_amt,dock_pays_remain",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "pwkrtable",
+    "PKColumns": "",
+    "TableColumns": "work_cd,title,rate,fringe_acct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "racetable",
+    "PKColumns": "",
+    "TableColumns": "race,description,race_fed,race_state,sis_code",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "regtb_building",
+    "PKColumns": "building",
+    "TableColumns": "building,building_name,district_num,street,city,state_id,zip_code,phone,principal,calendar,building_node,dist_updated,change_date,change_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "revledgr",
+    "PKColumns": "yr,key_orgn,account",
+    "TableColumns": "yr,key_orgn,account,bud1,exp1,enc1,bud2,exp2,enc2,bud3,exp3,enc3,bud4,exp4,enc4,bud5,exp5,enc5,bud6,exp6,enc6,bud7,exp7,enc7,bud8,exp8,enc8,bud9,exp9,enc9,bud10,exp10,enc10,bud11,exp11,enc11,bud12,exp12,enc12,bud13,exp13,enc13,title",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "rstable",
+    "PKColumns": "",
+    "TableColumns": "range,desc_x,step_1,pcnt_1,step_2,pcnt_2,step_3,pcnt_3,step_4,pcnt_4,step_5,pcnt_5,step_6,pcnt_6,step_7,pcnt_7,step_8,pcnt_8,step_9,pcnt_9,step_10,pcnt_10,step_11,pcnt_11,step_12,pcnt_12,step_13,pcnt_13,step_14,pcnt_14,step_15,pcnt_15,step_16,pcnt_16,step_17,pcnt_17,step_18,pcnt_18,step_19,pcnt_19,step_20,pcnt_20,step_21,pcnt_21,step_22,pcnt_22,step_23,pcnt_23,step_24,pcnt_24,step_25,pcnt_25,step_26,pcnt_26,step_27,pcnt_27,step_28,pcnt_28,step_29,pcnt_29,step_30,pcnt_30,step_31,pcnt_31,step_32,pcnt_32,step_33,pcnt_33,step_34,pcnt_34,step_35,pcnt_35,step_36,pcnt_36,step_37,pcnt_37,step_38,pcnt_38,step_39,pcnt_39,step_40,pcnt_40,step_41,pcnt_41,step_42,pcnt_42,step_43,pcnt_43,step_44,pcnt_44,step_45,pcnt_45,step_46,pcnt_46,step_47,pcnt_47,step_48,pcnt_48,step_49,pcnt_49,step_50,pcnt_50,step_51,pcnt_51,step_52,pcnt_52,step_53,pcnt_53,step_54,pcnt_54,step_55,pcnt_55,step_56,pcnt_56,step_57,pcnt_57,step_58,pcnt_58,step_59,pcnt_59,step_60,pcnt_60,step_61,pcnt_61,step_62,pcnt_62,step_63,pcnt_63,step_64,pcnt_64,step_65,pcnt_65,step_66,pcnt_66,step_67,pcnt_67,step_68,pcnt_68,step_69,pcnt_69,step_70,pcnt_70,step_71,pcnt_71,step_72,pcnt_72,step_73,pcnt_73,step_74,pcnt_74,step_75,pcnt_75,step_76,pcnt_76,step_77,pcnt_77,step_78,pcnt_78,step_79,pcnt_79,step_80,pcnt_80,step_81,pcnt_81,step_82,pcnt_82,step_83,pcnt_83,step_84,pcnt_84,step_85,pcnt_85,step_86,pcnt_86,step_87,pcnt_87,step_88,pcnt_88,step_89,pcnt_89,step_90,pcnt_90,step_91,pcnt_91,step_92,pcnt_92,step_93,pcnt_93,step_94,pcnt_94,step_95,pcnt_95,step_96,pcnt_96,step_97,pcnt_97,step_98,pcnt_98,step_99,pcnt_99",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "salsch_code",
+    "PKColumns": "",
+    "TableColumns": "lea,fy,code",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "school",
+    "PKColumns": "",
+    "TableColumns": "code,desc_x",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "screen_attr_tbl",
+    "PKColumns": "",
+    "TableColumns": "group_id,client_type,state_id,site_id,key_name,field_id,field_type,field_style,field_label,comments,field_hidden,field_noentry",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "screen_desc",
+    "PKColumns": "",
+    "TableColumns": "rpt_type,rpt_option,rpt_description1,rpt_description2,rpt_description3,rpt_description4,rpt_description5,rpt_description6,rpt_description7,rpt_description8,rpt_description9,rpt_description10",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "search_detail",
+    "PKColumns": "",
+    "TableColumns": "searchid,line_no,intab,incol,inoperation,inval,hival,ingroup,injoin",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "search_groups",
+    "PKColumns": "grpname,tabname",
+    "TableColumns": "grpname,tabname,join_type",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "search_header",
+    "PKColumns": "",
+    "TableColumns": "searchid,grpname,ownername,searchname,searchdesc,is_public",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "search_keys",
+    "PKColumns": "tabname,joinalias",
+    "TableColumns": "tabname,keyname,joinalias",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "search_nxtno",
+    "PKColumns": "",
+    "TableColumns": "tab_name,next_no",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sec_user_menu_cache",
+    "PKColumns": "login_id",
+    "TableColumns": "login_id,menu,reset,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sectb_access",
+    "PKColumns": "",
+    "TableColumns": "uid,usertype,stampid,stampdate,stamptime",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sectb_action_feature",
+    "PKColumns": "area,controller,action,feature_id",
+    "TableColumns": "area,controller,action,feature_id,read_access_resource,write_access_resource,description,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sectb_action_resource",
+    "PKColumns": "area,controller,action",
+    "TableColumns": "area,controller,action,read_access_resource,write_access_resource,description,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sectb_crosswalk",
+    "PKColumns": "spiuser",
+    "TableColumns": "spiuser,windomain,winuser",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sectb_license",
+    "PKColumns": "id",
+    "TableColumns": "id,uid,name,description,active,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sectb_package",
+    "PKColumns": "",
+    "TableColumns": "package,descript,stampid,stampdate,stamptime",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sectb_privilege",
+    "PKColumns": "",
+    "TableColumns": "priv_code,descript,stampid,stampdate,stamptime",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sectb_profile",
+    "PKColumns": "",
+    "TableColumns": "sec_attach,ad_integrate,ad_val_groups,ad_limit_adgroups,ad_synch_time",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sectb_resource",
+    "PKColumns": "",
+    "TableColumns": "usertype,package,subpack,func,priv_code,descript,stampid,stampdate,stamptime",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sectb_roles",
+    "PKColumns": "",
+    "TableColumns": "role_id,role_descript,ad_group,role_status,stampid,stampdate,stamptime",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sectb_subpack",
+    "PKColumns": "",
+    "TableColumns": "subpack,descript,stampid,stampdate,stamptime",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sectb_user",
+    "PKColumns": "",
+    "TableColumns": "uid,lname,fname,email,building,bld_group,dept,fund,orgn,project,user_dba,qwarn,qlimit,stampid,stampdate,stamptime",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sectb_usrviw",
+    "PKColumns": "",
+    "TableColumns": "user_id,viewcode,view_txt,ent_date,ent_operator,upd_date,upd_operator",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "secure_elements",
+    "PKColumns": "field_name",
+    "TableColumns": "field_name,secure_id,secure_name,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "setup_misc",
+    "PKColumns": "",
+    "TableColumns": "tax_yr,typ1,amt1,typ2,amt2,typ3,amt3,typ5,amt5,typ6,amt6,typ7,amt7,typ8,amt8,typ10,amt10,typ13,amt13,typ14,amt14,typ15a,amt15a,typ15b,amt15b,inc1,inc2,inc3,inc5,inc6,inc7,inc8,inc10,inc13,inc14,inc15a,inc15b,typ11,amt11,inc11",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "setup1099",
+    "PKColumns": "",
+    "TableColumns": "tax_yr,contact,payer_name,payer_address,payer_city,payer_state,payer_zip,payer_phone,payer_ein,payer_name_control,trans_code,fs_filer,state_number,prt_detail,media_code,email,op_type,flg_print,p_name,comp_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "shared_info",
+    "PKColumns": "empl_no",
+    "TableColumns": "empl_no,password,uid,chg_pwd,user_dcid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "shared_info_hist",
+    "PKColumns": "empl_no,change_date_time",
+    "TableColumns": "empl_no,password,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "shdtable",
+    "PKColumns": "",
+    "TableColumns": "code,desc_x,hs_flag,max_step,num_ranges,days_worked,hours_day,bn_flag,state_hours_day",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "shipping",
+    "PKColumns": "",
+    "TableColumns": "code,address1,address2,address3,address4,city,state_id,zip",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "site_info",
+    "PKColumns": "",
+    "TableColumns": "site_code,type,name,state_id,optional1,optional2,sub_site_code,sw_version,district_type",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sjournal",
+    "PKColumns": "",
+    "TableColumns": "je_number,description,key_orgn,account,project,proj_acct,debit_amt,credit_amt,hold_flg,date_entered,entered_by,batch,item_desc,row_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "source",
+    "PKColumns": "",
+    "TableColumns": "fund_source,fund_source_desc",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sourceamt",
+    "PKColumns": "",
+    "TableColumns": "fiscal_yr,fund_source,fund_type,amount,change_time,change_date,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "spi_column_info",
+    "PKColumns": "table_name,column_name",
+    "TableColumns": "table_name,column_name,ui_control_type,val_list,val_list_disp,val_tbl_name,val_col_code,val_col_desc,val_sql_where,val_order_by_code,val_disp_format,sec_package,sec_subpackage,column_width,change_date_time,change_uid,sec_feature",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "spi_column_names",
+    "PKColumns": "table_name,column_name,culture_code",
+    "TableColumns": "table_name,column_name,culture_code,column_description,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "SPI_INTEGRATION_DET",
+    "PKColumns": "DISTRICT,PRODUCT,OPTION_NAME",
+    "TableColumns": "DISTRICT,PRODUCT,OPTION_NAME,OPTION_VALUE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "SPI_INTEGRATION_HDR",
+    "PKColumns": "DISTRICT,PRODUCT",
+    "TableColumns": "DISTRICT,PRODUCT,DESCRIPTION,PACKAGE,SUBPACKAGE,FEATURE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "SPI_INTEGRATION_SESSION_DET",
+    "PKColumns": "SESSION_GUID,VARIABLE_NAME",
+    "TableColumns": "SESSION_GUID,VARIABLE_NAME,VARIABLE_VALUE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "SPI_INTEGRATION_SESSION_HDR",
+    "PKColumns": "SESSION_GUID",
+    "TableColumns": "SESSION_GUID,TSTAMP",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "spi_option_excld",
+    "PKColumns": "search_type,table_name,column_name",
+    "TableColumns": "search_type,table_name,column_name,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "spi_option_list_field",
+    "PKColumns": "search_type,table_name,column_name",
+    "TableColumns": "search_type,table_name,column_name,display_order,is_hidden,formatter,navigation_param,column_label,is_sec_building_col,column_width,reserved,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "spi_option_name",
+    "PKColumns": "search_type",
+    "TableColumns": "search_type,option_name,navigate_to,btn_new_navigate,user_def_scr_type,use_programs,target_table,delete_table,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "spi_option_simple_search",
+    "PKColumns": "search_type,table_name,column_name,environment",
+    "TableColumns": "search_type,table_name,column_name,environment,display_order,operator,override_label,reserved,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "spi_option_table",
+    "PKColumns": "search_type,table_name",
+    "TableColumns": "search_type,table_name,sequence_num,sec_package,sec_subpackage,sec_feature,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "spi_table_join",
+    "PKColumns": "source_table,target_table,sequence_number",
+    "TableColumns": "source_table,target_table,sequence_number,join_table_1,join_column_1,join_table_2,join_column_2,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "spi_table_names",
+    "PKColumns": "table_name",
+    "TableColumns": "table_name,table_description,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "spi_user_sort",
+    "PKColumns": "login_id,sort_type,sort_number,sequence_num",
+    "TableColumns": "login_id,sort_type,sort_number,sequence_num,table_name,screen_type,screen_number,program_id,column_name,field_number,sort_order,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "spilicense",
+    "PKColumns": "",
+    "TableColumns": "package,subpackage,option_name,username,description,install_date,enabled,license_key,checksum,expiration_date,user_count",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "st2table",
+    "PKColumns": "",
+    "TableColumns": "state_id,pay_freq,marital,ear,amt,per",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "st3table",
+    "PKColumns": "",
+    "TableColumns": "state_id,pay_freq,marital,cred",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "state_fullacct",
+    "PKColumns": "",
+    "TableColumns": "state_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "states",
+    "PKColumns": "code",
+    "TableColumns": "code,desc_x,code1",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "stathist",
+    "PKColumns": "",
+    "TableColumns": "empl_no,stat,statdt",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "statustb",
+    "PKColumns": "code",
+    "TableColumns": "code,desc_x",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sttable",
+    "PKColumns": "",
+    "TableColumns": "state_id,pay_freq,marital,account,stan_rate,stan_min,stan_max,mar_exemp,depend,supp_per",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "suffix_table",
+    "PKColumns": "",
+    "TableColumns": "suffix_code",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sv_search_detail",
+    "PKColumns": "row_id",
+    "TableColumns": "row_id,search_id,field_name,value",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "sv_search_master",
+    "PKColumns": "search_id",
+    "TableColumns": "search_id,form_name,uid,pgm_run_cmd",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "systb_columns",
+    "PKColumns": "tabname,colname",
+    "TableColumns": "tabname,colname,descript1,descript2,descript3,descript4,change_date,change_time,change_uid,table_help,friendly_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "systb_tables",
+    "PKColumns": "tabname",
+    "TableColumns": "tabname,package,subpack,customer,descript1,descript2,descript3,descript4,change_date,change_time,change_uid,friendly_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "t_employee",
+    "PKColumns": "",
+    "TableColumns": "empl_no,password,dept_code,super_flag",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "t_levtable",
+    "PKColumns": "lv_code,pay_code",
+    "TableColumns": "lv_code,pay_code",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "t1099",
+    "PKColumns": "",
+    "TableColumns": "form_1099,code,descrip,row_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "t99rmain",
+    "PKColumns": "",
+    "TableColumns": "taxyr,ename,addr1,addr2,city,state_id,zip,zipext,phone,eid,stid,flg_name,flg_ein,flg_sid,flg_control,flg_form,term_code,comp_name,flg_media,density,notify,pnc_1099,transco_1099,fs_file_1099,prt_detail_1099,prt_empdept_1099,contact,pid,faxno,email,flg_print,p_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "task_table",
+    "PKColumns": "task_id",
+    "TableColumns": "task_id,task_name,spi_defined,workflow_type",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "tertable",
+    "PKColumns": "code",
+    "TableColumns": "code,desc_x,state_term_code",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "transact",
+    "PKColumns": "",
+    "TableColumns": "trans_no,yr,period,t_c,gl_key_orgn,disb_gl_key_orgn,key_orgn,account,project,proj_acct,gl_recv,gl_cash,trans_date,enc_no,je_number,check_no,ck_date,cleared,trans_amt,liquid,vend_no,invoice,p_f,c_1099,cancel,due_date,disc_date,disc_amt,disc_per,reported,description,date_entered,operator,batch,je_desc,qty_paid,qty_rec,line_no,warrant,bnk_code,sales_tax,use_tax,clear_date,alt_vend_no,row_id,gl_recv_key_orgn,gl_cash_key_orgn,bankacct,check_bankacct,cash_clear_keyorgn,cash_clear_acct,group_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "transnotes",
+    "PKColumns": "",
+    "TableColumns": "id_number,note_type,lino,vend_no,trans_date,description",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "upload_detail",
+    "PKColumns": "",
+    "TableColumns": "template_name,column_name,column_number",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "upload_header",
+    "PKColumns": "",
+    "TableColumns": "template_name,template_type,template_format",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "user_def",
+    "PKColumns": "ln_type,indx,page_no",
+    "TableColumns": "ln_type,indx,page_no,slabel,type_check,table_name,help_text,default_val,req,valid_if",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "user_profile",
+    "PKColumns": "user_id",
+    "TableColumns": "user_id,combo_type,impromptu_exe,upfront_exe,webcenter_exe,excel_exe,browser_exe,building,pr_command,use_tab_pur,excel_opt,keyboard_map,mouse_control,notify_type,screen_height,screen_width,document_sort,pref_dashboard",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "user_ref",
+    "PKColumns": "prefx,code",
+    "TableColumns": "prefx,code,desc_x",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ut_integration_fields",
+    "PKColumns": "table_name,field_name",
+    "TableColumns": "table_name,field_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "uvprofile",
+    "PKColumns": "",
+    "TableColumns": "wave_id,district_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "vac_content",
+    "PKColumns": "row_id",
+    "TableColumns": "row_id,content_type,content_page,content_text",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "vac_profile",
+    "PKColumns": "row_id",
+    "TableColumns": "row_id,setting_key,setting_value",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "vbs_prof",
+    "PKColumns": "",
+    "TableColumns": "award_rec,min_cvt_amt,user_bid,next_bidno,preencum_bid,high_lev,min_bid_amt,alt_awrd,format_commod",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "vem_prof",
+    "PKColumns": "",
+    "TableColumns": "client,system,company,auto_ser,next_ser,due_acct,user_1,user_2,user_3,user_4,user_5,ns_exp_acct,ns_clr_orgn,ns_clr_acct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "venact",
+    "PKColumns": "",
+    "TableColumns": "vend_no,date_chg,time_chg,field_no,field_name,old_value,new_value,operator,op_type",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "vendaddr",
+    "PKColumns": "",
+    "TableColumns": "vend_no,vend_seq,s_addr_1,s_addr_2,s_city,s_state,s_zip,contact,cont_phone,comm_desc,fax_no,po_print",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "vendor",
+    "PKColumns": "vend_no",
+    "TableColumns": "vend_no,ven_name,alpha_name,b_addr_1,b_addr_2,b_city,b_state,b_zip,b_contact,b_phone,b_fax,p_addr_1,p_addr_2,p_city,p_state,p_zip,p_contact,p_phone,p_fax,fed_id,date_last,paid_ytd,ytd_misc,ordered_ytd,prev_ytd,prev_misc,prev_bal,comm1,comm2,comm3,comm4,comm5,comm6,comm7,comm8,comm9,comm10,comm11,form_1099,disc_ind,discount,disc_days,net_days,stax_rate,utax_rate,empl_vend,empl_no,type_misc,hold_flg,min_check_amt,type_g,ytd_g,prev_g,type_int,ytd_int,prev_int,bid_only,tax_code,dba_name,web_url,inactive_flg,ten99_ven_name,ten99_addr_1,ten99_addr_2,ten99_city,ten99_state,ten99_zip",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "viewid",
+    "PKColumns": "",
+    "TableColumns": "view_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "vnd_misc",
+    "PKColumns": "",
+    "TableColumns": "vend_no,bank_trans_code,bank_code,bank_acct_no,bank_routing,ap_email,po_email,eft_flag,link_vend_no,vend_acct,po_flag,use_hrm_bank",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "vnd_ssn",
+    "PKColumns": "vend_no",
+    "TableColumns": "vend_no,ssn,same_flag",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "vndasoundex",
+    "PKColumns": "",
+    "TableColumns": "soundcode,vend_no,alpha_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "vndnsoundex",
+    "PKColumns": "",
+    "TableColumns": "soundcode,vend_no,ven_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "w2box12",
+    "PKColumns": "",
+    "TableColumns": "label,dbp_code,code1,code2,code3,code4,code5,code6,code7,code8,code9,code10,code11,code12,code13,code14,code15,code16,code17,code18,code19,code20,code21,code22,code23,code24,code25,code26,code27,code28,code29,code30,code31,code32,code33,code34,code35,code36,code37,code38,code39,code40",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "w2box14",
+    "PKColumns": "",
+    "TableColumns": "label,dbp_code,code1,code2,code3,code4,code5,code6,code7,code8,code9,code10,code11,code12,code13,code14,code15,code16,code17,code18,code19,code20,code21,code22,code23,code24,code25,code26,code27,code28,code29,code30,code31,code32,code33,code34,code35,code36,code37,code38,code39,code40",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "w2depension",
+    "PKColumns": "",
+    "TableColumns": "taxyr,batch_no,code_type,code,depflg",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "w2employee",
+    "PKColumns": "taxyr,batch_no,empl_no,seq_no",
+    "TableColumns": "taxyr,batch_no,empl_no,empl_type,seq_no,ssn,fname,lname,street,street2,city,state_id,zip,zipext,ind_statute,ind_deceased,ind_pension,ind_legal,ind_defcomp,ind_void,ind_3psick,alloctips,eic,fedtax,fedwages,ficatax,ficawage,soctips,medwage,medtax,b17a,amt_b17a,b17b,amt_b17b,b17c,amt_b17c,b17d,amt_b17d,b18a,amt_b18a,b18b,amt_b18b,b18c,amt_b18c,depcare,fringe,amt_457,amt_not457,statetax,statewage,statename,stat2tax,stat2wage,stat2name,localtax,localwage,localname,loca2name,loca2tax,loca2wage,chk_locn,f_state,f_postal,country,b18d,amt_b18d,b18e,amt_b18e,m_name,name_suffix,ind_corrected",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "w2labels",
+    "PKColumns": "",
+    "TableColumns": "code,desc_x,code1",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "w2load",
+    "PKColumns": "",
+    "TableColumns": "taxyr,batch_no,paygrp01,paygrp02,paygrp03,paygrp04,paygrp05,paygrp06,paygrp07,paygrp08,paygrp09,paygrp10,paygrp11,paygrp12,paygrp13,paygrp14,paygrp15,paygrp16,paygrp17,paygrp18,paygrp19,paygrp20,paygrp21,paygrp22,paygrp23,paygrp24,depflg,dp01,dp02,dp03,dp04,dp05,dp06,dp07,dp08,dp09,dp10,pp01,pp02,pp03,pp04,pp05,pp06,pp07,pp08,pp09,pp10,pp11,pp12,pp13,pp14,pp15,pp16,pp17,pp18,pp19,pp20,pp21,pp22,pp23,pp24,pp25,pp26,pp27,pp28,pp29,pp30,ytdflg",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "w4lockin",
+    "PKColumns": "empl_no",
+    "TableColumns": "empl_no,active,letter_date,lifted_date",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wbassign_num",
+    "PKColumns": "",
+    "TableColumns": "iname,nxt_num",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wbud_prof",
+    "PKColumns": "",
+    "TableColumns": "rev_offset_acct,rev_offset_perc,auto_approve,require_notes",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wea_prof",
+    "PKColumns": "",
+    "TableColumns": "company_name,logo,eeo_req,eeo_statement,crimecheckreq,crimecheck,crimedl_flg,crimebd_flg,admin_email,login_comment,edu_comment,exp_comment,ref_comment,cert_comment",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wea_supplement",
+    "PKColumns": "",
+    "TableColumns": "company_name,use_flag,question1,question2,question3,question4,question5,question6,question7,question8,question9,question10,question11,question12,job_no",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "web_admin",
+    "PKColumns": "",
+    "TableColumns": "empl_no,prod_name,descript,val",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "web_admin_options",
+    "PKColumns": "",
+    "TableColumns": "prod_name,descript,long_descript,opt_type,category",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "web_disclaim",
+    "PKColumns": "",
+    "TableColumns": "prod_name,id,descript,disclaim,long_descript",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "web_prof_cat",
+    "PKColumns": "category",
+    "TableColumns": "category,descript",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "web_prof_type",
+    "PKColumns": "row_id",
+    "TableColumns": "prod_name,row_id,prof_type,title,item_type,input_format,is_required,validation,selected_val,deselected_val,descript",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "web_profile",
+    "PKColumns": "",
+    "TableColumns": "prod_name,id,descript,val,long_descript,prof_type,category",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "web_sec_quest",
+    "PKColumns": "question_id",
+    "TableColumns": "question_id,question_text",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "web_sec_resp",
+    "PKColumns": "empl_no,question_id",
+    "TableColumns": "empl_no,question_id,question_response",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wet_employee",
+    "PKColumns": "empl_no",
+    "TableColumns": "empl_no,super_flag,block_flag",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wet_paytable",
+    "PKColumns": "pay_code",
+    "TableColumns": "pay_code,wet_comp_pay_code,wet_use_for_calc,wet_description",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wf_dataset",
+    "PKColumns": "dataset_id",
+    "TableColumns": "dataset_id,title,search_type,key_table,key_fields,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wf_launch_types",
+    "PKColumns": "launch_type",
+    "TableColumns": "launch_type,title,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wf_roles",
+    "PKColumns": "role_id",
+    "TableColumns": "role_id,title,status,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "with_rate_sched",
+    "PKColumns": "code",
+    "TableColumns": "code,description,active",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wkrdept",
+    "PKColumns": "",
+    "TableColumns": "work_cd,orgn,reg_sal,ot_sal",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wkrtable",
+    "PKColumns": "",
+    "TableColumns": "work_cd,title,rate,reg_sal,ot_sal,with_acct,fringe_acct,encumber,frng_liab_acct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "workflow_codes",
+    "PKColumns": "workflow_type_id",
+    "TableColumns": "workflow_type_id,workflow_name,package",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "workflow_config",
+    "PKColumns": "row_id",
+    "TableColumns": "row_id,spisystem,workflow_service,subgroup,setting_key,setting_value,field_type,field_values,field_length,field_label,field_tooltip",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "workflow_profile",
+    "PKColumns": "id",
+    "TableColumns": "id,var_name,var_value,create_date,update_date,created_by,updated_by",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wrk1099m",
+    "PKColumns": "",
+    "TableColumns": "tax_yr,vend_no,fed_id,alt_vend_no,ven_name,address1,address2,city,state_id,zip,acct_num,tin_notice2,box1,box2,box3,box4,box5,box6,box7,box8,box9,box10,box11,box12,box13,box14,box15,box16,box17,box18,box15a,box15b,forgn_sw,f_state,f_postal,country,dba_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wrk1099n",
+    "PKColumns": "",
+    "TableColumns": "tax_yr,vend_no,fed_id,alt_vend_no,ven_name,address1,address2,city,state_id,zip,acct_num,tin_notice2,box1,box2,box4,box5,box6,box7,forgn_sw,f_state,f_postal,country,dba_name,alt_ven_name",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wrkdeduct",
+    "PKColumns": "",
+    "TableColumns": "taxyr,empl_no,ded_cd,taken_y,cont_y,sal_y",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wrkemployee",
+    "PKColumns": "",
+    "TableColumns": "taxyr,empl_no,group_x,fic_ext1,fic_ext2,ssn,l_name,f_name,addr1,addr2,mail_city,mail_state,zip,zipext,home_orgn,term_code,state_id,pr_state,locl,pr_local,tearn_y,ftearn_y,fiearn_y,stearn_y,s2earn_y,loearn_y,l2earn_y,allow_y,nocash_y,fedtax_y,fictax_y,statax_y,st2tax_y,loctax_y,lt2tax_y,eic_y,ficaern1,ficatax1,medearn1,medatax1,ficaern2,ficatax2,medearn2,medatax2,chk_locn,fed_marital,fed_dep,add_fed,sta_marital,sta_dep,add_state,loc_marital,loc_dep,add_local,m_name,name_suffix",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wrkemployer",
+    "PKColumns": "",
+    "TableColumns": "taxyr,batch_no,eid,stid,ename,street,city,state_id,zip,zipext,state2,stid2,state3,stid3,state4,stid4,state5,stid5,street2",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wrkfica",
+    "PKColumns": "",
+    "TableColumns": "taxyr,fic_med,emp_per,emp_max,empr_per,empr_max",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wrkmain",
+    "PKColumns": "",
+    "TableColumns": "taxyr,ename,addr1,addr2,city,state_id,zip,zipext,phone,eid,stid,flg_name,flg_ein,flg_sid,flg_control,flg_form,term_code,comp_name,flg_media,density,notify,pnc_1099,transco_1099,fs_file_1099,prt_detail_1099,prt_empdept_1099,contact,pid,faxno,email",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "wrkpaycode",
+    "PKColumns": "",
+    "TableColumns": "taxyr,empl_no,pay_code,sal_y",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "aca_aggregate_ale",
+    "PKColumns": "",
+    "TableColumns": "eid,taxyr,aggr_ale_name,aggr_ale_eid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "aca_ben_class",
+    "PKColumns": "",
+    "TableColumns": "type,start_date,end_date,class",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "aca_empl_ovrd",
+    "PKColumns": "",
+    "TableColumns": "empl_no,offer_code_all,offer_code_jan,offer_code_feb,offer_code_mar,offer_code_apr,offer_code_may,offer_code_jun,offer_code_jul,offer_code_aug,offer_code_sep,offer_code_oct,offer_code_nov,offer_code_dec,emp_share_all,emp_share_jan,emp_share_feb,emp_share_mar,emp_share_apr,emp_share_may,emp_share_jun,emp_share_jul,emp_share_aug,emp_share_sep,emp_share_oct,emp_share_nov,emp_share_dec,safe_harbor_all,safe_harbor_jan,safe_harbor_feb,safe_harbor_mar,safe_harbor_apr,safe_harbor_may,safe_harbor_jun,safe_harbor_jul,safe_harbor_aug,safe_harbor_sep,safe_harbor_oct,safe_harbor_nov,safe_harbor_dec,paper_1095c",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "acct_components",
+    "PKColumns": "lvl,code",
+    "TableColumns": "lvl,code,title,acct1,acct2,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "acct4table",
+    "PKColumns": "",
+    "TableColumns": "acct,acctkeyup,accttitle",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "accttype",
+    "PKColumns": "",
+    "TableColumns": "acctnum,description",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "actor",
+    "PKColumns": "",
+    "TableColumns": "row_id,uid,supervisor_id,lvl,super_flag,role_id,notify_type,alt_super_id,link_id,approval_group",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "addempldetail",
+    "PKColumns": "",
+    "TableColumns": "row_id,proc_step,empl_no,complete,navigation,lastupddate,lastupdtime,lastupduid",
     "TableHasChangeDT": ""
   },
   {
@@ -2702,13 +5519,6 @@ $dbDefinitions = @'
     "name": "AMApplicationResponses",
     "PKColumns": "ApplicationResponseID",
     "TableColumns": "ApplicationResponseID,ApplicationID,QuestionID,QuestionVersion,QuestionCategoryID,QuestionOrder,DocumentCount,DocumentLink,PostingID,OtherOrMain,ResponseID,Response,Score,HRVerifiedDate,HRVerifiedBy,HRExpirationDate,HRVerifyStatus,VerifyComments,Create_When,Create_Who,Update_When,Update_Who,Unique_Key,ExternalComments,ApplicantComments,DisplayComments",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "AMCodes",
-    "PKColumns": "Unique_Key",
-    "TableColumns": "CodeCategory,CodeValue,CodeFlag,CodeStatus,ShortDescription,LongDescription,Create_When,Create_Who,Update_When,Update_Who,Unique_Key",
     "TableHasChangeDT": ""
   },
   {
@@ -2916,13 +5726,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "AMSetting",
-    "PKColumns": "Unique_Key",
-    "TableColumns": "SettingKey,SettingGroup,Text1,Text2,Text3,Text4,Text5,Num1,Num2,Num3,Date1,Date2,Date3,Decimal1,Decimal2,Decimal3,TextBlock,Unique_Key",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "AMStaticCodes",
     "PKColumns": "StaticCodeListName,CodeValue",
     "TableColumns": "StaticCodeListName,CodeValue,CodeDescription,Create_When,Create_Who,Update_When,Update_Who,Unique_Key",
@@ -3035,30 +5838,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "approval",
-    "PKColumns": "",
-    "TableColumns": "app_group,description,app_chgord,notify_app,notify_req,notify_alt",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "appuser",
     "PKColumns": "",
     "TableColumns": "app_id,page_no,ftext1,ftext2,ftext3,ftext4,ftext5,ftext6,ftext7,ftext8,ftext9,ftext10,tcode1,tcode2,tcode3,tcode4,tcode5,tcode6,tcode7,tcode8,tcode9,tcode10,comment1,comment2",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "asntable",
-    "PKColumns": "",
-    "TableColumns": "code,desc_x,eeo,state_assign_num,hq_area,core_flag,fin_field1,fin_field2,fin_field3,fin_field4,fin_field5,user_1",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "AspNetRoles",
-    "PKColumns": "Id",
-    "TableColumns": "Id,Name,NormalizedName,ConcurrencyStamp",
     "TableHasChangeDT": ""
   },
   {
@@ -3091,34 +5873,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "assetif",
-    "PKColumns": "rec_no",
-    "TableColumns": "acqdate,des,vendor,dept,po_no,line_no,unitsx,unitcost,initcost,recvd,commodity,check_no,rec_no,vend_no,invoice",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "assets",
-    "PKColumns": "",
-    "TableColumns": "tagno,improvement_num,acqdate,des,fund_source,vendor,insurer,mfr,model,serial_no,dept,loccode,grantx,catcode,cat_class,cond,po,checkno,unitsx,unitcost,initcost,salvage,insvalue,sale_amt,accdep,estlife,deplife,post_togl,invent,maint,retdate,stats,user_1,user_2,user_3,user_4,user_5,dep_flag,dep_method,curdep,depdate,dep_basis,last_post_date,prop_fund,cap_asset",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "assign_tbl",
-    "PKColumns": "tbl_name",
-    "TableColumns": "tbl_name,nxt_num",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "assignment",
-    "PKColumns": "empl_no,indx",
-    "TableColumns": "empl_no,asncode,perc_time,period,location,primary_asn,class_cd,position,hqarea,hqreason,num_classes,fin_field1,fin_field2,fin_field3,fin_field4,fin_field5,user_1,user_2,user_3,user_4,user_5,user_6,user_7,user_8,user_9,gradepk,gradekg,grade01,grade02,grade03,grade04,grade05,grade06,grade07,grade08,grade09,grade10,grade11,grade12,sif_job_class,sif_program_type,sif_funding_source,grade13,grade14,grade15,grade16,grade17,grade18,grade19,grade20,grade21,grade22,grade23,grade24,grade25,indx",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "assoc_approvers",
     "PKColumns": "association_id,approver_emp_id",
     "TableColumns": "association_id,approver_emp_id,approval_level,created_date,created_by,modified_by",
@@ -3147,34 +5901,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "attach_detail",
-    "PKColumns": "row_id",
-    "TableColumns": "row_id,form_name,column_name,field_name,field_type,notes",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "attach_master",
-    "PKColumns": "form_name",
-    "TableColumns": "form_name,table_name,notes",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "attend",
-    "PKColumns": "row_id",
-    "TableColumns": "empl_no,pay_code,start_date,stop_date,lv_hrs,remarks,check_date,status_flg,lv_code,pay_run,post_flg,sub_id,sub_pay_code,sub_pay_class,sub_pay_rate,sub_amt_paid,sub_loc,sub_tax_ind,sub_orgn,sub_acct,cal_val,row_id,sub_start,sub_stop,sub_hrs,dataset_instance_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "audit1099",
-    "PKColumns": "",
-    "TableColumns": "userid,change_date,change_time,change_type,tax_yr,vend_no,field_changed,orig_data,new_data,form_1099,alt_vend_no,row_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "audit1099r",
     "PKColumns": "",
     "TableColumns": "userid,change_date,change_type,taxyr,employee,field_changed,orig_data,new_data",
@@ -3189,9 +5915,23 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
+    "name": "auto_check_doc",
+    "PKColumns": "bankacct,row_id,doc_type",
+    "TableColumns": "bankacct,row_id,indx,doc_type",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
     "name": "auto_check_no",
+    "PKColumns": "bankacct,row_id,next_num",
+    "TableColumns": "bankacct,row_id,next_num",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "auto_check_no_bak",
     "PKColumns": "",
-    "TableColumns": "bankacct,doc_type,prefix,next_num",
+    "TableColumns": "bankacct,doc_type,next_num",
     "TableHasChangeDT": ""
   },
   {
@@ -3252,37 +5992,16 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
+    "name": "bacct_components",
+    "PKColumns": "yr,lvl,code",
+    "TableColumns": "yr,lvl,code,title,acct1,acct2,change_date_time,change_uid",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
     "name": "backord",
     "PKColumns": "",
     "TableColumns": "locn,ship_code,stock_no,req_no,req_line_no,quantity,trans_date,key_orgn,account,proj,proj_acct,person,remarks",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "backup_checksum",
-    "PKColumns": "",
-    "TableColumns": "tablename,package,rowarchive,timestamp",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "backup_log",
-    "PKColumns": "",
-    "TableColumns": "backupid,package,optype,username,requestdate,requesttime,tablecount,status",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bank_layout",
-    "PKColumns": "",
-    "TableColumns": "layout_cd,description,rec_type,file_pos,delimit,fld_name,fld_format,literal,pos_start,pos_stop,fld_length,batch_rec,cnt_sum,cnt_rec1,cnt_rec2,cnt_rec3,cnt_rec4,cnt_rec5,cnt_rec6,incl_decimal",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bankacct",
-    "PKColumns": "",
-    "TableColumns": "bankacct,key_orgn,account,feeflag,intflag",
     "TableHasChangeDT": ""
   },
   {
@@ -3380,7 +6099,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "bdedtable",
     "PKColumns": "ded_cd",
-    "TableColumns": "batch_no,eff_date,ded_cd,title,ck_title,freq,arrears,emp_meth,rate,low_max,mid_rate,mid_max,high_rate,with_acct,frng_meth,frng_rate,frng_acct,fed_exp,sta_exp,fic_exp,loc_exp,fed_fexp,sta_fexp,fic_fexp,loc_fexp,max_meth,vend_no,vend_pay_freq,bond_flag,frng_dist,frng_orgn,frng_proj,max_ded,max_ben,caf_flag,encumber,enc_num_times,enc_remaining,use_gross_field,eac_whatif,mandatory_flag,child_sup_flag,copy_bank_info,calc_pr_add_with",
+    "TableColumns": "batch_no,eff_date,ded_cd,title,ck_title,freq,arrears,emp_meth,rate,low_max,mid_rate,mid_max,high_rate,with_acct,frng_meth,frng_rate,frng_acct,fed_exp,sta_exp,fic_exp,loc_exp,fed_fexp,sta_fexp,fic_fexp,loc_fexp,max_meth,vend_no,vend_pay_freq,bond_flag,frng_dist,frng_orgn,frng_proj,max_ded,max_ben,caf_flag,encumber,enc_num_times,enc_remaining,use_gross_field,eac_whatif,mandatory_flag,child_sup_flag,copy_bank_info,calc_pr_add_with,frng_liab_acct",
     "TableHasChangeDT": ""
   },
   {
@@ -3388,13 +6107,6 @@ $dbDefinitions = @'
     "name": "bdeduct",
     "PKColumns": "empl_no,ded_cd,enroll_flg",
     "TableColumns": "eff_date,empl_no,ded_cd,status,account,start_x,stop_x,beff_date,ded_amt,cont_amt,num_deds,max_amt,max_fringe,arrears,chk_ind,bank,bt_code,bank_acct,enroll_flg,post_flg,operator,date_chg,addl_ded_gross,addl_frng_gross,desc_x,bank_code",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bdemo",
-    "PKColumns": "empl_no",
-    "TableColumns": "eff_date,empl_no,ssn,l_name,f_name,addr1,addr2,city,zip,hire_date,home_orgn,birthdate,base_loc,state_id,orig_hire,prev_lname,email_addr,info_rlease,home_phone,work_phone,emer_cont,emer_phone,phys_name,phys_phone,spouse_name,spouse_phone,post_flg,operator,date_chg,email_voucher,personal_email,cell_phone,other_phone,emer_cell_phone,m_name,name_suffix,preferred_name,gender_identity,ethnicity",
     "TableHasChangeDT": ""
   },
   {
@@ -3462,13 +6174,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "bempact",
-    "PKColumns": "",
-    "TableColumns": "empl_no,date_chg,table_name,field_name,old_value,new_value,operator,pay_ded_code,pay_ded_desc,time_chg",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "bempl_races",
     "PKColumns": "",
     "TableColumns": "empl_no,race_code,indx,race_order,race_prcnt",
@@ -3492,7 +6197,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "ben_chrg_override",
     "PKColumns": "row_id",
-    "TableColumns": "row_id,fund_bud_flag,yr,priority,ded_cd,empl_no,salary_orgn,salary_acct,charge_orgn,charge_acct",
+    "TableColumns": "row_id,fund_bud_flag,yr,priority,ded_cd,empl_no,salary_orgn,salary_acct,charge_orgn,charge_acct,salary_mask,charge_mask",
     "TableHasChangeDT": ""
   },
   {
@@ -3567,13 +6272,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "bexpledgr",
-    "PKColumns": "",
-    "TableColumns": "yr,key_orgn,account,budget_orgn,budget_acct,freeze,bud3,act3,bud2,act2,bud1,act1,bud_curr,act_ytd,act_prop,dept_base,dept_new,rec_base,rec_new,app_base,app_new,year2,year3,year4,year5",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "bfe2table",
     "PKColumns": "",
     "TableColumns": "batch_no,eff_date,pay_freq,marital,ear,amt,per,with_rate_sched_cd",
@@ -3590,7 +6288,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "bfictable",
     "PKColumns": "",
-    "TableColumns": "batch_no,eff_date,fic_med,emp_per,emp_max,empr_per,empr_max,lia_acct,frg_acct,frng_dist,frng_orgn,encumber",
+    "TableColumns": "batch_no,eff_date,fic_med,emp_per,emp_max,empr_per,empr_max,lia_acct,frg_acct,frng_dist,frng_orgn,encumber,frng_liab_acct",
     "TableHasChangeDT": ""
   },
   {
@@ -3679,9 +6377,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "bk_attend",
-    "PKColumns": "",
-    "TableColumns": "empl_no,pay_code,start_date,stop_date,lv_hrs,remarks,check_date,status_flg,lv_code,pay_run,post_flg,sub_id,sub_pay_code,sub_pay_class,sub_pay_rate,sub_amt_paid,sub_loc,sub_tax_ind,sub_orgn,sub_acct,cal_val,row_id,sub_start,sub_stop,sub_hrs,dataset_instance_id",
+    "name": "bk_auto_check_no",
+    "PKColumns": "bankacct,row_id,next_num",
+    "TableColumns": "bankacct,row_id,next_num",
     "TableHasChangeDT": ""
   },
   {
@@ -3693,100 +6391,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "bk_dedtable",
-    "PKColumns": "",
-    "TableColumns": "ded_cd,title,ck_title,freq,arrears,emp_meth,rate,low_max,mid_rate,mid_max,high_rate,with_acct,frng_meth,frng_rate,frng_acct,frng_dist,frng_orgn,frng_proj,fed_exp,sta_exp,fic_exp,loc_exp,fed_fexp,sta_fexp,fic_fexp,loc_fexp,max_meth,vend_no,vend_pay_freq,bond_flag,max_ded,max_ben,caf_flag,encumber,enc_num_times,enc_remaining,use_gross_field,eac_whatif,mandatory_flag,child_sup_flag,copy_bank_info,calc_pr_add_with",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_deduct",
-    "PKColumns": "",
-    "TableColumns": "empl_no,ded_cd,status,account,start_x,stop_x,beff_date,ded_amt,max_amt,max_fringe,arrears,cont_amt,num_deds,chk_ind,taken_c,taken_m,taken_q,taken_y,taken_i,taken_f,cont_c,cont_m,cont_q,cont_y,cont_i,cont_f,sal_c,sal_m,sal_q,sal_y,sal_f,bank,bt_code,bank_acct,enc_remaining,addl_ded_gross,addl_frng_gross",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_empuser",
-    "PKColumns": "",
-    "TableColumns": "empl_no,page_no,ftext1,ftext2,ftext3,ftext4,ftext5,ftext6,ftext7,ftext8,ftext9,ftext10,tcode1,tcode2,tcode3,tcode4,tcode5,tcode6,tcode7,tcode8,tcode9,tcode10,comment1,comment2",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_menu_applications",
-    "PKColumns": "app_id",
-    "TableColumns": "app_id,title,package,subpackage,func,spi_defined",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_menu_groups",
-    "PKColumns": "app_id,tab_id,group_id",
-    "TableColumns": "app_id,tab_id,group_id,title,package,subpackage,func,spi_defined",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_menu_options",
-    "PKColumns": "app_id,tab_id,group_id,option_id",
-    "TableColumns": "app_id,tab_id,group_id,option_id,title,progcall,callpath,package,subpackage,func,is_fglrun,is_sub_system,spi_defined",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_menu_tabs",
-    "PKColumns": "tab_id",
-    "TableColumns": "tab_id,title,package,subpackage,func,spi_defined",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_pay2file",
-    "PKColumns": "",
-    "TableColumns": "empl_no,ssn,l_name,f_name,chk_locn,addr1,addr2,addr3,zip,home_orgn,voucher,end_date,start_date,m_name,name_suffix",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "bk_payaddend",
     "PKColumns": "",
     "TableColumns": "empl_no,ded_cd,rec_no,batch,pay_run,end_date,run_type,due_date,case_no,amount,medical,fips_cd,terminated,row_id,trans_no",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_paycode",
-    "PKColumns": "",
-    "TableColumns": "empl_no,pay_code,p_amt,p_hours,mtd_amt,mtd_hours,qtd_amt,ytd_amt,cal_cycle_units,cal_cycle_amt",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_payfile",
-    "PKColumns": "",
-    "TableColumns": "empl_no,home_orgn,pdf,code,amount,fringe,orgn,proj,acct,pacct,arrears,check_no,hours,classify,dedgross,frngross,tax_ind,bank,bt_code,bank_acct,pay_cycle,chk_ind,flsa_flg,payrate",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_paygroups",
-    "PKColumns": "",
-    "TableColumns": "group_x,def_hours,pay_run,end_date,cur_run,run_desc,proc_sumfisc,start_date",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_payrate",
-    "PKColumns": "",
-    "TableColumns": "empl_no,rate_no,primry,group_x,pay_hours,days_worked,hours_day,incl_dock,no_pays,fte,pay_method,pay_cycle,pay_cd,classify,occupied,cal_type,range,step_x,rate,dock_rate,cont_flg,cont_days,override,annl_sal,cont_lim,cont_bal,cont_paid,cont_start,cont_end,pay_start,pay_end,summer_pay,status_x,pyo_date,pyo_rem_pay,pyo_days,pyo_rate,pyo_amt,dock_arrears_amt,dock_pays_remain",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_payroll",
-    "PKColumns": "",
-    "TableColumns": "empl_no,pay_freq,card_requ,sp1_amt,sp1_cd,sp2_amt,sp2_cd,sp3_amt,sp3_cd,chk_locn,last_paid,fed_exempt,fed_marital,fed_dep,add_fed,sta_exempt,state_id,pr_state,sta_marital,sta_dep,add_state,loc_exempt,locl,pr_local,loc_marital,loc_dep,add_local,fic_exempt,earn_inc,lv_date,lv1_cd,lv1_bal,lv1_tak,lv1_ear,lv2_cd,lv2_bal,lv2_tak,lv2_ear,lv3_cd,lv3_bal,lv3_tak,lv3_ear,lv4_cd,lv4_bal,lv4_tak,lv4_ear,lv5_cd,lv5_bal,lv5_tak,lv5_ear,lv6_cd,lv6_bal,lv6_tak,lv6_ear,lv7_cd,lv7_bal,lv7_tak,lv7_ear,lv8_cd,lv8_bal,lv8_tak,lv8_ear,lv9_cd,lv9_bal,lv9_tak,lv9_ear,lv10_cd,lv10_bal,lv10_tak,lv10_ear,tearn_c,tearn_m,tearn_q,tearn_y,tearn_ft,ftearn_c,ftearn_m,ftearn_q,ftearn_y,ftearn_ft,fiearn_c,fiearn_m,fiearn_q,fiearn_y,fiearn_ft,mdearn_c,mdearn_m,mdearn_q,mdearn_y,mdearn_ft,stearn_c,stearn_m,stearn_q,stearn_y,stearn_ft,s2earn_c,s2earn_m,l2earn_y,s2earn_y,s2earn_ft,loearn_c,loearn_m,loearn_q,loearn_y,loearn_ft,allow_c,allow_m,allow_q,allow_y,allow_ft,nocash_c,nocash_m,nocash_q,nocash_y,nocash_ft,fedtax_c,fedtax_m,fedtax_q,fedtax_y,fedtax_ft,fictax_c,fictax_m,fictax_q,fictax_y,fictax_ft,medtax_c,medtax_m,medtax_q,medtax_y,medtax_ft,statax_c,statax_m,statax_q,statax_y,statax_ft,st2tax_c,st2tax_m,lt2tax_y,st2tax_y,st2tax_ft,loctax_c,loctax_m,loctax_q,loctax_y,loctax_ft,eic_c,eic_m,eic_q,eic_y,eic_ft,rfiearn_y,rfictax_y,rmdearn_y,rmedtax_y,flsa_cycle_y,flsa_cycle_hrs,flsa_hours,flsa_amount,rfiearn_c,rfiearn_m,rfiearn_q,rfiearn_ft,rfictax_c,rfictax_m,rfictax_q,rfictax_ft,rmdearn_c,rmdearn_m,rmdearn_q,rmdearn_ft,rmedtax_c,rmedtax_m,rmedtax_q,rmedtax_ft,fed_tax_calc_cd,w4_sub_date,non_res_alien,ann_other_inc,ann_deductions,ann_tax_credit,pays_per_year",
     "TableHasChangeDT": ""
   },
   {
@@ -3835,14 +6442,14 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "bk_sumdetdist",
     "PKColumns": "",
-    "TableColumns": "yr,empl_no,pay_run,check_no,classify,rec_type,code,orgn,acct,fund,liab_acct,amount",
+    "TableColumns": "yr,empl_no,pay_run,check_no,classify,rec_type,code,orgn,acct,gl_key_orgn,liab_acct,amount",
     "TableHasChangeDT": ""
   },
   {
     "db": "eFin",
     "name": "bk_sumfiscdist",
     "PKColumns": "",
-    "TableColumns": "yr,empl_no,classify,rec_type,code,orgn,acct,fund,liab_acct,accr_amt,liq_amt,bal_amt,accr_status,load_date,load_user,post_date,post_user,delete_date,delete_user,complete_date,complete_user,orig_sal_orgn,orig_sal_acct,prim_sal_orgn,prim_sal_acct",
+    "TableColumns": "yr,empl_no,classify,rec_type,code,orgn,acct,gl_key_orgn,liab_acct,accr_amt,liq_amt,bal_amt,accr_status,load_date,load_user,post_date,post_user,delete_date,delete_user,complete_date,complete_user,orig_sal_orgn,orig_sal_acct,prim_sal_orgn,prim_sal_acct",
     "TableHasChangeDT": ""
   },
   {
@@ -3864,27 +6471,6 @@ $dbDefinitions = @'
     "name": "bk_task_table",
     "PKColumns": "",
     "TableColumns": "task_id,task_name,spi_defined,workflow_type",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_timecard",
-    "PKColumns": "",
-    "TableColumns": "empl_no,pay_code,hours,payrate,amount,orgn,account,proj,pacct,classify,pay_cycle,tax_ind,pay_run,subtrack_id,reported,user_chg,date_chg,flsa_cycle,flsa_flg,flsa_carry_ovr,ret_pers_code,loctaxcd",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_wkrdept",
-    "PKColumns": "",
-    "TableColumns": "work_cd,orgn,reg_sal,ot_sal",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bk_wkrtable",
-    "PKColumns": "",
-    "TableColumns": "work_cd,title,rate,reg_sal,ot_sal,with_acct,fringe_acct,encumber",
     "TableHasChangeDT": ""
   },
   {
@@ -3961,21 +6547,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "bloctable",
     "PKColumns": "",
-    "TableColumns": "batch_no,eff_date,location,description,pay_freq,marital,account,stan_rate,stan_min,stan_max,mar_exemp,depend,supp_per",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bnk_fld_name",
-    "PKColumns": "",
-    "TableColumns": "fld_code,description,tabl,col",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bnktable",
-    "PKColumns": "",
-    "TableColumns": "code,desc_x,ck_title,bank_code",
+    "TableColumns": "batch_no,eff_date,location,description,pay_freq,marital,account,stan_rate,stan_min,stan_max,mar_exemp,depend,supp_per,local_tax_type",
     "TableHasChangeDT": ""
   },
   {
@@ -4071,13 +6643,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "brevledgr",
-    "PKColumns": "",
-    "TableColumns": "yr,key_orgn,account,freeze,bud3,act3,bud2,act2,bud1,act1,bud_curr,act_ytd,act_prop,dept_base,dept_new,rec_base,rec_new,app_base,app_new,year2,year3,year4,year5",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "brstable",
     "PKColumns": "",
     "TableColumns": "batch_no,eff_date,range,desc_x,step_1,pcnt_1,step_2,pcnt_2,step_3,pcnt_3,step_4,pcnt_4,step_5,pcnt_5,step_6,pcnt_6,step_7,pcnt_7,step_8,pcnt_8,step_9,pcnt_9,step_10,pcnt_10,step_11,pcnt_11,step_12,pcnt_12,step_13,pcnt_13,step_14,pcnt_14,step_15,pcnt_15,step_16,pcnt_16,step_17,pcnt_17,step_18,pcnt_18,step_19,pcnt_19,step_20,pcnt_20,step_21,pcnt_21,step_22,pcnt_22,step_23,pcnt_23,step_24,pcnt_24,step_25,pcnt_25,step_26,pcnt_26,step_27,pcnt_27,step_28,pcnt_28,step_29,pcnt_29,step_30,pcnt_30,step_31,pcnt_31,step_32,pcnt_32,step_33,pcnt_33,step_34,pcnt_34,step_35,pcnt_35,step_36,pcnt_36,step_37,pcnt_37,step_38,pcnt_38,step_39,pcnt_39,step_40,pcnt_40,step_41,pcnt_41,step_42,pcnt_42,step_43,pcnt_43,step_44,pcnt_44,step_45,pcnt_45,step_46,pcnt_46,step_47,pcnt_47,step_48,pcnt_48,step_49,pcnt_49,step_50,pcnt_50,step_51,pcnt_51,step_52,pcnt_52,step_53,pcnt_53,step_54,pcnt_54,step_55,pcnt_55,step_56,pcnt_56,step_57,pcnt_57,step_58,pcnt_58,step_59,pcnt_59,step_60,pcnt_60,step_61,pcnt_61,step_62,pcnt_62,step_63,pcnt_63,step_64,pcnt_64,step_65,pcnt_65,step_66,pcnt_66,step_67,pcnt_67,step_68,pcnt_68,step_69,pcnt_69,step_70,pcnt_70,step_71,pcnt_71,step_72,pcnt_72,step_73,pcnt_73,step_74,pcnt_74,step_75,pcnt_75,step_76,pcnt_76,step_77,pcnt_77,step_78,pcnt_78,step_79,pcnt_79,step_80,pcnt_80,step_81,pcnt_81,step_82,pcnt_82,step_83,pcnt_83,step_84,pcnt_84,step_85,pcnt_85,step_86,pcnt_86,step_87,pcnt_87,step_88,pcnt_88,step_89,pcnt_89,step_90,pcnt_90,step_91,pcnt_91,step_92,pcnt_92,step_93,pcnt_93,step_94,pcnt_94,step_95,pcnt_95,step_96,pcnt_96,step_97,pcnt_97,step_98,pcnt_98,step_99,pcnt_99",
@@ -4106,6 +6671,13 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
+    "name": "bstate_payroll",
+    "PKColumns": "",
+    "TableColumns": "eff_date,post_flg,operator,date_chg,empl_no,sta_w4_sub_date,sta_ann_cred,sta_ann_ded",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
     "name": "bsttable",
     "PKColumns": "",
     "TableColumns": "batch_no,eff_date,state_id,pay_freq,marital,account,stan_rate,stan_min,stan_max,mar_exemp,depend,supp_per",
@@ -4129,21 +6701,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "btrans_acct",
     "PKColumns": "",
-    "TableColumns": "no_levels,orgn1b,orgn1e,orgn2b,orgn2e,orgn3b,orgn3e,orgn4b,orgn4e,orgn5b,orgn5e,orgn6b,orgn6e,orgn7b,orgn7e,orgn8b,orgn8e,orgn9b,orgn9e,orgn10b,orgn10e,acct1b,acct1e,acct2b,acct2e",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bubudacct",
-    "PKColumns": "",
-    "TableColumns": "yr,acct,sub_1_acct,sub_2_acct,sub_3_acct,title,pr_acct,pos,posit_per,curr_yr,dept_base,rec_base,yr2_per,yr3_per,yr4_per,yr5_per,month1,month2,month3,month4,month5,month6,month7,month8,month9,month10,month11,month12,month13,proll_flg,reqpur_flg,war_flg,local_use",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "bubudorgn",
-    "PKColumns": "",
-    "TableColumns": "yr,key_orgn,lvl,fund,orgn1,orgn2,orgn3,orgn4,orgn5,orgn6,orgn7,orgn8,orgn9,title,enterprise,cash,budget,req_enc,disb_fund,total_rec,pr_orgn,curr_yr,dept_base,rec_base,yr2_per,yr3_per,yr4_per,yr5_per,proj_link,project,local_use",
+    "TableColumns": "no_levels,orgn1b,orgn1e,orgn2b,orgn2e,orgn3b,orgn3e,orgn4b,orgn4e,orgn5b,orgn5e,orgn6b,orgn6e,orgn7b,orgn7e,orgn8b,orgn8e,orgn9b,orgn9e,orgn10b,orgn10e,acct1b,acct1e,acct2b,acct2e,ledger_type,placeholder_text,acct_helpmsg",
     "TableHasChangeDT": ""
   },
   {
@@ -4155,23 +6713,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "bud_prof",
-    "PKColumns": "",
-    "TableColumns": "yr,sdate,edate,client,system,company,low_exp,hi_exp,low_rev,hi_rev,wbr,wpr,fund_title,orgn1_title,orgn2_title,orgn3_title,orgn4_title,orgn5_title,orgn6_title,orgn7_title,orgn8_title,orgn9_title,low_orgn,proj1_title,proj2_title,low_proj,e_full_acct,r_full_acct,proj3_title,proj4_title,proj5_title,proj6_title,proj7_title,proj8_title",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "budacctappr",
     "PKColumns": "",
     "TableColumns": "yr,period,key_orgn,account,batch,trn_no,trn_idx,type_flg,range_code,action_date,app_name,act,comment,trans_no",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "budactv",
-    "PKColumns": "",
-    "TableColumns": "empl_no,classify,pos,ded_cd,date_chg,table_name,field_name,old_value,new_value,operator",
     "TableHasChangeDT": ""
   },
   {
@@ -4200,13 +6744,6 @@ $dbDefinitions = @'
     "name": "budincr",
     "PKColumns": "",
     "TableColumns": "classify,eff_date,amt,prcent,c_b",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "budpayr",
-    "PKColumns": "",
-    "TableColumns": "classify,pos,freeze,empl_no,l_name,f_name,rate_no,primry,group_x,pay_hours,days_worked,hours_day,no_pays,fte,pay_method,pay_cd,cal_type,range,step_x,curr_rate,curr_sal,bud_dock,cont_flg,cont_days,override,cont_start,cont_end,summer_pay,sp1_cd,sp1_amt,sp2_cd,sp2_amt,sp3_cd,sp3_amt,prcnt_incr_a,amt_incr_a,bud_rate,bud_base,spec_base,incr_base,mdyr_incr_a,occupied,date_incr_a,date_incr_b,prcnt_incr_b,amt_incr_b,mdyr_incr_b,curr_date_a,curr_prcnt_a,curr_date_b,curr_prcnt_b",
     "TableHasChangeDT": ""
   },
   {
@@ -4246,30 +6783,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "business_rule_type",
-    "PKColumns": "rule_type",
-    "TableColumns": "rule_type,description,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "bvenclass",
     "PKColumns": "",
     "TableColumns": "vend_no,comm_cls",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "calendar",
-    "PKColumns": "",
-    "TableColumns": "cal_type,description,start_date,end_date,pay_start,pay_end,no_days",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "capital",
-    "PKColumns": "",
-    "TableColumns": "low_capital,hi_capital,min_value,max_value,cap_flag",
     "TableHasChangeDT": ""
   },
   {
@@ -4291,90 +6807,6 @@ $dbDefinitions = @'
     "name": "cashbpro",
     "PKColumns": "",
     "TableColumns": "title1,je_type,combine,bondfund,bondcash,bondliab,pstdrorgn,pstdracct,pstcrorgn,pstcracct,feedrorgn,feedracct,feecrorgn,feecracct,findrorgn,findracct,fincrorgn,fincracct,estdrorgn,estdracct,estcrorgn,estcracct",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "category",
-    "PKColumns": "",
-    "TableColumns": "catcode,cat_class,catdesc,accum_dep",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "cert_area",
-    "PKColumns": "",
-    "TableColumns": "code,desc_x,core_area",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "cert_type",
-    "PKColumns": "",
-    "TableColumns": "code,desc_x",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "chart_type",
-    "PKColumns": "",
-    "TableColumns": "chart_type,filename",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "check_ded",
-    "PKColumns": "",
-    "TableColumns": "empl_no,check_no,ded_cd,taken_y,taken_f,taken_i,cont_y,cont_f,cont_i,bank,bt_code",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "check_leave",
-    "PKColumns": "",
-    "TableColumns": "empl_no,check_no,lv_code,lv_bal,lv_tak,lv_ear,lv_nbr",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "check_paycode",
-    "PKColumns": "",
-    "TableColumns": "empl_no,check_no,pay_code,ytd_amt",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "check_record",
-    "PKColumns": "",
-    "TableColumns": "yr,period,disb_fund,fund,account,check_no,check_date,trans_date,vend_no,alt_vend_no,ven_name,amount,check_status,clear_date",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "check_ytd",
-    "PKColumns": "",
-    "TableColumns": "empl_no,check_no,chk_locn,email_voucher,fed_marital,fed_dep,add_fed,sta_marital,sta_dep,add_state,loc_marital,loc_dep,tearn_y,ftearn_y,tearn_ft,allow_y,nocash_y,dock_arrears_amt",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "checkhi2",
-    "PKColumns": "",
-    "TableColumns": "empl_no,check_no,earn_ded,code,amt,fringe,orgn,proj,acct,classify,hours,dedgross,frngross,flsa_flg,group_x,payrate",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "checkhis",
-    "PKColumns": "",
-    "TableColumns": "empl_no,check_no,iss_date,trans_date,dirdep,man_void,pay_run,status_cd,home_orgn,start_date",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "checkrec",
-    "PKColumns": "",
-    "TableColumns": "check_no,empl_no,iss_date,amount,bank,cleared,man_void",
     "TableHasChangeDT": ""
   },
   {
@@ -4449,30 +6881,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "chkstat",
-    "PKColumns": "rundate,disp_fund,check_no,chk_status",
-    "TableColumns": "rundate,disp_fund,check_no,vend_no,vend_name,chk_status,amount,description",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "clsincr",
     "PKColumns": "",
     "TableColumns": "classify,amt,prcent",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "clstable",
-    "PKColumns": "",
-    "TableColumns": "class_cd,title,schedule,wkr_comp,civil_ser,union_cd,division,contract_title,cal_type,ded_cd1,ded_cd2,ded_cd3,ded_cd4,ded_cd5,ded_cd6,ded_cd7,ded_cd8,ded_cd9,ded_cd10,lv1_cd,lv2_cd,lv3_cd,lv4_cd,lv5_cd,lv6_cd,lv7_cd,lv8_cd,lv9_cd,lv10_cd,pay_cd,pay_method,group_x,bar_unit",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "clstable_data2",
-    "PKColumns": "",
-    "TableColumns": "class_cd,job_type,job_descript",
     "TableHasChangeDT": ""
   },
   {
@@ -4501,13 +6912,6 @@ $dbDefinitions = @'
     "name": "code_crosswalk",
     "PKColumns": "",
     "TableColumns": "field_identifier,old_code,new_code",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "color_table",
-    "PKColumns": "",
-    "TableColumns": "color_name,color_code",
     "TableHasChangeDT": ""
   },
   {
@@ -4543,20 +6947,6 @@ $dbDefinitions = @'
     "name": "comtext",
     "PKColumns": "",
     "TableColumns": "com_code,rec_no,description",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "cont_misc_fields",
-    "PKColumns": "col_friendly_name",
-    "TableColumns": "col_friendly_name,db_table,db_column,future_yr",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "contract_adjust",
-    "PKColumns": "",
-    "TableColumns": "empl_no,pay_run,check_no,chk_ind,classify,adj_amt",
     "TableHasChangeDT": ""
   },
   {
@@ -4603,13 +6993,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "crdc_cert_type",
-    "PKColumns": "",
-    "TableColumns": "code,exclude_cred",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "crdc_de_xwalk",
     "PKColumns": "dept_code",
     "TableColumns": "dept_code,position",
@@ -4652,37 +7035,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "crdc_levtable",
-    "PKColumns": "",
-    "TableColumns": "lv_code,unit_type,crdc_include",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "crdc_locn",
     "PKColumns": "",
     "TableColumns": "code,orgn_loc,nces_school_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "crdc_lv_hist",
-    "PKColumns": "empl_no,yr,seq_no,reason_code",
-    "TableColumns": "empl_no,yr,save_date,seq_no,lv1_cd,lv1_bal,lv1_tak,lv1_ear,lv2_cd,lv2_bal,lv2_tak,lv2_ear,lv3_cd,lv3_bal,lv3_tak,lv3_ear,lv4_cd,lv4_bal,lv4_tak,lv4_ear,lv5_cd,lv5_bal,lv5_tak,lv5_ear,lv6_cd,lv6_bal,lv6_tak,lv6_ear,lv7_cd,lv7_bal,lv7_tak,lv7_ear,lv8_cd,lv8_bal,lv8_tak,lv8_ear,lv9_cd,lv9_bal,lv9_tak,lv9_ear,lv10_cd,lv10_bal,lv10_tak,lv10_ear,reason_code",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "crn_cfg",
-    "PKColumns": "",
-    "TableColumns": "available,crn_version,crn_desc,crn_server,gateway_server,gateway_url,add_params,district,use_ssl,change_date_time,change_uid,dsn_name,cat_db_name,cat_server_info",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "crn_cfg_renamed",
-    "PKColumns": "",
-    "TableColumns": "available,crn_version,crn_desc,crn_server,gateway_server,gateway_url,add_params,dsn_name,use_ssl,district,change_date_time,change_uid",
     "TableHasChangeDT": ""
   },
   {
@@ -4696,7 +7051,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "ct3inter",
     "PKColumns": "",
-    "TableColumns": "ind,orgn_proj,account,fringe,amount,ctrl_no,row_id,pay_run",
+    "TableColumns": "ind,orgn_proj,account,fringe,amount,ctrl_no,row_id,pay_run,orgn_liab,desc_x,fullacct,liab_fullacct",
     "TableHasChangeDT": ""
   },
   {
@@ -4736,13 +7091,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "dash_header",
-    "PKColumns": "",
-    "TableColumns": "plus_user_id,number_columns,col1_desc,col1_color,col2_desc,col2_color,col3_desc,col3_color,color_code_1,color_code_2,color_code_3,color_code_4,color_code_5,color_code_6,color_code_7,color_code_8,color_code_9,color_code_10,color_code_11,color_code_12,color_code_13,background_color",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "dash_master",
     "PKColumns": "",
     "TableColumns": "row_id,batch_mode,batch_frequency,graph_title,description,x_legend,y_legend,db_name,low_range_1,high_range_1,pic_range_1,low_range_2,high_range_2,pic_range_2,low_range_3,high_range_3,pic_range_3,qry_text,qry_graph_url,drill_params",
@@ -4767,13 +7115,6 @@ $dbDefinitions = @'
     "name": "dash_run",
     "PKColumns": "",
     "TableColumns": "row_id,plus_user_id,rundate,qry_status,qry_text,qry_params,qry_result,dash_detail_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "data_mask",
-    "PKColumns": "",
-    "TableColumns": "code,mask_desc,data_mask",
     "TableHasChangeDT": ""
   },
   {
@@ -4806,6 +7147,13 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
+    "name": "ded_liab_override",
+    "PKColumns": "",
+    "TableColumns": "yr,ded_code,ded_liab_orgn,ded_liab_acct,frng_liab_orgn,frng_liab_acct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
     "name": "dedaddend",
     "PKColumns": "",
     "TableColumns": "empl_no,ded_cd,rec_no,case_no,order_date,amount,medical,fips_cd,terminated,arrears,notes",
@@ -4813,30 +7161,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "dedfreqtable",
-    "PKColumns": "",
-    "TableColumns": "freq,title,no_times",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "dedtable",
-    "PKColumns": "ded_cd",
-    "TableColumns": "ded_cd,title,ck_title,freq,arrears,emp_meth,rate,low_max,mid_rate,mid_max,high_rate,with_acct,frng_meth,frng_rate,frng_acct,frng_dist,frng_orgn,frng_proj,fed_exp,sta_exp,fic_exp,loc_exp,fed_fexp,sta_fexp,fic_fexp,loc_fexp,max_meth,vend_no,vend_pay_freq,bond_flag,max_ded,max_ben,caf_flag,encumber,enc_num_times,enc_remaining,use_gross_field,eac_whatif,mandatory_flag,child_sup_flag,copy_bank_info,calc_pr_add_with",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "dedtbl_web",
     "PKColumns": "",
     "TableColumns": "ded_cd,link_ded,ded_txt,upd_flg,bnk_flg,dep_ben,fullnet_flg,inaccurate_flg",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "deduct",
-    "PKColumns": "empl_no,ded_cd",
-    "TableColumns": "empl_no,ded_cd,status,account,start_x,stop_x,beff_date,ded_amt,max_amt,max_fringe,arrears,cont_amt,num_deds,chk_ind,taken_c,taken_m,taken_q,taken_y,taken_i,taken_f,cont_c,cont_m,cont_q,cont_y,cont_i,cont_f,sal_c,sal_m,sal_q,sal_y,sal_f,bank,bt_code,bank_acct,enc_remaining,addl_ded_gross,addl_frng_gross",
     "TableHasChangeDT": ""
   },
   {
@@ -4869,23 +7196,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "degtable",
-    "PKColumns": "",
-    "TableColumns": "code,desc_x,deglvl,state_degree,lcredit,hcredit",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "dencumbr",
     "PKColumns": "",
     "TableColumns": "enc_no,line_no,vend_no,description,key_orgn,account,project,proj_acct,amount,date_enc,hold_flg,date_entered,entered_by,batch,yr,period,sales_tax,use_tax,where_created,row_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "department",
-    "PKColumns": "",
-    "TableColumns": "dept,dept_title",
     "TableHasChangeDT": ""
   },
   {
@@ -4904,27 +7217,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "dephist",
-    "PKColumns": "",
-    "TableColumns": "fiscal_yr,tagno,improvement_num,fund_type,func_name,activity,dep_orgn,dep_acct,accum_dep_acct,dep_amt,post_mth,post_year,post_date,post_togl",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "dept",
-    "PKColumns": "code",
-    "TableColumns": "code,desc_x",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "detdist",
-    "PKColumns": "rec_no",
-    "TableColumns": "empl_no,pay_date,rec_type,orgn_proj,acct,offset,code,amount,check_no,paygroup,void_man,pay_run,redist,classify,rec_no",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "detdist_ben_ovrd",
     "PKColumns": "dd_rec_no",
     "TableColumns": "dd_rec_no,orig_sal_orgn,orig_sal_acct,prim_sal_orgn,prim_sal_acct",
@@ -4934,7 +7226,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "dexpledgr",
     "PKColumns": "",
-    "TableColumns": "yr,period,key_orgn,account,description,amount,batch,trn_no,entered_by,type_flg,trn_idx,hold_flg,app_group,approve_required,approval_stat,hdr_desc",
+    "TableColumns": "yr,period,key_orgn,account,description,amount,batch,trn_no,entered_by,type_flg,trn_idx,hold_flg,app_group,approve_required,approval_stat,hdr_desc,group_id",
     "TableHasChangeDT": ""
   },
   {
@@ -4963,13 +7255,6 @@ $dbDefinitions = @'
     "name": "dist_cell",
     "PKColumns": "",
     "TableColumns": "fam_code,grd_code,chk_locn,dept,cell_no,low_amt,hi_amt,curr_amt,proj_amt",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "dist_orgn",
-    "PKColumns": "",
-    "TableColumns": "empl_no,rate_no,classify,pos,orgn,acct,prcent",
     "TableHasChangeDT": ""
   },
   {
@@ -5032,14 +7317,21 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "dmanchk",
     "PKColumns": "",
-    "TableColumns": "check_no,cancel,ck_date,enc_no,line_no,p_f,key_orgn,account,project,proj_acct,vend_no,c_1099,gl_cash,invoice,trans_amt,description,hold_flg,date_entered,entered_by,batch,yr,period,qty_paid,qty_rec,disc_date,disc_amt,sales_tax,use_tax,alt_vend_no,row_id,stu_trans_no,disb_fund",
+    "TableColumns": "check_no,cancel,ck_date,enc_no,line_no,p_f,key_orgn,account,project,proj_acct,vend_no,c_1099,gl_cash,invoice,trans_amt,description,hold_flg,date_entered,entered_by,batch,yr,period,qty_paid,qty_rec,disc_date,disc_amt,sales_tax,use_tax,alt_vend_no,row_id,stu_trans_no,disb_gl_key_orgn,gl_cash_key_orgn,gl_key_orgn,bankacct,due_to_key_orgn,due_to_account",
     "TableHasChangeDT": ""
   },
   {
     "db": "eFin",
     "name": "dpayable",
     "PKColumns": "row_id",
-    "TableColumns": "trans_no,enc_no,line_no,p_f,key_orgn,account,project,proj_acct,vend_no,c_1099,gl_cash,due_date,invoice,amount,description,single_ck,disc_date,disc_amt,voucher,hold_flg,date_entered,entered_by,batch,yr,period,qty_paid,qty_rec,sales_tax,use_tax,alt_vend_no,row_id,app_group,payable_src,disc_per,approve_required,approval_stat,stu_trans_no",
+    "TableColumns": "trans_no,enc_no,line_no,p_f,key_orgn,account,project,proj_acct,vend_no,c_1099,gl_cash,due_date,invoice,amount,description,single_ck,disc_date,disc_amt,voucher,hold_flg,date_entered,entered_by,batch,yr,period,qty_paid,qty_rec,sales_tax,use_tax,alt_vend_no,row_id,app_group,payable_src,disc_per,approve_required,approval_stat,stu_trans_no,gl_cash_key_orgn,gl_key_orgn,disb_gl_key_orgn,bankacct,due_to_key_orgn,due_to_account",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "dpayable_errors",
+    "PKColumns": "dpay_row_id",
+    "TableColumns": "dpay_row_id,fund,orig_key_orgn,orig_account,orig_fullacct,change_date_time,change_uid",
     "TableHasChangeDT": ""
   },
   {
@@ -5060,14 +7352,14 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "dreceipt",
     "PKColumns": "",
-    "TableColumns": "enc_no,gl_recv,key_orgn,account,project,proj_acct,vend_no,gl_cash,invoice,description,trans_amt,hold_flg,date_entered,entered_by,batch,yr,period,row_id,stu_trans_no",
+    "TableColumns": "enc_no,gl_recv,key_orgn,account,project,proj_acct,vend_no,gl_cash,invoice,description,trans_amt,hold_flg,date_entered,entered_by,batch,yr,period,row_id,stu_trans_no,gl_cash_key_orgn,gl_recv_key_orgn,gl_key_orgn,disb_gl_key_orgn,bankacct,due_from_key_orgn,due_from_account",
     "TableHasChangeDT": ""
   },
   {
     "db": "eFin",
     "name": "dreceive",
     "PKColumns": "",
-    "TableColumns": "enc_no,key_orgn,account,project,proj_acct,gl_account,vend_no,amount,date_enc,description,hold_flg,date_entered,entered_by,batch,yr,period,row_id",
+    "TableColumns": "enc_no,key_orgn,account,project,proj_acct,gl_account,vend_no,amount,date_enc,description,hold_flg,date_entered,entered_by,batch,yr,period,row_id,gl_recv_key_orgn,gl_key_orgn",
     "TableHasChangeDT": ""
   },
   {
@@ -5096,13 +7388,6 @@ $dbDefinitions = @'
     "name": "dt_levtable",
     "PKColumns": "lv_code,pay_code",
     "TableColumns": "lv_code,pay_code",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "dtytable",
-    "PKColumns": "",
-    "TableColumns": "code,desc_x,prcent,dollar",
     "TableHasChangeDT": ""
   },
   {
@@ -5191,69 +7476,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "ear_assetif",
-    "PKColumns": "rec_no",
-    "TableColumns": "rec_no,qty_rcvd,account_no",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ear_atrs_empr",
-    "PKColumns": "",
-    "TableColumns": "empr_cd,empr_name,addr1,addr2,city,state,zipcode",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ear_calenpay",
-    "PKColumns": "",
-    "TableColumns": "cal_type,pay_run,start_date,end_date,no_days",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ear_clstable",
-    "PKColumns": "",
-    "TableColumns": "class_cd,cls_type",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ear_cont_detail",
-    "PKColumns": "",
-    "TableColumns": "empl_no,classify,cont_type,field_name,field_no,field_value",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ear_dedtable",
-    "PKColumns": "",
-    "TableColumns": "ded_cd,ret_group,type,linked_cd,certified",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ear_emp_contract",
-    "PKColumns": "",
-    "TableColumns": "empl_no,classify,group_x,schedule,cont_type",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ear_fam_prof",
-    "PKColumns": "",
-    "TableColumns": "city_per,city_max,state_per,state_max,county_per,county_max,fund_bal_low,fund_bal_hi,cust1,cust2,cust3,cust4,cust5,cust6,cust7,cust8,cust9,cust10",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ear_health",
-    "PKColumns": "",
-    "TableColumns": "ded_cd,health_ins",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "ear_hrm_chrg",
     "PKColumns": "",
     "TableColumns": "code",
@@ -5268,13 +7490,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "ear_levtable",
-    "PKColumns": "",
-    "TableColumns": "lv_code,cost_of_sub",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "ear_old_limit",
     "PKColumns": "",
     "TableColumns": "yr,empl_no,rate_no,classify,cont_start,cont_end,cont_lim,cont_paid,retro_calc",
@@ -5282,23 +7497,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "ear_pbsuser",
-    "PKColumns": "",
-    "TableColumns": "empl_no,cls_crt",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "ear_purchase",
     "PKColumns": "po_no",
     "TableColumns": "po_no,approved_by",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ear_qtr_retire",
-    "PKColumns": "",
-    "TableColumns": "dist_no,trans_date,plan_opt,ssn,full_name,reg_salary_c,reg_salary_n,reg_cont,fed_cont,tot_cont,days_service,fed_salary_c,fed_salary_n,non_teach_sal,cls_type,err_msg,address,city,state,zip",
     "TableHasChangeDT": ""
   },
   {
@@ -5327,34 +7528,6 @@ $dbDefinitions = @'
     "name": "ear_retro_rate",
     "PKColumns": "",
     "TableColumns": "yr,rec_no,empl_no,rate_no,primry,group_x,pay_hours,days_worked,hours_day,no_pays,fte,pay_method,pay_cycle,pay_cd,classify,cal_type,range,step_x,rate,dock_rate,cont_flg,cont_days,override,annl_sal,cont_lim,cont_bal,cont_paid,cont_start,cont_end,pay_start,pay_end,summer_pay,status_x,pyo_date,pyo_rem_pay,pyo_days,pyo_rate,pyo_amt",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ear_trs_data",
-    "PKColumns": "",
-    "TableColumns": "empr_cd,rpt_month,rpt_year,empl_no,rec_type,ssn,l_name,f_name,m_name,suffix,sex,addr1,addr2,home_phone,city,state,zip,birthdate,cont_flg,cont_days,cont_lim,empl_type,hire_date,cont_start,cont_end,home_orgn,part_time,class,summer_pay,atrs_status,apscn_status,disabled,qtd_serv_days,service_credit,term_code,term_date,days_worked,hours_day,aesd_exempt,start_x,stop_x,pay_cd,no_pays,rate,match_fed,match_reg,contrib_reg,contrib_fed,sal_reg,sal_fed,purchase,tot_grs,ded_cd,last_paid,pay_freq,amt_rate6,amt_rate12,suppl_date,arrears,service,rpt_date,tot_sal,ctrl_sal,err_msg",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ear_trs_load",
-    "PKColumns": "",
-    "TableColumns": "rpt_date,load_type,load_start,load_end,payrun1,payrun2,payrun3,payrun4,payrun5,payrun6,payrun7,payrun8,payrun9,payrun10,payrun11,payrun12,payrun13,payrun14,payrun15,payrun16,payrun17,payrun18,payrun19,payrun20,payrun21,payrun22,payrun23,payrun24,payrun25,payrun26,payrun27,payrun28,payrun29,payrun30,payrun31,payrun32,payrun33,payrun34,payrun35,payrun36,payrun37,payrun38,payrun39,payrun40,payrun41,payrun42,payrun43,payrun44,payrun45,payrun46,payrun47,payrun48,payrun49,payrun50,payrun51,payrun52,payrun53,payrun54,payrun55,payrun56,payrun57,payrun58,payrun59,payrun60,payrun61,payrun62,payrun63,payrun64,payrun65,payrun66,payrun67,payrun68,payrun69,payrun70,payrun71,payrun72,payrun73,payrun74,payrun75,payrun76,payrun77,payrun78,payrun79,payrun80",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ebd_count",
-    "PKColumns": "",
-    "TableColumns": "run_date,lea,empl_no,status,caf_ded_cd,caf_amt,cc_ded_cd,cc_amt",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ebd_daily",
-    "PKColumns": "",
-    "TableColumns": "lea,empl_no,status,caf_ded_cd,caf_amt,cc_ded_cd,cc_amt",
     "TableHasChangeDT": ""
   },
   {
@@ -5404,41 +7577,6 @@ $dbDefinitions = @'
     "name": "edgecustlinks",
     "PKColumns": "rec_no,prod_name",
     "TableColumns": "rec_no,title,url,field1,source1,prod_name",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "efp_profile",
-    "PKColumns": "key_name",
-    "TableColumns": "package,key_name,description,category,prof_type,state_id,custom,val,min_sw_version,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "eft_dest",
-    "PKColumns": "",
-    "TableColumns": "description,def_flag,eft_tax_id,eft_dest_name,eft_dest_bank_code,eft_trans_desc,eft_bank_debit,eft_site_bank_acct,fund,opt_trans_rec1,opt_trans_rec2,eft_file_format,eft_email_addr,email_subject,bcc_email_addr,email_body,eft_dest_num,imm_orig_num,imm_orig_name,company_id_hdr,company_id_ctrl,orig_dfi_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "eic2tabl",
-    "PKColumns": "",
-    "TableColumns": "pay_freq,marital,ear,amt,per",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "eictable",
-    "PKColumns": "",
-    "TableColumns": "pay_freq,marital,account,max_gross",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "emp_certificate",
-    "PKColumns": "empl_no,indx",
-    "TableColumns": "empl_no,number,iss_date,exp_date,reg_date,c_type,c_area,primary_cert,indx",
     "TableHasChangeDT": ""
   },
   {
@@ -5506,23 +7644,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "emp_crs_stat_tbl",
-    "PKColumns": "course_stat_cd",
-    "TableColumns": "course_stat_cd,descx,create_who,create_when,update_who,update_when,unique_id,unique_key",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "emp_crs_type_tbl",
     "PKColumns": "course_type_cd",
     "TableColumns": "course_type_cd,descx,create_who,create_when,update_who,update_when,unique_id,unique_key",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "emp_degree",
-    "PKColumns": "empl_no,indx",
-    "TableColumns": "empl_no,dtype,highest,school,major,minor,deg_date,credits,gpa,user_1,indx",
     "TableHasChangeDT": ""
   },
   {
@@ -5541,37 +7665,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "emp_qualify",
-    "PKColumns": "",
-    "TableColumns": "empl_no,qual_code,eff_date,exp_date,exp_comp_date,misc_info,qual_meth,qual_stat,active",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "emp_require",
-    "PKColumns": "",
-    "TableColumns": "empl_no,req_code,eff_date,exp_date,exp_comp_date,misc_info",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "empact",
-    "PKColumns": "",
-    "TableColumns": "empl_no,date_chg,table_name,field_name,old_value,new_value,operator,pay_ded_code,pay_ded_desc,time_chg",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "empl_privacy",
     "PKColumns": "empl_no",
     "TableColumns": "empl_no,share_home_phone,share_mobile_phone,share_home_email,update_who,update_when",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "empl_races",
-    "PKColumns": "",
-    "TableColumns": "empl_no,race_code,indx,race_order,race_prcnt",
     "TableHasChangeDT": ""
   },
   {
@@ -5586,48 +7682,6 @@ $dbDefinitions = @'
     "name": "emplinfo",
     "PKColumns": "",
     "TableColumns": "empl_no,marital,sex,depend_cov",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "employee",
-    "PKColumns": "empl_no",
-    "TableColumns": "empl_no,ssn,l_name,f_name,addr1,addr2,city,zip,hire_date,home_orgn,birthdate,base_loc,state_id,orig_hire,prev_lname,email_addr,info_rlease,email_voucher,uid,supervisor_id,personal_email,m_name,name_suffix,preferred_name",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "employee_renamed",
-    "PKColumns": "empl_no",
-    "TableColumns": "empl_no,ssn,l_name,f_name,m_name,addr1,addr2,city,zip,hire_date,home_orgn,birthdate,base_loc,state_id,orig_hire,prev_lname,email_addr,info_rlease,email_voucher,uid,supervisor_id,personal_email,name_suffix",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "employee_type",
-    "PKColumns": "code",
-    "TableColumns": "code,desc_x",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "emplsoundex",
-    "PKColumns": "",
-    "TableColumns": "soundcode,empl_no,l_name",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "empuser",
-    "PKColumns": "empl_no,page_no",
-    "TableColumns": "empl_no,page_no,ftext1,ftext2,ftext3,ftext4,ftext5,ftext6,ftext7,ftext8,ftext9,ftext10,tcode1,tcode2,tcode3,tcode4,tcode5,tcode6,tcode7,tcode8,tcode9,tcode10,comment1,comment2",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "empuser_snapshot",
-    "PKColumns": "",
-    "TableColumns": "add_date,uid,clear_code,month,qtr,year,empl_no,page_no,ftext1,ftext2,ftext3,ftext4,ftext5,ftext6,ftext7,ftext8,ftext9,ftext10,tcode1,tcode2,tcode3,tcode4,tcode5,tcode6,tcode7,tcode8,tcode9,tcode10,comment1,comment2",
     "TableHasChangeDT": ""
   },
   {
@@ -5709,37 +7763,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "epay_format",
-    "PKColumns": "",
-    "TableColumns": "epay_code,format_descr,bank_trans_descr,check_char1,clear_vouchers,allow_email,seq_number,eaccount,lia_acct,addr1,addr2,city,state,zip,debit_credit,sec_code,filesource,shortname,expirydays,filesequence,cc_email,notes",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "epay_type",
     "PKColumns": "",
     "TableColumns": "vend_no,alt_vend_no,pay_type,payment_code",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "esc_employee",
-    "PKColumns": "empl_no",
-    "TableColumns": "empl_no,admin_flag,block_flag,inv_login_attempts,acct_locked_date_time",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "esc_prof",
-    "PKColumns": "",
-    "TableColumns": "site_logo,site_bgcolor,site_txtcolor,default_pg,email_server,email_port,admin_email,hr_email,payr_email,emplinfo_notify,benefits_notify,name_flg,addr_flg,email_flg,dates_flg,ssn_flg,pie_flg,fedfrm_name,stafrm_name,locfrm_name,fedtax_flg,statax_flg,loctax_flg,link_fed,link_sta,link_loc,instr_fed,instr_sta,instr_loc,leave_unit,leave_disclaim,cal_flg,cal_workday,cal_nonwork,cal_leave1,cal_leave2,cal_leave3,cal_leave4,cal_leave5,cal_leave6,cal_leave7,cal_leave8,cal_leave9,cal_leave10,enrol_disclaim,enrol_start,enrol_end,enrol_eff_date,upd_ben_flg,upd_dep_flg,degree_flg,certif_flg,certno_flg,certdate_flg,skills_flg,skills_title1,skills_title2,login_meth,payded_inact_flag,wphone_fmt_flag",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "esmfiscal",
-    "PKColumns": "",
-    "TableColumns": "begin_month,begin_day",
     "TableHasChangeDT": ""
   },
   {
@@ -5779,20 +7805,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "et_crosswalk",
-    "PKColumns": "",
-    "TableColumns": "field_name,cur_value,new_value,group_cd",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ethnic_table",
-    "PKColumns": "",
-    "TableColumns": "ethnic_code,description",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "ets_action_codes",
     "PKColumns": "",
     "TableColumns": "action_type,action_code,action_desc",
@@ -5817,13 +7829,6 @@ $dbDefinitions = @'
     "name": "ets_distributions",
     "PKColumns": "",
     "TableColumns": "empl_no,dist_key,key_title,key_orgn,account,project,proj_acct,active,hidden,use_alt_account",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "ets_except_list",
-    "PKColumns": "",
-    "TableColumns": "except_code,except_desc",
     "TableHasChangeDT": ""
   },
   {
@@ -5863,6 +7868,13 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
+    "name": "etx_future_clstable",
+    "PKColumns": "eff_date,class_cd",
+    "TableColumns": "eff_date,class_cd,accrual",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
     "name": "etx_paytable",
     "PKColumns": "",
     "TableColumns": "pay_code,peims_cd,statmin_exempt,ret_exempt,pos_ovr",
@@ -5870,23 +7882,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "ex_curricular",
-    "PKColumns": "",
-    "TableColumns": "code,desc_x",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "exceltasks",
     "PKColumns": "task_id",
     "TableColumns": "task_id,user_id,proc_id,report_name,file_name,start_date,end_date,task_status",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "expbudgt",
-    "PKColumns": "yr,key_orgn,account",
-    "TableColumns": "yr,key_orgn,account,bud1,exp1,enc1,bud2,exp2,enc2,bud3,exp3,enc3,bud4,exp4,enc4,bud5,exp5,enc5,bud6,exp6,enc6,bud7,exp7,enc7,bud8,exp8,enc8,bud9,exp9,enc9,bud10,exp10,enc10,bud11,exp11,enc11,bud12,exp12,enc12,bud13,exp13,enc13,inv_bal,req_bal,pay_encum,bud_adj",
     "TableHasChangeDT": ""
   },
   {
@@ -5914,7 +7912,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "expense_header",
     "PKColumns": "expense_no",
-    "TableColumns": "expense_no,empl_no,description,yr,expense_type,form_type,fiscal_year,start_date,end_date,city,state,status,po_no,reimbursable_amount,advance_amount,amount_owed,created_date,uid,comment,last_approved_date",
+    "TableColumns": "expense_no,empl_no,description,yr,expense_type,form_type,fiscal_year,start_date,end_date,city,state,status,po_no,reimbursable_amount,advance_amount,amount_owed,created_date,uid,comment,last_approved_date,updated_date",
     "TableHasChangeDT": ""
   },
   {
@@ -5926,13 +7924,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "expledgr",
-    "PKColumns": "yr,key_orgn,account",
-    "TableColumns": "yr,key_orgn,account,budget_orgn,budget_acct,bud1,exp1,enc1,bud2,exp2,enc2,bud3,exp3,enc3,bud4,exp4,enc4,bud5,exp5,enc5,bud6,exp6,enc6,bud7,exp7,enc7,bud8,exp8,enc8,bud9,exp9,enc9,bud10,exp10,enc10,bud11,exp11,enc11,bud12,exp12,enc12,bud13,exp13,enc13,pay_encum,active",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "expnotes",
     "PKColumns": "",
     "TableColumns": "yr,key_orgn,account,note,recno,amount",
@@ -5940,16 +7931,16 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "f_profact",
-    "PKColumns": "",
-    "TableColumns": "date_chg,table_name,field_name,old_value,new_value,operator",
+    "name": "export_public_key",
+    "PKColumns": "key_id",
+    "TableColumns": "key_id,job_title,public_key,create_who,create_when",
     "TableHasChangeDT": ""
   },
   {
     "db": "eFin",
-    "name": "faaccount",
+    "name": "export_template",
     "PKColumns": "",
-    "TableColumns": "acct,sub_1_acct,sub_2_acct,sub_3_acct,title,proll_flg,reqpur_flg,war_flg,local_use",
+    "TableColumns": "template_id,group_name,template_name,template_data,user_id",
     "TableHasChangeDT": ""
   },
   {
@@ -5964,27 +7955,6 @@ $dbDefinitions = @'
     "name": "fam_locn",
     "PKColumns": "",
     "TableColumns": "code,description,lev1_us1,lev1_us2,lev1_us3,lev2_us1,lev2_us2,lev2_us3,lev3_us1,lev3_us2,lev3_us3",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "fam_prof",
-    "PKColumns": "",
-    "TableColumns": "trans_date,period,yr,client,system,company,disb_fund,pay_fund,cash_account,pay_cash,a_p,fund_bal,exp_bud_control,rev_bud_control,res_for_enc,act_fund_bal,enc_control,pay_res_enc,pen_control,exp_control,rev_control,tax_payable,low_asset,hi_asset,low_lia,hi_lia,low_equ,hi_equ,low_exp,hi_exp,low_rev,hi_rev,enc_title,fund_title,orgn1_title,orgn2_title,orgn3_title,orgn4_title,orgn5_title,orgn6_title,orgn7_title,orgn8_title,orgn9_title,low_orgn,proj1_title,proj2_title,proj3_title,proj4_title,proj5_title,proj6_title,proj7_title,proj8_title,low_proj,user_req,next_reqno,user_po,next_pono,user_je,next_jeno,user_vendor,next_vndno,purch_encum,dup_invoice,high_lev,min_amount,purch,fixed_assets,inv_control,ven_bidding,check_sort,e_full_acct,r_full_acct,portrait,chk_frmt,det_sum,prior_year,sum_enc_flg,app_by_group,app_group,comm_mask,comm_used,pre_encum,city,state_id,zip,buyer,payb4recv,autobal,jetofrom,p_f,opay_warning,opay_type,opay_amount,opay_percent,sep_old_je,next_old_jeno,user_bt,next_btno,def_vnd_due,key_sum,sep_nyr_req,next_nyr_reqno,sep_nyr_po,next_nyr_pono,dist_method,len_reqno,len_pono,ap_pdf,po_pdf,deft_appgrp_pay,deft_appgrp_comm,deft_appgrp_load,ap_appr_po_pay,ap_appr_no_po,ap_appr_po_thres,purch_email,bud_approve,tax_freight,exceed_payroll_bud,apcheck_form,po_form,pyrl_venpay_cash,req_po_def,copy_req_notes,flag1,flag2,flag3,flag4,flag5,flag6,flag7,flag8,flag9,flag10,fisc_start_date,fisc_end_date,compl_req_only,prevnt_upd_cvt_req",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "fam_ref",
-    "PKColumns": "",
-    "TableColumns": "prefx,code,desc_x",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "famstate",
-    "PKColumns": "",
-    "TableColumns": "state1,state2,state3,state4,state5,state6,state7,state8,state9,state10,state11,state12,state13,state14,state15,state16,state17,state18,state19,state20,state21,state22,state23,state24,state25,state26,state27,state28,state29,state30,state31,state32,state33,state34,state35,state36,state37,state38,state39,state40,state41,state42,state43,state44,state45,state46,state47,state48,state49,state50,state51,state52,state53,state54,state55,state56,state57,state58,state59,state60,state61,state62,state63,state64,state65,state66,state67,state68,state69,state70,state71,state72,state73,state74,state75,state76,state77,state78,state79,state80,state81,state82,state83,state84,state85,state86,state87,state88,state89,state90,state91,state92,state93,state94,state95,state96,state97,state98,state99,state100,state101,state102",
     "TableHasChangeDT": ""
   },
   {
@@ -6017,13 +7987,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "faorgn",
-    "PKColumns": "",
-    "TableColumns": "yr,key_orgn,lvl,fund,orgn1,orgn2,orgn3,orgn4,orgn5,orgn6,orgn7,orgn8,orgn9,title,enterprise,cash,budget,req_enc,pr_orgn,disb_fund,total_rec,proj_link,project,local_use",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "faproject",
     "PKColumns": "",
     "TableColumns": "key_proj,lvl,proj1,proj2,title,start_date,stop_date,funding,budget,closed,overhd1,overhd2,overhd3,overhd4,proj3,proj4,proj5,proj6,proj7,proj8",
@@ -6045,100 +8008,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "fe2table",
-    "PKColumns": "",
-    "TableColumns": "pay_freq,marital,ear,amt,per,with_rate_sched_cd",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "fed_race_codes",
-    "PKColumns": "",
-    "TableColumns": "fed_code,description",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "fed_tax_calc",
-    "PKColumns": "code",
-    "TableColumns": "code,description,active",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "fedtable",
-    "PKColumns": "",
-    "TableColumns": "pay_freq,marital,account,depend,supp_per,with_rate_sched_cd,pays_per_year,nonres_alien_adj1,nonres_alien_adj2,std_allowance",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "fictable",
-    "PKColumns": "",
-    "TableColumns": "fic_med,emp_per,emp_max,empr_per,empr_max,lia_acct,frg_acct,frng_dist,frng_orgn,encumber",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "filing_type",
-    "PKColumns": "",
-    "TableColumns": "type_cd,description",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "finauditlinks",
-    "PKColumns": "audit_no,field_no",
-    "TableColumns": "audit_no,field_no,char_id,num_id,date_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "finaudittrail",
-    "PKColumns": "audit_no",
-    "TableColumns": "pkg,change_date,change_time,change_type,change_note,tabname,colname,old_val,new_val,spiuser,audit_no",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "fincustom",
-    "PKColumns": "",
-    "TableColumns": "key_name,description,proj_no,install_date,install_programmer,orig_programmer,orig_flg,enable_flg,udf1,udf2,udf3,udf4,udf5",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "fips_codes",
-    "PKColumns": "",
-    "TableColumns": "code,desc_x,state_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "fix_def",
     "PKColumns": "",
     "TableColumns": "ln_type,indx,page_no,slabel,type_check,table_name,help_text,default_val,req,valid_if",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "fix_locn",
-    "PKColumns": "",
-    "TableColumns": "loccode,locdesc",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "fix_num",
-    "PKColumns": "",
-    "TableColumns": "next_asset",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "fix_prof",
-    "PKColumns": "",
-    "TableColumns": "client,system,company,user_1,user_2,user_3,user_4,user_5,low_capital,hi_capital,fix_min_amt,user_asset,next_asset,yr_start_date,fiscal_yr,cafr_yr_end",
     "TableHasChangeDT": ""
   },
   {
@@ -6164,23 +8036,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "flsa_payroll",
-    "PKColumns": "",
-    "TableColumns": "empl_no,cycle_code",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "fm_format_defaults",
     "PKColumns": "user_id,format_id",
     "TableColumns": "user_id,format_id,format_default",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "fms_user_fields",
-    "PKColumns": "screen_type,screen_number,field_number",
-    "TableColumns": "screen_type,screen_number,field_number,field_label,field_order,required_field,field_type,data_type,number_type,data_length,field_scale,field_precision,default_value,default_table,default_column,validation_list,validation_table,code_column,description_column,spi_table,spi_column,spi_screen_number,spi_field_number,spi_field_type,sec_package,sec_subpackage,sec_feature,locked,visible,change_date_time,change_uid",
     "TableHasChangeDT": ""
   },
   {
@@ -6199,23 +8057,16 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "fms_user_screen",
-    "PKColumns": "screen_type,screen_number",
-    "TableColumns": "screen_type,screen_number,form_type,list_type,columns,description,required_screen,sec_package,sec_subpackage,sec_feature,reserved,state_flag,wf_screen,wf_model_id,wf_model_version,dataset_id,change_date_time,change_uid",
+    "name": "fullaccount_bud",
+    "PKColumns": "yr,key_orgn,account",
+    "TableColumns": "yr,key_orgn,account,fullacct,fullacct_noformat,ledger_type",
     "TableHasChangeDT": ""
   },
   {
     "db": "eFin",
-    "name": "fmsnxtno",
-    "PKColumns": "tab_name",
-    "TableColumns": "tab_name,next_no",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "functbl",
-    "PKColumns": "",
-    "TableColumns": "func_name,description",
+    "name": "fullaccount_fam",
+    "PKColumns": "yr,key_orgn,account",
+    "TableColumns": "yr,key_orgn,account,fullacct,fullacct_noformat,ledger_type",
     "TableHasChangeDT": ""
   },
   {
@@ -6227,16 +8078,65 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "fxhist",
-    "PKColumns": "",
-    "TableColumns": "tagno,improvement_num,trans_date,trans_time,field_name,old_value,new_value,user_id",
+    "name": "fut_state_clstable",
+    "PKColumns": "eff_date,class_cd",
+    "TableColumns": "eff_date,class_cd,nh_stoprule_exempt,check2,check3,check4,check5,check6,check7,check8,check9,check10,check11,check12,check13,check14,check15,char1,char2,char3,char4,decimal1,decimal2,date1,date2,cb001,cb002",
     "TableHasChangeDT": ""
   },
   {
     "db": "eFin",
-    "name": "fxhistmult",
-    "PKColumns": "",
-    "TableColumns": "act,tagno,improvement_num,trans_date,trans_time,user_id,func_name,activity,deporgn,depacct,dep_pct",
+    "name": "future_add_rate",
+    "PKColumns": "eff_date,empl_no,duty_code,indx",
+    "TableColumns": "eff_date,empl_no,duty_code,indx,salary,fte,prorate",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "future_clsincr",
+    "PKColumns": "eff_date,classify",
+    "TableColumns": "eff_date,classify,amt,prcent",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "future_clstable",
+    "PKColumns": "eff_date,class_cd",
+    "TableColumns": "eff_date,class_cd,title,schedule,wkr_comp,civil_ser,union_cd,division,contract_title,cal_type,ded_cd1,ded_cd2,ded_cd3,ded_cd4,ded_cd5,ded_cd6,ded_cd7,ded_cd8,ded_cd9,ded_cd10,lv1_cd,lv2_cd,lv3_cd,lv4_cd,lv5_cd,lv6_cd,lv7_cd,lv8_cd,lv9_cd,lv10_cd,pay_cd,pay_method,group_x,bar_unit,job_type,job_descript,reference_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "future_dist_orgn",
+    "PKColumns": "yr,eff_date,empl_no,rate_no,seq_no",
+    "TableColumns": "yr,eff_date,empl_no,rate_no,seq_no,classify,pos,orgn,acct,prcent",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "future_dist_proj",
+    "PKColumns": "yr,eff_date,empl_no,rate_no,seq_no",
+    "TableColumns": "yr,eff_date,empl_no,rate_no,seq_no,classify,pos,proj,acct,prcent",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "future_dutytable",
+    "PKColumns": "eff_date,duty_code",
+    "TableColumns": "eff_date,duty_code,desc_x,prcent,dollar,reference_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "future_mmaxpayrate",
+    "PKColumns": "eff_date,empl_no,classify",
+    "TableColumns": "eff_date,empl_no,classify,fam_code,grd_code,cont_cyc",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "future_payrate",
+    "PKColumns": "yr,eff_date,empl_no,rate_no",
+    "TableColumns": "yr,eff_date,empl_no,rate_no,primry,group_x,pay_hours,days_worked,hours_day,incl_dock,no_pays,fte,pay_method,pay_cycle,pay_cd,classify,occupied,cal_type,range,step_x,rate,dock_rate,cont_flg,cont_days,override,annl_sal,cont_lim,cont_bal,cont_paid,cont_start,cont_end,pay_start,pay_end,summer_pay,status_x,pyo_date,pyo_rem_pay,pyo_days,pyo_rate,pyo_amt,dock_arrears_amt,dock_pays_remain,reference_id,rate_start",
     "TableHasChangeDT": ""
   },
   {
@@ -6244,27 +8144,6 @@ $dbDefinitions = @'
     "name": "fxinv_upd",
     "PKColumns": "",
     "TableColumns": "controlno,tagno,rec_type,acqdate,des,fund_source,vendor,insurer,mfr,model,serial_no,dept,loccode,grantx,catcode,cond,unitsx,unitcost,initcost,salvage,insvalue,sale_amt,invent,maint,retdate,stats,user_1,user_2,user_3,user_4,user_5,dep_flag,dep_method,estlife,deplife,deporgn,depacct,accdep,curdep,dep_basis,last_post_date,post_togl,prop_fund,cap_asset,func_name,activity,multifunc,po,checkno",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "gasb_fx",
-    "PKColumns": "",
-    "TableColumns": "fiscal_yr,fund_type,func_name,activity,major_class,beg_bal,adj,additions,deletions,end_bal,accum_dep_bb,accum_dep_adj,accum_dep_add,accum_dep_del,accum_dep_end,change_time,change_date,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "gender_identity_tbl",
-    "PKColumns": "",
-    "TableColumns": "code,title,federal_code,state_code,report_1_code,report_2_code,report_3_code,report_4_code,report_5_code",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "genledgr",
-    "PKColumns": "yr,fund,account",
-    "TableColumns": "yr,fund,account,gl_bal1,gl_bal2,gl_bal3,gl_bal4,gl_bal5,gl_bal6,gl_bal7,gl_bal8,gl_bal9,gl_bal10,gl_bal11,gl_bal12,gl_bal13",
     "TableHasChangeDT": ""
   },
   {
@@ -6297,104 +8176,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "hdeduct",
-    "PKColumns": "",
-    "TableColumns": "capture_date,empl_no,ded_cd,status,account,start_x,stop_x,beff_date,ded_amt,max_amt,max_fringe,arrears,cont_amt,num_deds,chk_ind,taken_c,taken_m,taken_q,taken_y,taken_i,taken_f,cont_c,cont_m,cont_q,cont_y,cont_i,cont_f,sal_c,sal_m,sal_q,sal_y,sal_f,bank,bt_code,bank_acct,enc_remaining,addl_ded_gross,addl_frng_gross",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "hemployee",
-    "PKColumns": "",
-    "TableColumns": "capture_date,empl_no,ssn,l_name,f_name,addr1,addr2,city,zip,hire_date,home_orgn,birthdate,base_loc,state_id,orig_hire,prev_lname,email_addr,info_rlease,email_voucher,uid,supervisor_id,personal_email,m_name,name_suffix,preferred_name",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "hemployee_renamed",
-    "PKColumns": "",
-    "TableColumns": "capture_date,empl_no,ssn,l_name,f_name,m_name,addr1,addr2,city,zip,hire_date,home_orgn,birthdate,base_loc,state_id,orig_hire,prev_lname,email_addr,info_rlease,email_voucher,uid,supervisor_id,personal_email,name_suffix",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "holiday",
-    "PKColumns": "cal_type,h_date",
-    "TableColumns": "cal_type,h_date,w_flag",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "home_fav_groups",
-    "PKColumns": "fav_grp_id",
-    "TableColumns": "fav_grp_id,fav_grp_title,user_id,is_display_menu_path",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "home_fav_items",
-    "PKColumns": "fav_item_id",
-    "TableColumns": "fav_item_id,fav_grp_id,fav_item_name,fav_item_order,callpath,progcall,is_fglrun,is_sub_system",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "home_panel_types",
-    "PKColumns": "panel_type",
-    "TableColumns": "panel_type,panel_name,panel_min_rows,panel_max_rows,panel_min_cols,panel_max_cols",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "home_session_docs",
-    "PKColumns": "session_id,index_id",
-    "TableColumns": "session_id,index_id,rpt_name,rpt_path,rpt_create_date,rpt_size,rpt_deleted",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "home_user_panel",
-    "PKColumns": "tab_id,panel_order",
-    "TableColumns": "tab_id,panel_order,user_id,panel_type,fav_grp_id,panel_title,panel_icon,panel_num_rows,panel_num_cols",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "home_user_ses_hist",
-    "PKColumns": "",
-    "TableColumns": "session_id,user_id,create_time,expire_time,process_id,client_ip,user_agent",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "home_user_session",
-    "PKColumns": "session_id",
-    "TableColumns": "session_id,user_id,create_time,process_id,client_ip,user_agent,rpt_status",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "home_user_tab",
-    "PKColumns": "tab_id",
-    "TableColumns": "tab_id,user_id,tab_order,tab_title",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "hpayrate",
-    "PKColumns": "",
-    "TableColumns": "capture_date,empl_no,rate_no,primry,group_x,pay_hours,days_worked,hours_day,incl_dock,no_pays,fte,pay_method,pay_cycle,pay_cd,classify,occupied,cal_type,range,step_x,rate,dock_rate,cont_flg,cont_days,override,annl_sal,cont_lim,cont_bal,cont_paid,cont_start,cont_end,pay_start,pay_end,summer_pay,status_x,pyo_date,pyo_rem_pay,pyo_days,pyo_rate,pyo_amt,dock_arrears_amt,dock_pays_remain",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "hpayroll",
-    "PKColumns": "",
-    "TableColumns": "capture_date,empl_no,pay_freq,card_requ,sp1_amt,sp1_cd,sp2_amt,sp2_cd,sp3_amt,sp3_cd,chk_locn,last_paid,fed_exempt,fed_marital,fed_dep,add_fed,sta_exempt,state_id,pr_state,sta_marital,sta_dep,add_state,loc_exempt,locl,pr_local,loc_marital,loc_dep,add_local,fic_exempt,earn_inc,lv_date,lv1_cd,lv1_bal,lv1_tak,lv1_ear,lv2_cd,lv2_bal,lv2_tak,lv2_ear,lv3_cd,lv3_bal,lv3_tak,lv3_ear,lv4_cd,lv4_bal,lv4_tak,lv4_ear,lv5_cd,lv5_bal,lv5_tak,lv5_ear,lv6_cd,lv6_bal,lv6_tak,lv6_ear,lv7_cd,lv7_bal,lv7_tak,lv7_ear,lv8_cd,lv8_bal,lv8_tak,lv8_ear,lv9_cd,lv9_bal,lv9_tak,lv9_ear,lv10_cd,lv10_bal,lv10_tak,lv10_ear,tearn_c,tearn_m,tearn_q,tearn_y,tearn_ft,ftearn_c,ftearn_m,ftearn_q,ftearn_y,ftearn_ft,fiearn_c,fiearn_m,fiearn_q,fiearn_y,fiearn_ft,mdearn_c,mdearn_m,mdearn_q,mdearn_y,mdearn_ft,stearn_c,stearn_m,stearn_q,stearn_y,stearn_ft,s2earn_c,s2earn_m,l2earn_y,s2earn_y,s2earn_ft,loearn_c,loearn_m,loearn_q,loearn_y,loearn_ft,allow_c,allow_m,allow_q,allow_y,allow_ft,nocash_c,nocash_m,nocash_q,nocash_y,nocash_ft,fedtax_c,fedtax_m,fedtax_q,fedtax_y,fedtax_ft,fictax_c,fictax_m,fictax_q,fictax_y,fictax_ft,medtax_c,medtax_m,medtax_q,medtax_y,medtax_ft,statax_c,statax_m,statax_q,statax_y,statax_ft,st2tax_c,st2tax_m,lt2tax_y,st2tax_y,st2tax_ft,loctax_c,loctax_m,loctax_q,loctax_y,loctax_ft,eic_c,eic_m,eic_q,eic_y,eic_ft,rfiearn_y,rfictax_y,rmdearn_y,rmedtax_y,flsa_cycle_y,flsa_cycle_hrs,flsa_hours,flsa_amount,rfiearn_c,rfiearn_m,rfiearn_q,rfiearn_ft,rfictax_c,rfictax_m,rfictax_q,rfictax_ft,rmdearn_c,rmdearn_m,rmdearn_q,rmdearn_ft,rmedtax_c,rmedtax_m,rmedtax_q,rmedtax_ft,fed_tax_calc_cd,w4_sub_date,non_res_alien,ann_other_inc,ann_deductions,ann_tax_credit,pays_per_year",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "hq_credential",
     "PKColumns": "",
     "TableColumns": "cred_code,cred_desc",
@@ -6409,20 +8190,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "hq_qualify",
-    "PKColumns": "",
-    "TableColumns": "qual_code,qual_desc",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "hq_require",
-    "PKColumns": "",
-    "TableColumns": "req_code,req_desc",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "hq_status",
     "PKColumns": "",
     "TableColumns": "stat_code,stat_desc",
@@ -6430,51 +8197,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "hrm_aca_audit",
-    "PKColumns": "",
-    "TableColumns": "user_id,change_date,change_time,change_type,empl_no,classify,pay_code,start_date,check_no,field_changed,orig_data,new_data,row_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "hrm_aca_hours",
-    "PKColumns": "",
-    "TableColumns": "empl_no,pay_run,check_no,empl_type,group_x,classify,pay_code,cal_type,start_date,end_date,work_hours,aca_status,row_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "hrm_locn",
-    "PKColumns": "",
-    "TableColumns": "code,desc_x,addr1,addr2,city,state_id,zip,sch_numb,sch_annx,enroll,pk,kg,g1,g2,g3,g4,g5,g6,g7,g8,g9,g10,g11,g12,un,se,has_prin,full_pt,gender,teach,race,sch_building,state_locn_code,sis_code",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "hrm_prof",
-    "PKColumns": "",
-    "TableColumns": "trans_date,client,system,company,payroll,personnel,pos_cont,insure,applicant,fundacct,low_orgn_title,low_proj_title,tc_attn,journ_srt,wkrcomp,netpay,np_acct,cr_vend_paymnts,fedtax_id,immdest,dest_name,trans_desc,bank_db,bank_acct,bank_code,emp_name,emp_add,emp_city,emp_state,emp_zip,rpt_year,site_code,misc1,misc2,school_yr,dist_id,add_rte,dollar_rnd,default_ssn,ratnposhst,print_net,tc_sec_check,eeo_def,client_type,p_dedvend,imm_orig_num,opt_trans_rec1,opt_trans_rec2,assign_empl,empl_start,empl_incre,assign_appl,appl_start,appl_incre,print_ytd_ded,leave_processing,retro_dock_code,lien_wage_code,retro_pay_code,ssn_mask_method,paycheck_form,from_addr,bcc_addr,email_subject,attach_pdf,email_body,imm_orig_name,company_id_hdr,company_id_ctrl,orig_dfi_id,dept_location,paycd_list,flag1,flag2,flag3,flag4,flag5,flag6,flag7,flag8,flag9,flag10,print_dirdep,sum_fisc_accr,disable_dock,child_support,adjust_neg_gross",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "hrm_user_employee",
     "PKColumns": "empl_no,screen_number,list_sequence,field_number",
     "TableColumns": "empl_no,screen_number,list_sequence,field_number,field_value,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "hrmstate",
-    "PKColumns": "",
-    "TableColumns": "state1,state2,state3,state4,state5,state6,state7,state8,state9,state10,state11,state12,state13,state14,state15,state16,state17,state18,state19,state20,state21,state22,state23,state24,state25,state26,state27,state28,state29,state30,state31,state32,state33,state34,state35,state36,state37,state38,state39,state40,state41,state42,state43,state44,state45,state46,state47,state48,state49,state50,state51,state52,state53,state54,state55,state56,state57,state58,state59,state60",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "hrmstate2",
-    "PKColumns": "",
-    "TableColumns": "state1,state2,state3,state4,state5,state6,state7,state8,state9,state10,state11,state12,state13,state14,state15,state16,state17,state18,state19,state20",
     "TableHasChangeDT": ""
   },
   {
@@ -6517,6 +8242,20 @@ $dbDefinitions = @'
     "name": "hrworknotification",
     "PKColumns": "",
     "TableColumns": "date_time,source_email,act_subject,act_status,act_notes,dest_uid,act_url,source_uid,activity_xml,row_id,wkf_instance_id,dest_email,workflow_id,delegate_item",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "iaddtl_info",
+    "PKColumns": "",
+    "TableColumns": "fullacct,cash_fullacct,sub_fullacct,ledger_type,exp_fullacct,rev_fullacct",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "ibfullacct",
+    "PKColumns": "",
+    "TableColumns": "fullacct,budget_fullacct,ledger_type",
     "TableHasChangeDT": ""
   },
   {
@@ -6640,13 +8379,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "integration_fields",
-    "PKColumns": "table_name,field_name",
-    "TableColumns": "table_name,field_name",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "interface_setup",
     "PKColumns": "",
     "TableColumns": "interface_name,option_name,option_value",
@@ -6656,7 +8388,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "interfund_bal_walk",
     "PKColumns": "yr,from_fund_1,to_fund_2",
-    "TableColumns": "yr,from_fund_1,to_fund_2,due_to_f2_acct,due_from_f1_acct,due_to_f1_acct,due_from_f2_acct,from_fund_bal_acct,to_fund_bal_acct",
+    "TableColumns": "yr,from_fund_1,to_fund_2,due_to_f2_acct,due_from_f1_acct,due_to_f1_acct,due_from_f2_acct,from_fund_bal_acct,to_fund_bal_acct,due_to_f2_mask,due_from_f1_mask,due_to_f1_mask,due_from_f2_mask,from_fund_bal_mask,to_fund_bal_mask",
     "TableHasChangeDT": ""
   },
   {
@@ -6690,8 +8422,8 @@ $dbDefinitions = @'
   {
     "db": "eFin",
     "name": "inuse_check_no",
-    "PKColumns": "disb_gl_key_orgn,check_no",
-    "TableColumns": "disb_gl_key_orgn,check_no,gl_cash,operator",
+    "PKColumns": "disb_fund,check_no,check_bankacct",
+    "TableColumns": "disb_fund,check_no,gl_cash,operator,check_bankacct",
     "TableHasChangeDT": ""
   },
   {
@@ -6787,13 +8519,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "irs_country_codes",
-    "PKColumns": "",
-    "TableColumns": "country_cd,country_name,addr_format",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "ischedule",
     "PKColumns": "",
     "TableColumns": "batch_no,eff_date,schedule,desc_x,hs_flag,days_worked,hours_day,bn_flag,state_hours_day,step,range_01,range_02,range_03,range_04,range_05,range_06,range_07,range_08,range_09,range_10,range_11,range_12,range_13,range_14,range_15,range_16,range_17,range_18,range_19,range_20,range_21,range_22,range_23,range_24,range_25,range_26,range_27,range_28,range_29,range_30,range_31,range_32,range_33,range_34,range_35,range_36,range_37,range_38,range_39,range_40,range_41,range_42,range_43,range_44,range_45,range_46,range_47,range_48,range_49,range_50,range_51,range_52,range_53,range_54,range_55,range_56,range_57,range_58,range_59,range_60,range_61,range_62,range_63,range_64,range_65,range_66,range_67,range_68,range_69,range_70,range_71,range_72,range_73,range_74,range_75,range_76,range_77,range_78,range_79,range_80,range_81,range_82,range_83,range_84,range_85,range_86,range_87,range_88,range_89,range_90,range_91,range_92,range_93,range_94,range_95,range_96,range_97,range_98,range_99",
@@ -6866,7 +8591,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "itimecard",
     "PKColumns": "",
-    "TableColumns": "row_id,empl_no,pay_run,classify,pay_code,hours,payrate,amount,orgn,account,proj,pacct,tax_ind,pay_cycle,flsa_cycle,post_flg,status_flg,start_date,stop_date,lv_code,lv_hrs,remarks,check_date,sub_id,sub_pay_code,sub_pay_class,sub_pay_rate,sub_amt_paid,sub_loc,sub_tax_ind,sub_orgn,sub_acct,sub_start,sub_stop,sub_hrs,load_date,load_user,change_date,change_user",
+    "TableColumns": "row_id,empl_no,pay_run,classify,pay_code,hours,payrate,amount,orgn,account,proj,pacct,tax_ind,pay_cycle,flsa_cycle,post_flg,status_flg,start_date,stop_date,lv_code,lv_hrs,remarks,check_date,sub_id,sub_pay_code,sub_pay_class,sub_pay_rate,sub_amt_paid,sub_loc,sub_tax_ind,sub_orgn,sub_acct,sub_start,sub_stop,sub_hrs,load_date,load_user,change_date,change_user,fullacct,sub_fullacct",
     "TableHasChangeDT": ""
   },
   {
@@ -6874,13 +8599,6 @@ $dbDefinitions = @'
     "name": "jac_employee",
     "PKColumns": "",
     "TableColumns": "empl_no,admin_flag,viewer_flag,super_flag",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "je_nums",
-    "PKColumns": "",
-    "TableColumns": "code,je_number,yr",
     "TableHasChangeDT": ""
   },
   {
@@ -6915,7 +8633,35 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "job_master",
     "PKColumns": "job_no",
-    "TableColumns": "job_no,userid,job_type,job_status,job_desc,start_dt,end_dt,job_progress,job_progress_dt,doc_id,create_when,create_who,update_when,update_who,row_id,output",
+    "TableColumns": "job_no,userid,job_type,job_status,job_desc,start_dt,end_dt,job_progress,job_progress_dt,doc_id,create_when,create_who,update_when,update_who,row_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "job_mstr",
+    "PKColumns": "job_no",
+    "TableColumns": "job_no,userid,job_type,job_status,job_desc,start_dt,end_dt,job_progress,job_progress_dt,doc_id,create_when,create_who,update_when,update_who",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "job_mstr_data",
+    "PKColumns": "row_id",
+    "TableColumns": "job_no,key_value1,key_value2,key_value3,key_value4,key_value5,key_value6,key_value7,key_value8,key_value9,status,create_when,create_who,update_when,update_who,row_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "job_output",
+    "PKColumns": "output_id",
+    "TableColumns": "output_id,output_type,output_desc,create_who,create_when",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "job_outputdetail",
+    "PKColumns": "",
+    "TableColumns": "output_id,sort_no,type,level,output,row_id",
     "TableHasChangeDT": ""
   },
   {
@@ -6955,20 +8701,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "kpi_expbudact",
-    "PKColumns": "key_orgn,account",
-    "TableColumns": "key_orgn,account,fund,orgn1,orgn2,orgn3,orgn4,orgn5,orgn6,orgn7,orgn8,orgn9,key_title,acct_title,bud,per,enc,exp,act,bal,create_date",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "lastcalc",
-    "PKColumns": "",
-    "TableColumns": "pay_run,indicator,calc_date,calc_time,calc_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "leaveaprv",
     "PKColumns": "request_id,lvl,association_id",
     "TableColumns": "request_id,lvl,association_id,association_seq,app_empl_no,del_empl_no,spec_leave_flag,act,action_date,comment,approved_by",
@@ -6986,41 +8718,6 @@ $dbDefinitions = @'
     "name": "leaverequest",
     "PKColumns": "request_id",
     "TableColumns": "request_id,empl_no,pay_code,leave_code,from_date,to_date,leave_units,notes,leave_status,request_date,attend_rowid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "levtable",
-    "PKColumns": "lv_code",
-    "TableColumns": "lv_code,title,ck_title,acc_type,acc_rate,lwop_acct,max_acc,years,exc_meth,roll_lim,roll_code,max_earn,unused_pay_meth,unused_pay,lv_unit,emp_status,prt_flg",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "libattachstatus",
-    "PKColumns": "",
-    "TableColumns": "group_desc,key_field1,key_field2,key_field3,key_field4,key_field5,num_attach",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "libcolcheck",
-    "PKColumns": "colcheckno",
-    "TableColumns": "colcheckno,coltable,colcolumn,colcheckprop,colchecksql1,colerrorif1,colerrormsg1,colchecksql2,colerrorif2,colerrormsg2,colchecksql3,colerrorif3,colerrormsg3,colcheckval,colerrorifv,colerrormsgv,coldefaultsql,coldefaultval,colchecknull",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "librefcolumns",
-    "PKColumns": "refcolumn",
-    "TableColumns": "refcolumn,refcolumnname,refcolumndisplay,reftable,createuserid,createstamp,changeuserid,changestamp",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "libreftables",
-    "PKColumns": "reftable",
-    "TableColumns": "reftable,reftablename,reftabledisplay,reftabledesc,reftablegrp,createuserid,createstamp,changeuserid,changestamp",
     "TableHasChangeDT": ""
   },
   {
@@ -7055,7 +8752,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "loctable",
     "PKColumns": "location,pay_freq,marital",
-    "TableColumns": "location,description,pay_freq,marital,account,stan_rate,stan_min,stan_max,mar_exemp,depend,supp_per",
+    "TableColumns": "location,description,pay_freq,marital,account,stan_rate,stan_min,stan_max,mar_exemp,depend,supp_per,local_tax_type",
     "TableHasChangeDT": ""
   },
   {
@@ -7095,86 +8792,16 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "mapckhld",
-    "PKColumns": "",
-    "TableColumns": "vend_no,check_no,check_dt,disb_fund",
+    "name": "mapdetail",
+    "PKColumns": "row_id",
+    "TableColumns": "row_id,header_id,columnname,colno,coltitle,isunique,isrequired,defaultcoltitle",
     "TableHasChangeDT": ""
   },
   {
     "db": "eFin",
-    "name": "mapckhst",
-    "PKColumns": "",
-    "TableColumns": "user_id,old_chk_no,new_chk_bo,prt_date,disb_fund",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "mchkhist",
-    "PKColumns": "",
-    "TableColumns": "user_id,old_chkno,new_chkno,prt_date",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "mchkhld",
-    "PKColumns": "",
-    "TableColumns": "srt_no,check_no,iss_date,empl_no",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menu_applications",
-    "PKColumns": "app_id",
-    "TableColumns": "app_id,title,package,subpackage,func,spi_defined",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menu_custom_opts",
-    "PKColumns": "base_progcall,base_callpath",
-    "TableColumns": "base_progcall,base_callpath,cust_progcall,cust_callpath,enable_flg,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menu_groups",
-    "PKColumns": "app_id,tab_id,group_id",
-    "TableColumns": "app_id,tab_id,group_id,title,package,subpackage,func,spi_defined",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menu_options",
-    "PKColumns": "app_id,tab_id,group_id,option_id",
-    "TableColumns": "app_id,tab_id,group_id,option_id,title,progcall,callpath,package,subpackage,func,is_fglrun,is_sub_system,spi_defined",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menu_options_lic",
-    "PKColumns": "id",
-    "TableColumns": "id,app_id,app_title,app_package,app_subpackage,app_func,app_spi_defined,tab_id,tab_title,tab_package,tab_subpackage,tab_func,tab_spi_defined,group_id,group_title,group_package,group_subpackage,group_func,group_spi_defined,option_id,option_title,progcall,callpath,package,subpackage,func,is_fglrun,is_sub_system,spi_defined,sectb_license_id,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menu_persnl_grps",
-    "PKColumns": "",
-    "TableColumns": "grp_num,grp_title,uid,package,exe_location",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menu_persnl_opts",
-    "PKColumns": "",
-    "TableColumns": "grp_num,uid,opt_num,option_name,callpath,progcall,desk_icon,package,btn_num",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menu_tabs",
-    "PKColumns": "tab_id",
-    "TableColumns": "tab_id,title,package,subpackage,func,spi_defined",
+    "name": "mapheader",
+    "PKColumns": "row_id",
+    "TableColumns": "row_id,mapname,name,spiuser,ispublic,restrict_yn,change_uid,change_date,change_time",
     "TableHasChangeDT": ""
   },
   {
@@ -7182,83 +8809,6 @@ $dbDefinitions = @'
     "name": "menutb_activity",
     "PKColumns": "",
     "TableColumns": "userid,menu_path,choice,choicedesc,package,subpack,func,stampdate,stamptime",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menutb_cfg",
-    "PKColumns": "",
-    "TableColumns": "customer,change_date,change_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menutb_items",
-    "PKColumns": "",
-    "TableColumns": "menu_path,choice,choicedesc,progcall,callpath,run_command,package,subpack,func,change_date,change_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menutb_lock",
-    "PKColumns": "",
-    "TableColumns": "package,subpack,func,num_users",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menutb_printers",
-    "PKColumns": "",
-    "TableColumns": "building,description,pr_command,quiet_mode,copies_opt,change_date,change_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menutb_rebuild",
-    "PKColumns": "",
-    "TableColumns": "spiuser,package,subpack,func",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menutb_termtype",
-    "PKColumns": "",
-    "TableColumns": "term_type,seq_132,seq_80",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menutb_titles",
-    "PKColumns": "",
-    "TableColumns": "menu_path,title,menuid,change_date,change_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menutool",
-    "PKColumns": "choice",
-    "TableColumns": "choice,group_id,choiceparent,action_index,action_name,description,image,comment,item_type,showtoolitem",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menutool_groups",
-    "PKColumns": "group_id",
-    "TableColumns": "group_id,group_type,group_name,parent_group_id,gdc_order,gwc_order,gdc_title,gwc_title,group_orientation",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "menutool_items",
-    "PKColumns": "item_id",
-    "TableColumns": "item_id,gdc_group_id,gwc_group_id,item_type,action_name,action_desc,gdc_order,gwc_order,gdc_image,gwc_image,gdc_showtoolitem,gwc_showtoolitem,gwc_toolbar_order,item_orientation,tooltiptext",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "migration",
-    "PKColumns": "id",
-    "TableColumns": "id,name,project_name,run_date",
     "TableHasChangeDT": ""
   },
   {
@@ -7718,23 +9268,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "multiasset",
-    "PKColumns": "",
-    "TableColumns": "tagno,improvement_num,func_name,activity,deporgn,depacct,dep_pct",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "netdist",
     "PKColumns": "",
     "TableColumns": "vend_no,due_date,fund_grp,pay_run,amountx,tran_type,hold_flg",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "netdist2",
-    "PKColumns": "",
-    "TableColumns": "fund,gross,tax_deds,ret_deds,oth_deds,fringe",
     "TableHasChangeDT": ""
   },
   {
@@ -7784,13 +9320,6 @@ $dbDefinitions = @'
     "name": "newhireverf",
     "PKColumns": "request_id,lvl,association_id",
     "TableColumns": "request_id,lvl,association_id,association_seq,app_empl_no,del_empl_no,act,result,action_date,comment,verified_by",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "non_work",
-    "PKColumns": "cal_type,n_date",
-    "TableColumns": "cal_type,n_date,w_flag",
     "TableHasChangeDT": ""
   },
   {
@@ -7865,20 +9394,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "old_assets",
-    "PKColumns": "",
-    "TableColumns": "tagno,improvement_num,dept,catcode,func_name,activity,deporgn,depacct,multifunc",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "old_department",
-    "PKColumns": "",
-    "TableColumns": "dept,dept_title,catcode,activity_code,prior_yr_amt,cur_yr_amt",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "old_multiftbl",
     "PKColumns": "",
     "TableColumns": "multifunc,description,function1,percent1,function2,percent2,function3,percent3,function4,percent4,function5,percent5,function6,percent6,function7,percent7,function8,percent8,function9,percent9,function10,percent10",
@@ -7886,23 +9401,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "old_source",
-    "PKColumns": "",
-    "TableColumns": "fund_source,fund_source_desc,prior_yr_amt,cur_yr_amt",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "opayable",
     "PKColumns": "",
     "TableColumns": "trans_no,enc_no,line_no,p_f,key_orgn,account,project,proj_acct,vend_no,c_1099,gl_cash,due_date,invoice,amount,description,single_ck,disc_date,disc_amt,voucher,hold_flg,date_entered,entered_by,batch,yr,period,qty_paid,qty_rec,sales_tax,use_tax,alt_vend_no",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "optio_manager",
-    "PKColumns": "",
-    "TableColumns": "format_id,format_name,active_format,site_code,district_code,format_code,format_type,printer,address_1,address_1_v,address_1_h,address_2,address_2_v,address_2_h,address_3,address_3_v,address_3_h,address_4,address_4_v,address_4_h,address_5,address_5_v,address_5_h,voucher_text,voucher_text_v,voucher_text_h,check_text,check_text_v,check_text_h,return_address_1,return_address_1_v,return_address_1_h,return_address_2,return_address_2_v,return_address_2_h,return_address_3,return_address_3_v,return_address_3_h,return_address_4,return_address_4_v,return_address_4_h,logo,logo_v,logo_h,logo_file,signature_1,signature_1_v,signature_1_h,signature_1_file,title_1,title_1_v,title_1_h,signature_2,signature_2_v,signature_2_h,signature_2_file,title_2,title_2_v,title_2_h,signature_3,signature_3_v,signature_3_h,signature_3_file,title_3,title_3_v,title_3_h,bank_address_1,bank_address_1_v,bank_address_1_h,bank_address_2,bank_address_2_v,bank_address_2_h,bank_address_3,bank_address_3_v,bank_address_3_h,bank_address_4,bank_address_4_v,bank_address_4_h,bank_address_5,bank_address_5_v,bank_address_5_h,fraction,fraction_v,fraction_h,micr_prefix,micr_prefix_v,micr_prefix_h,micr_routing,micr_routing_v,micr_routing_h,micr_account,micr_account_v,micr_account_h,top_text_1,top_text_1_v,top_text_1_h,top_text_2,top_text_2_v,top_text_2_h,bottom_text_1,bottom_text_1_v,bottom_text_1_h,bottom_text_2,bottom_text_2_v,bottom_text_2_h,bottom_text_3,bottom_text_3_v,bottom_text_3_h,bottom_text_4,bottom_text_4_v,bottom_text_4_h,bottom_text_5,bottom_text_5_v,bottom_text_5_h,bottom_text_6,bottom_text_6_v,bottom_text_6_h,bottom_text_7,bottom_text_7_v,bottom_text_7_h,bottom_text_8,bottom_text_8_v,bottom_text_8_h,bottom_text_9,bottom_text_9_v,bottom_text_9_h,bottom_text_10,bottom_text_10_v,bottom_text_10_h,bottom_text_11,bottom_text_11_v,bottom_text_11_h,bottom_text_12,bottom_text_12_v,bottom_text_12_h,bottom_text_13,bottom_text_13_v,bottom_text_13_h,bottom_text_14,bottom_text_14_v,bottom_text_14_h,bottom_text_15,bottom_text_15_v,bottom_text_15_h,copy_1_name,copy_1_name_v,copy_1_name_h,copy_2_name,copy_2_name_v,copy_2_name_h,copy_3_name,copy_3_name_v,copy_3_name_h,copy_4_name,copy_4_name_v,copy_4_name_h,copy_5_name,copy_5_name_v,copy_5_name_h,num_copies,change_date,change_time,change_uid,check_number_v,check_number_h,check_date_v,check_date_h,check_date_label_v,check_date_label_h,po_watermark,from_email_address,email_subject,email_body",
     "TableHasChangeDT": ""
   },
   {
@@ -7917,20 +9418,6 @@ $dbDefinitions = @'
     "name": "oreceive",
     "PKColumns": "",
     "TableColumns": "enc_no,key_orgn,account,project,proj_acct,gl_account,vend_no,amount,date_enc,description,hold_flg,date_entered,entered_by,batch,yr,period",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "orgbudexp",
-    "PKColumns": "",
-    "TableColumns": "yr,fund,key_orgn,acct,amount",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "orgbudrev",
-    "PKColumns": "",
-    "TableColumns": "yr,fund,key_orgn,acct,amount",
     "TableHasChangeDT": ""
   },
   {
@@ -8047,23 +9534,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "P360_NotificationRule",
-    "PKColumns": "PNR_ID",
-    "TableColumns": "PNR_ID,PNR_TStamp,PNR_LastUser,PNR_District,PNR_Name,PNR_Description,PNR_SourceApplication,PNR_RemoteSecurityApplication,PNR_RemoteSecurityType,PNR_RequiredSecurity,PNR_RuleType,PNR_Rule,PNR_Category,PNR_FilterSQL,PNR_HighestRequiredLevel,PNR_ShortMessage,PNR_LongMessage,PNR_LongMessageRemote,PNR_LinkToPageTitle,PNR_LinkToPageURL,PNR_LinkToPageMethod,PNR_AlertEveryTime,PNR_Subquery,PNR_Subquery_ID,PNR_Active",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "P360_NotificationRuleKey",
     "PKColumns": "PNRK_ID",
     "TableColumns": "PNRK_ID,PNRK_TStamp,PNRK_LastUser,PNRK_District,PNRK_PNR_ID,PNRK_KeyName,PNRK_ResultValueID",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "P360_NotificationRuleUser",
-    "PKColumns": "PNRU_ID",
-    "TableColumns": "PNRU_ID,PNRU_TStamp,PNRU_LastUser,PNRU_District,PNRU_PNR_ID,PNRU_Level,PNRU_Actor,PNRU_SubscribeStatus,PNRU_DeliveryMethod,PNRU_InstantAlert,PNRU_Active",
     "TableHasChangeDT": ""
   },
   {
@@ -8082,20 +9555,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "P360_NotificationUserCriteria",
-    "PKColumns": "PNUC_ID",
-    "TableColumns": "PNUC_ID,PNUC_TStamp,PNUC_LastUser,PNUC_District,PNUC_PNR_ID,PNUC_PNRU_ID,PNUC_CriteriaType,PNUC_CriteriaVariable,PNUC_CriteriaValue",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "padd_rate",
-    "PKColumns": "",
-    "TableColumns": "empl_no,classify,pos,indx,code,salary,fte",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "password_requests",
     "PKColumns": "session_id,user_id,request_date",
     "TableColumns": "session_id,user_id,request_date,is_active",
@@ -8110,58 +9569,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "pat_sit",
+    "name": "pay_history",
     "PKColumns": "",
-    "TableColumns": "sit_type,secure_type,lv_cd_ref,udef1_name,udef1_type,udef1_len,udef1_tab_ref,udef2_name,udef2_type,udef2_len,udef2_tab_ref,udef3_name,udef3_type,udef3_len,udef3_tab_ref,udef4_name,udef4_type,udef4_len,udef4_tab_ref,udef5_name,udef5_type,udef5_len,udef5_tab_ref,udef6_name,udef6_type,udef6_len,udef6_tab_ref,udef7_name,udef7_type,udef7_len,udef7_tab_ref,udef8_name,udef8_type,udef8_len,udef8_tab_ref,udef9_name,udef9_type,udef9_len,udef9_tab_ref,udef10_name,udef10_type,udef10_len,udef10_tab_ref,udef11_name,udef11_type,udef11_len,udef11_tab_ref,udef12_name,udef12_type,udef12_len,udef12_tab_ref,udef13_name,udef13_type,udef13_len,udef13_tab_ref,udef14_name,udef14_type,udef14_len,udef14_tab_ref,udef15_name,udef15_type,udef15_len,udef15_tab_ref,udef16_name,udef16_type,udef16_len,udef16_tab_ref,udef17_name,udef17_type,udef17_len,udef17_tab_ref,udef18_name,udef18_type,udef18_len,udef18_tab_ref,udef19_name,udef19_type,udef19_len,udef19_tab_ref,udef20_name,udef20_type,udef20_len,udef20_tab_ref,short_sit_type",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "pay_code",
-    "PKColumns": "",
-    "TableColumns": "screen_no,scr_desc,pay_code1,fy1,pay_code2,fy2,pay_code3,fy3,pay_code4,fy4,pay_code5,fy5,pay_code6,fy6,pay_code7,fy7,pay_code8,fy8,pay_code9,fy9,pay_code10,fy10",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "pay_freq",
-    "PKColumns": "",
-    "TableColumns": "vend_pay_freq,pay_run,due_date,period,yr",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "pay_log",
-    "PKColumns": "",
-    "TableColumns": "pay_run,uid,chg_date,chg_time",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "pay_runf",
-    "PKColumns": "",
-    "TableColumns": "pay_run,pay_cycle,freq_type,freq_code,adv_pay",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "pay_stax",
-    "PKColumns": "",
-    "TableColumns": "pay_run,pay_cycle,s_fed_tax,s_sta_tax,s_loc_tax",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "pay2file",
-    "PKColumns": "",
-    "TableColumns": "empl_no,ssn,l_name,f_name,chk_locn,addr1,addr2,addr3,zip,home_orgn,voucher,end_date,start_date,m_name,name_suffix",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "payab_asset",
-    "PKColumns": "",
-    "TableColumns": "payab_src,row_id,rec_no",
+    "TableColumns": "po_no,line_no,paid_qty,paid_by,trans_date,batch,status,trans_no,invoice,src,row_id",
     "TableHasChangeDT": ""
   },
   {
@@ -8187,30 +9597,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "paychk_sel",
-    "PKColumns": "",
-    "TableColumns": "pay_run,selection_type,data_type,begin_chknum,lastgood_chknum,restart_chknum,iss_date,sort_ord,begin_evchnum,msg_line1,msg_line2,run_date,run_time,run_user,format_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "paycode",
-    "PKColumns": "",
-    "TableColumns": "empl_no,pay_code,p_amt,p_hours,mtd_amt,mtd_hours,qtd_amt,ytd_amt,cal_cycle_units,cal_cycle_amt",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "payee",
     "PKColumns": "",
     "TableColumns": "payee_no,payee_name,alpha_name,address_1,address_2,address_3,zip_code,phone,fax",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "payer",
-    "PKColumns": "",
-    "TableColumns": "vend_no,ven_name,alpha_name,b_addr_1,b_addr_2,b_addr_3,b_zip,b_phone,date_last,receivables,payments",
     "TableHasChangeDT": ""
   },
   {
@@ -8222,58 +9611,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "payfile",
-    "PKColumns": "",
-    "TableColumns": "empl_no,home_orgn,pdf,code,amount,fringe,orgn,proj,acct,pacct,arrears,check_no,hours,classify,dedgross,frngross,tax_ind,bank,bt_code,bank_acct,pay_cycle,chk_ind,flsa_flg,payrate",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "paygroups",
-    "PKColumns": "",
-    "TableColumns": "group_x,def_hours,pay_run,end_date,cur_run,run_desc,proc_sumfisc,start_date",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "paygrp_defdays",
     "PKColumns": "",
     "TableColumns": "group_x,def_days,pay_run",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "payrate",
-    "PKColumns": "empl_no,rate_no",
-    "TableColumns": "empl_no,rate_no,primry,group_x,pay_hours,days_worked,hours_day,incl_dock,no_pays,fte,pay_method,pay_cycle,pay_cd,classify,occupied,cal_type,range,step_x,rate,dock_rate,cont_flg,cont_days,override,annl_sal,cont_lim,cont_bal,cont_paid,cont_start,cont_end,pay_start,pay_end,summer_pay,status_x,pyo_date,pyo_rem_pay,pyo_days,pyo_rate,pyo_amt,dock_arrears_amt,dock_pays_remain",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "payrhist",
-    "PKColumns": "",
-    "TableColumns": "empl_no,classify,pos,rangex,stepx,ratex,annl_sal,eff_date,operator_id,group_x,cont_days,days_worked,fte,cont_lim,cont_paid,cont_bal,hours_day,pay_hours,pay_cd,remain_pay,cal_type,pay_method,dock_rate,dock_units,dock_amt,ext_lv_units,ext_lv_amt,dock_arrears_amt,dock_pays_remain",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "payroll",
-    "PKColumns": "empl_no",
-    "TableColumns": "empl_no,pay_freq,card_requ,sp1_amt,sp1_cd,sp2_amt,sp2_cd,sp3_amt,sp3_cd,chk_locn,last_paid,fed_exempt,fed_marital,fed_dep,add_fed,sta_exempt,state_id,pr_state,sta_marital,sta_dep,add_state,loc_exempt,locl,pr_local,loc_marital,loc_dep,add_local,fic_exempt,earn_inc,lv_date,lv1_cd,lv1_bal,lv1_tak,lv1_ear,lv2_cd,lv2_bal,lv2_tak,lv2_ear,lv3_cd,lv3_bal,lv3_tak,lv3_ear,lv4_cd,lv4_bal,lv4_tak,lv4_ear,lv5_cd,lv5_bal,lv5_tak,lv5_ear,lv6_cd,lv6_bal,lv6_tak,lv6_ear,lv7_cd,lv7_bal,lv7_tak,lv7_ear,lv8_cd,lv8_bal,lv8_tak,lv8_ear,lv9_cd,lv9_bal,lv9_tak,lv9_ear,lv10_cd,lv10_bal,lv10_tak,lv10_ear,tearn_c,tearn_m,tearn_q,tearn_y,tearn_ft,ftearn_c,ftearn_m,ftearn_q,ftearn_y,ftearn_ft,fiearn_c,fiearn_m,fiearn_q,fiearn_y,fiearn_ft,mdearn_c,mdearn_m,mdearn_q,mdearn_y,mdearn_ft,stearn_c,stearn_m,stearn_q,stearn_y,stearn_ft,s2earn_c,s2earn_m,l2earn_y,s2earn_y,s2earn_ft,loearn_c,loearn_m,loearn_q,loearn_y,loearn_ft,allow_c,allow_m,allow_q,allow_y,allow_ft,nocash_c,nocash_m,nocash_q,nocash_y,nocash_ft,fedtax_c,fedtax_m,fedtax_q,fedtax_y,fedtax_ft,fictax_c,fictax_m,fictax_q,fictax_y,fictax_ft,medtax_c,medtax_m,medtax_q,medtax_y,medtax_ft,statax_c,statax_m,statax_q,statax_y,statax_ft,st2tax_c,st2tax_m,lt2tax_y,st2tax_y,st2tax_ft,loctax_c,loctax_m,loctax_q,loctax_y,loctax_ft,eic_c,eic_m,eic_q,eic_y,eic_ft,rfiearn_y,rfictax_y,rmdearn_y,rmedtax_y,flsa_cycle_y,flsa_cycle_hrs,flsa_hours,flsa_amount,rfiearn_c,rfiearn_m,rfiearn_q,rfiearn_ft,rfictax_c,rfictax_m,rfictax_q,rfictax_ft,rmdearn_c,rmdearn_m,rmdearn_q,rmdearn_ft,rmedtax_c,rmedtax_m,rmedtax_q,rmedtax_ft,fed_tax_calc_cd,w4_sub_date,non_res_alien,ann_other_inc,ann_deductions,ann_tax_credit,pays_per_year",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "paytab_activity",
-    "PKColumns": "",
-    "TableColumns": "table_name,key_field,field_name,old_value,new_value,operator,date_chg,time_chg",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "paytable",
-    "PKColumns": "pay_code",
-    "TableColumns": "pay_code,title,ck_title,pay_type,percent_x,account,fed_exempt,sta_exempt,fic_exempt,loc_exempt,ded1_exempt,ded2_exempt,ded3_exempt,ded4_exempt,ded5_exempt,ded6_exempt,ded7_exempt,ded8_exempt,ded9_exempt,ded10_exempt,lv_add,lv_sub,time_type,frequency,wkr_comp,encum,pc_track,flsa_calc_type,flsa_ovt,exc_retro,add_factor,time_flag,app_level,ded11_exempt,ded12_exempt,ded13_exempt,ded14_exempt,ded15_exempt,ded16_exempt,ded17_exempt,ded18_exempt,ded19_exempt,ded20_exempt,ded21_exempt,ded22_exempt,ded23_exempt,ded24_exempt,ded25_exempt,ded26_exempt,ded27_exempt,ded28_exempt,ded29_exempt,ded30_exempt,ded31_exempt,ded32_exempt,ded33_exempt,ded34_exempt,ded35_exempt,ded36_exempt,ded37_exempt,ded38_exempt,ded39_exempt,ded40_exempt,include_notif",
     "TableHasChangeDT": ""
   },
   {
@@ -8490,14 +9830,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "pcd_dist",
     "PKColumns": "",
-    "TableColumns": "trans_no,entry_no,line_no,dpay_row_id,pay_row_id,key_orgn,account,project,proj_acct,amount,c_1099,description,row_id,enc_no",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "pcd_enc_no",
-    "PKColumns": "",
-    "TableColumns": "prefix,next_enc_no",
+    "TableColumns": "trans_no,entry_no,line_no,dpay_row_id,pay_row_id,key_orgn,account,project,proj_acct,amount,c_1099,description,row_id,enc_no,pcd_fullacct",
     "TableHasChangeDT": ""
   },
   {
@@ -8561,20 +9894,6 @@ $dbDefinitions = @'
     "name": "pcd_vendors",
     "PKColumns": "",
     "TableColumns": "pcard_layout,merch_id,vend_no,merch_name,address1,address2,city,state,zip",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "pclstable",
-    "PKColumns": "",
-    "TableColumns": "class_cd,title,schedule,wkr_comp,cal_type,ded_cd1,ded_cd2,ded_cd3,ded_cd4,ded_cd5,ded_cd6,ded_cd7,ded_cd8,ded_cd9,ded_cd10,pay_cd,pay_method,group_x,range,step_x,av_an_sal,hours_day,days_worked,no_pays,bud_rate,pos_ctrl,bar_unit,anniv_incr",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "pclstable_data2",
-    "PKColumns": "",
-    "TableColumns": "class_cd,job_type,job_descript",
     "TableHasChangeDT": ""
   },
   {
@@ -8796,37 +10115,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "pdedtable",
-    "PKColumns": "",
-    "TableColumns": "ded_cd,title,no_pays,frng_meth,frng_rate,frng_acct,fic_fexp,frng_dist,frng_orgn,frng_proj,use_gross_field",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "pdeduct",
-    "PKColumns": "",
-    "TableColumns": "classify,pos,empl_no,ded_cd,cont_amt,max_fringe,bud_amt,freeze,addl_frng_gross",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "pdist_orgn",
-    "PKColumns": "",
-    "TableColumns": "empl_no,rate_no,classify,pos,orgn,acct,prcent",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "pdist_proj",
     "PKColumns": "",
     "TableColumns": "empl_no,rate_no,classify,pos,proj,acct,prcent",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "pdtytable",
-    "PKColumns": "",
-    "TableColumns": "code,desc_x,prcent,dollar",
     "TableHasChangeDT": ""
   },
   {
@@ -8845,23 +10136,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "person",
-    "PKColumns": "empl_no",
-    "TableColumns": "empl_no,home_phone,listed,work_phone,emer_cont,emer_phone,phys_name,phys_phone,yrs_district,yrs_state,yrs_total,last_tb,tenure_date,senior_date,empl_type,location,sex,race,eeo,eeo_group,part_time,status,stat_date,hand,job_1,job_2,job_3,job_4,job_5,bargain,comp_code,term_date,term_code,ex_curr1,ex_curr2,ex_curr3,ex_curr4,ex_curr5,ex_curr6,curr_date,prior_class,prior_date,prior2_class,prior2_date,incr_per,incr_date,incr2_per,incr2_date,incr3_per,incr3_date,eeo_func,lastday_worked,cell_phone,other_phone,emer_cell_phone,ethnic_code,staff_state_id,inc_sum_fisc_accr,gender_identity",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "person_cont_type",
     "PKColumns": "empl_no,contract_type",
     "TableColumns": "empl_no,contract_type,board_date",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "pfictable",
-    "PKColumns": "",
-    "TableColumns": "fic_med,empr_per,empr_max,frg_acct,frng_dist,frng_orgn",
     "TableHasChangeDT": ""
   },
   {
@@ -9006,13 +10283,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "ppaytable",
-    "PKColumns": "",
-    "TableColumns": "pay_code,title,pay_type,percent_x,account,fic_exempt,wkr_comp,ded1_exempt,ded2_exempt,ded3_exempt,ded4_exempt,ded5_exempt,ded6_exempt,ded7_exempt,ded8_exempt,ded9_exempt,ded10_exempt,no_pays,ded11_exempt,ded12_exempt,ded13_exempt,ded14_exempt,ded15_exempt,ded16_exempt,ded17_exempt,ded18_exempt,ded19_exempt,ded20_exempt,ded21_exempt,ded22_exempt,ded23_exempt,ded24_exempt,ded25_exempt,ded26_exempt,ded27_exempt,ded28_exempt,ded29_exempt,ded30_exempt,ded31_exempt,ded32_exempt,ded33_exempt,ded34_exempt,ded35_exempt,ded36_exempt,ded37_exempt,ded38_exempt,ded39_exempt,ded40_exempt",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "ppctl_orgn",
     "PKColumns": "",
     "TableColumns": "classify,pos,orgn,acct,prcent",
@@ -9065,20 +10335,6 @@ $dbDefinitions = @'
     "name": "prevposn",
     "PKColumns": "",
     "TableColumns": "id,posn,employer,addr1,addr2,refer_ence,phone,start_date,end_date,st_salary,end_salary,leave_reason",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "proc_detail",
-    "PKColumns": "",
-    "TableColumns": "proc_type,proc_step,proc_def,complete,navigation",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "proc_header",
-    "PKColumns": "",
-    "TableColumns": "proc_type,proc_step,description,required,step_order",
     "TableHasChangeDT": ""
   },
   {
@@ -9209,13 +10465,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "purge_dist_orgn",
-    "PKColumns": "",
-    "TableColumns": "empl_no,rate_no,classify,pos,orgn,acct,prcent,purge_date",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "purge_dist_proj",
     "PKColumns": "",
     "TableColumns": "empl_no,rate_no,classify,pos,proj,acct,prcent,purge_date",
@@ -9251,13 +10500,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "purge_payrate",
-    "PKColumns": "",
-    "TableColumns": "empl_no,rate_no,primry,group_x,pay_hours,days_worked,hours_day,incl_dock,no_pays,fte,pay_method,pay_cycle,pay_cd,classify,occupied,cal_type,range,step_x,rate,dock_rate,cont_flg,cont_days,override,annl_sal,cont_lim,cont_bal,cont_paid,cont_start,cont_end,pay_start,pay_end,summer_pay,status_x,pyo_date,pyo_rem_pay,pyo_days,pyo_rate,pyo_amt,purge_date,dock_arrears_amt,dock_pays_remain",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "purge_posprate",
     "PKColumns": "",
     "TableColumns": "empl_no,classify,pos,fte,yr,purge_date",
@@ -9272,13 +10514,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "pwkrtable",
-    "PKColumns": "",
-    "TableColumns": "work_cd,title,rate,fringe_acct",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "qual_type",
     "PKColumns": "",
     "TableColumns": "qual_code,description",
@@ -9286,9 +10521,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "racetable",
+    "name": "rec_history",
     "PKColumns": "",
-    "TableColumns": "race,description,race_fed,race_state,sis_code",
+    "TableColumns": "po_no,line_no,rec_qty,rec_by,trans_date,batch,status,trans_no,invoice,src,row_id",
     "TableHasChangeDT": ""
   },
   {
@@ -9337,7 +10572,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "recon_payment",
     "PKColumns": "",
-    "TableColumns": "bankacct,end_date,cleared,t_c,ck_date,check_no,vend_no,trans_amt,clear_date,void_date,yr,period,disb_fund,gl_cash",
+    "TableColumns": "bankacct,end_date,cleared,t_c,ck_date,check_no,vend_no,trans_amt,clear_date,void_date,yr,period,disb_gl_key_orgn,gl_cash",
     "TableHasChangeDT": ""
   },
   {
@@ -9380,13 +10615,6 @@ $dbDefinitions = @'
     "name": "reftb_collateral",
     "PKColumns": "",
     "TableColumns": "code,description,change_date,change_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "regtb_building",
-    "PKColumns": "building",
-    "TableColumns": "building,building_name,district_num,street,city,state_id,zip_code,phone,principal,calendar,building_node,dist_updated,change_date,change_time,change_uid",
     "TableHasChangeDT": ""
   },
   {
@@ -9489,13 +10717,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "revledgr",
-    "PKColumns": "yr,key_orgn,account",
-    "TableColumns": "yr,key_orgn,account,bud1,exp1,enc1,bud2,exp2,enc2,bud3,exp3,enc3,bud4,exp4,enc4,bud5,exp5,enc5,bud6,exp6,enc6,bud7,exp7,enc7,bud8,exp8,enc8,bud9,exp9,enc9,bud10,exp10,enc10,bud11,exp11,enc11,bud12,exp12,enc12,bud13,exp13,enc13",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "revnotes",
     "PKColumns": "",
     "TableColumns": "yr,key_orgn,account,note,recno,amount",
@@ -9573,13 +10794,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "rstable",
-    "PKColumns": "",
-    "TableColumns": "range,desc_x,step_1,pcnt_1,step_2,pcnt_2,step_3,pcnt_3,step_4,pcnt_4,step_5,pcnt_5,step_6,pcnt_6,step_7,pcnt_7,step_8,pcnt_8,step_9,pcnt_9,step_10,pcnt_10,step_11,pcnt_11,step_12,pcnt_12,step_13,pcnt_13,step_14,pcnt_14,step_15,pcnt_15,step_16,pcnt_16,step_17,pcnt_17,step_18,pcnt_18,step_19,pcnt_19,step_20,pcnt_20,step_21,pcnt_21,step_22,pcnt_22,step_23,pcnt_23,step_24,pcnt_24,step_25,pcnt_25,step_26,pcnt_26,step_27,pcnt_27,step_28,pcnt_28,step_29,pcnt_29,step_30,pcnt_30,step_31,pcnt_31,step_32,pcnt_32,step_33,pcnt_33,step_34,pcnt_34,step_35,pcnt_35,step_36,pcnt_36,step_37,pcnt_37,step_38,pcnt_38,step_39,pcnt_39,step_40,pcnt_40,step_41,pcnt_41,step_42,pcnt_42,step_43,pcnt_43,step_44,pcnt_44,step_45,pcnt_45,step_46,pcnt_46,step_47,pcnt_47,step_48,pcnt_48,step_49,pcnt_49,step_50,pcnt_50,step_51,pcnt_51,step_52,pcnt_52,step_53,pcnt_53,step_54,pcnt_54,step_55,pcnt_55,step_56,pcnt_56,step_57,pcnt_57,step_58,pcnt_58,step_59,pcnt_59,step_60,pcnt_60,step_61,pcnt_61,step_62,pcnt_62,step_63,pcnt_63,step_64,pcnt_64,step_65,pcnt_65,step_66,pcnt_66,step_67,pcnt_67,step_68,pcnt_68,step_69,pcnt_69,step_70,pcnt_70,step_71,pcnt_71,step_72,pcnt_72,step_73,pcnt_73,step_74,pcnt_74,step_75,pcnt_75,step_76,pcnt_76,step_77,pcnt_77,step_78,pcnt_78,step_79,pcnt_79,step_80,pcnt_80,step_81,pcnt_81,step_82,pcnt_82,step_83,pcnt_83,step_84,pcnt_84,step_85,pcnt_85,step_86,pcnt_86,step_87,pcnt_87,step_88,pcnt_88,step_89,pcnt_89,step_90,pcnt_90,step_91,pcnt_91,step_92,pcnt_92,step_93,pcnt_93,step_94,pcnt_94,step_95,pcnt_95,step_96,pcnt_96,step_97,pcnt_97,step_98,pcnt_98,step_99,pcnt_99",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "rule_definitions",
     "PKColumns": "rule_id",
     "TableColumns": "rule_id,area,field_name,operator,comparison_value,ending_value,exclude,grouping,notes,rulegroup_id,sequence,created_date,created_by,modified_by",
@@ -9608,20 +10822,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "salsch_code",
-    "PKColumns": "",
-    "TableColumns": "lea,fy,code",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "school",
-    "PKColumns": "",
-    "TableColumns": "code,desc_x",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "screen_attr_additions",
     "PKColumns": "",
     "TableColumns": "group_id,field_id,CB_table,CB_value,CB_description,CB_where",
@@ -9629,86 +10829,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "screen_attr_tbl",
-    "PKColumns": "",
-    "TableColumns": "group_id,client_type,state_id,site_id,key_name,field_id,field_type,field_style,field_label,comments,field_hidden,field_noentry",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "screen_desc",
-    "PKColumns": "",
-    "TableColumns": "rpt_type,rpt_option,rpt_description1,rpt_description2,rpt_description3,rpt_description4,rpt_description5,rpt_description6,rpt_description7,rpt_description8,rpt_description9,rpt_description10",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "search_detail",
-    "PKColumns": "",
-    "TableColumns": "searchid,line_no,intab,incol,inoperation,inval,hival,ingroup,injoin",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "search_groupkeys",
     "PKColumns": "",
     "TableColumns": "grpname,tabname,collist",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "search_groups",
-    "PKColumns": "grpname,tabname",
-    "TableColumns": "grpname,tabname,join_type",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "search_header",
-    "PKColumns": "",
-    "TableColumns": "searchid,grpname,ownername,searchname,searchdesc,is_public",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "search_keys",
-    "PKColumns": "tabname,joinalias",
-    "TableColumns": "tabname,keyname,joinalias",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "search_nxtno",
-    "PKColumns": "",
-    "TableColumns": "tab_name,next_no",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sec_user_menu_cache",
-    "PKColumns": "login_id",
-    "TableColumns": "login_id,menu,reset,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sectb_access",
-    "PKColumns": "",
-    "TableColumns": "uid,usertype,stampid,stampdate,stamptime",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sectb_action_feature",
-    "PKColumns": "area,controller,action,feature_id",
-    "TableColumns": "area,controller,action,feature_id,read_access_resource,write_access_resource,description,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sectb_action_resource",
-    "PKColumns": "area,controller,action",
-    "TableColumns": "area,controller,action,read_access_resource,write_access_resource,description,change_date_time,change_uid",
     "TableHasChangeDT": ""
   },
   {
@@ -9727,51 +10850,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "sectb_crosswalk",
-    "PKColumns": "spiuser",
-    "TableColumns": "spiuser,windomain,winuser",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "sectb_delegate",
     "PKColumns": "row_id",
     "TableColumns": "spiuser,workflow_type_id,task_id,start_date,end_date,delegate_uid,row_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sectb_license",
-    "PKColumns": "id",
-    "TableColumns": "id,uid,name,description,active,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sectb_package",
-    "PKColumns": "",
-    "TableColumns": "package,descript,stampid,stampdate,stamptime",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sectb_privilege",
-    "PKColumns": "",
-    "TableColumns": "priv_code,descript,stampid,stampdate,stamptime",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sectb_profile",
-    "PKColumns": "",
-    "TableColumns": "sec_attach,ad_integrate,ad_val_groups,ad_limit_adgroups,ad_synch_time",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sectb_resource",
-    "PKColumns": "",
-    "TableColumns": "usertype,package,subpack,func,priv_code,descript,stampid,stampdate,stamptime",
     "TableHasChangeDT": ""
   },
   {
@@ -9783,44 +10864,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "sectb_roles",
-    "PKColumns": "",
-    "TableColumns": "role_id,role_descript,ad_group,role_status,stampid,stampdate,stamptime",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "sectb_roleusers",
     "PKColumns": "",
     "TableColumns": "role_id,spiuser,stampid,stampdate,stamptime",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sectb_subpack",
-    "PKColumns": "",
-    "TableColumns": "subpack,descript,stampid,stampdate,stamptime",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sectb_user",
-    "PKColumns": "",
-    "TableColumns": "uid,lname,fname,email,building,bld_group,dept,fund,orgn,project,user_dba,qwarn,qlimit,stampid,stampdate,stamptime",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sectb_usrviw",
-    "PKColumns": "",
-    "TableColumns": "user_id,viewcode,view_txt,ent_date,ent_operator,upd_date,upd_operator",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "secure_elements",
-    "PKColumns": "field_name",
-    "TableColumns": "field_name,secure_id,secure_name,change_date_time,change_uid",
     "TableHasChangeDT": ""
   },
   {
@@ -9841,21 +10887,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "setup_int",
     "PKColumns": "",
-    "TableColumns": "tax_yr,typ1,amt1,typ2,amt2,typ3,amt3,typ5n,amt5n,typ5,amt5,typ8,amt8,typ9,amt9",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "setup_misc",
-    "PKColumns": "",
-    "TableColumns": "tax_yr,typ1,amt1,typ2,amt2,typ3,amt3,typ5,amt5,typ6,amt6,typ7,amt7,typ8,amt8,typ10,amt10,typ13,amt13,typ14,amt14,typ15a,amt15a,typ15b,amt15b,inc1,inc2,inc3,inc5,inc6,inc7,inc8,inc10,inc13,inc14,inc15a,inc15b,typ11,amt11,inc11",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "setup1099",
-    "PKColumns": "",
-    "TableColumns": "tax_yr,contact,payer_name,payer_address,payer_city,payer_state,payer_zip,payer_phone,payer_ein,payer_name_control,trans_code,fs_filer,state_number,prt_detail,media_code,email,op_type,flg_print,p_name,comp_name",
+    "TableColumns": "tax_yr,typ1,amt1,typ2,amt2,typ3,amt3,typ5n,amt5n,typ5,amt5,typ8,amt8,typ9,amt9,typmarket_discount,market_discount,typbond_prem,bond_prem,typbond_prem_treas,bond_prem_treasury,typbond_prem_taxex,bond_prem_taxexmpt",
     "TableHasChangeDT": ""
   },
   {
@@ -9876,7 +10908,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "sfe_business_rules",
     "PKColumns": "rule_id",
-    "TableColumns": "priority,rule_id,rule_title,rule_role,start_date,end_date,budget_code,reason_code,units_to_pay,work_unit,wrk_hrs_or_prcnt,timecard,account_mask,islongtermsubstitute,consecutive_days,job_class,pay_code,pay_rate",
+    "TableColumns": "priority,rule_id,rule_title,rule_role,start_date,end_date,budget_code,reason_code,units_to_pay,work_unit,wrk_hrs_or_prcnt,timecard,account_mask,islongtermsubstitute,consecutive_days,job_class,pay_code,pay_rate,day_conversion_factor",
     "TableHasChangeDT": ""
   },
   {
@@ -9947,34 +10979,6 @@ $dbDefinitions = @'
     "name": "sftimecrd",
     "PKColumns": "",
     "TableColumns": "empl_no,pay_code,hours,payrate,amount,orgn,account,proj,pacct,classify,pay_cycle,tax_ind,pay_run,subtrack_id,reported,user_chg,date_chg,flsa_cycle,flsa_flg,flsa_carry_ovr,post_flag,sf_id,job_date,posted",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "shared_info",
-    "PKColumns": "empl_no",
-    "TableColumns": "empl_no,password,uid,chg_pwd,user_dcid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "shared_info_hist",
-    "PKColumns": "empl_no,change_date_time",
-    "TableColumns": "empl_no,password,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "shdtable",
-    "PKColumns": "",
-    "TableColumns": "code,desc_x,hs_flag,max_step,num_ranges,days_worked,hours_day,bn_flag,state_hours_day",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "shipping",
-    "PKColumns": "",
-    "TableColumns": "code,address1,address2,address3,address4,city,state_id,zip",
     "TableHasChangeDT": ""
   },
   {
@@ -10056,37 +11060,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "site_info",
-    "PKColumns": "",
-    "TableColumns": "site_code,type,name,state_id,optional1,optional2,sub_site_code,sw_version,district_type",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sjournal",
-    "PKColumns": "",
-    "TableColumns": "je_number,description,key_orgn,account,project,proj_acct,debit_amt,credit_amt,hold_flg,date_entered,entered_by,batch,item_desc,row_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "source",
-    "PKColumns": "",
-    "TableColumns": "fund_source,fund_source_desc",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sourceamt",
-    "PKColumns": "",
-    "TableColumns": "fiscal_yr,fund_source,fund_type,amount,change_time,change_date,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "spayable",
     "PKColumns": "",
-    "TableColumns": "enc_no,line_no,p_f,key_orgn,account,project,proj_acct,vend_no,c_1099,gl_cash,due_date,invoice,amount,description,single_ck,disc_date,disc_amt,voucher,hold_flg,date_entered,entered_by,batch,sales_tax,use_tax,row_id,app_group",
+    "TableColumns": "enc_no,line_no,p_f,key_orgn,account,project,proj_acct,vend_no,c_1099,gl_cash,due_date,invoice,amount,description,single_ck,disc_date,disc_amt,voucher,hold_flg,date_entered,entered_by,batch,sales_tax,use_tax,row_id,app_group,gl_cash_key_orgn,gl_key_orgn,disb_gl_key_orgn,bankacct,due_to_key_orgn,due_to_account",
     "TableHasChangeDT": ""
   },
   {
@@ -10112,20 +11088,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "spi_column_info",
-    "PKColumns": "table_name,column_name",
-    "TableColumns": "table_name,column_name,ui_control_type,val_list,val_list_disp,val_tbl_name,val_col_code,val_col_desc,val_sql_where,val_order_by_code,val_disp_format,sec_package,sec_subpackage,column_width,change_date_time,change_uid,sec_feature",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "spi_column_names",
-    "PKColumns": "table_name,column_name,culture_code",
-    "TableColumns": "table_name,column_name,culture_code,column_description,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "spi_column_validation",
     "PKColumns": "table_name,column_name",
     "TableColumns": "table_name,column_name,val_list,val_list_disp,val_tbl_name,val_col_code,val_col_desc,val_sql_where,reserved,change_date_time,change_uid",
@@ -10140,20 +11102,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "SPI_INTEGRATION_DET",
-    "PKColumns": "DISTRICT,PRODUCT,OPTION_NAME",
-    "TableColumns": "DISTRICT,PRODUCT,OPTION_NAME,OPTION_VALUE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "SPI_INTEGRATION_HDR",
-    "PKColumns": "DISTRICT,PRODUCT",
-    "TableColumns": "DISTRICT,PRODUCT,DESCRIPTION,PACKAGE,SUBPACKAGE,FEATURE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "SPI_INTEGRATION_LOGIN",
     "PKColumns": "DISTRICT,PRODUCT,LOGIN_ID",
     "TableColumns": "DISTRICT,PRODUCT,LOGIN_ID,OTHER_LOGIN_ID",
@@ -10161,58 +11109,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "SPI_INTEGRATION_SESSION_DET",
-    "PKColumns": "SESSION_GUID,VARIABLE_NAME",
-    "TableColumns": "SESSION_GUID,VARIABLE_NAME,VARIABLE_VALUE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "SPI_INTEGRATION_SESSION_HDR",
-    "PKColumns": "SESSION_GUID",
-    "TableColumns": "SESSION_GUID,TSTAMP",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "spi_option_column_nullable",
     "PKColumns": "search_type,table_name,column_name",
     "TableColumns": "search_type,table_name,column_name,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "spi_option_excld",
-    "PKColumns": "search_type,table_name,column_name",
-    "TableColumns": "search_type,table_name,column_name,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "spi_option_list_field",
-    "PKColumns": "search_type,table_name,column_name",
-    "TableColumns": "search_type,table_name,column_name,display_order,is_hidden,formatter,navigation_param,column_label,is_sec_building_col,column_width,reserved,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "spi_option_name",
-    "PKColumns": "search_type",
-    "TableColumns": "search_type,option_name,navigate_to,btn_new_navigate,user_def_scr_type,use_programs,target_table,delete_table,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "spi_option_simple_search",
-    "PKColumns": "search_type,table_name,column_name,environment",
-    "TableColumns": "search_type,table_name,column_name,environment,display_order,operator,override_label,reserved,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "spi_option_table",
-    "PKColumns": "search_type,table_name",
-    "TableColumns": "search_type,table_name,sequence_num,sec_package,sec_subpackage,sec_feature,change_date_time,change_uid",
     "TableHasChangeDT": ""
   },
   {
@@ -10238,20 +11137,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "spi_table_join",
-    "PKColumns": "source_table,target_table,sequence_number",
-    "TableColumns": "source_table,target_table,sequence_number,join_table_1,join_column_1,join_table_2,join_column_2,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "spi_table_names",
-    "PKColumns": "table_name",
-    "TableColumns": "table_name,table_description,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "spi_user_search",
     "PKColumns": "login_id,search_type,search_number,sequence_num",
     "TableColumns": "login_id,search_type,search_number,sequence_num,and_or_flag,table_name,screen_type,screen_number,program_id,column_name,field_number,operator,search_value1,search_value2,change_date_time,change_uid",
@@ -10266,23 +11151,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "spi_user_sort",
-    "PKColumns": "login_id,sort_type,sort_number,sequence_num",
-    "TableColumns": "login_id,sort_type,sort_number,sequence_num,table_name,screen_type,screen_number,program_id,column_name,field_number,sort_order,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "spi_validation_tables",
     "PKColumns": "package,table_name,user_defined,reserved",
     "TableColumns": "package,table_name,table_descr,user_defined,custom_code,reserved,active,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "spilicense",
-    "PKColumns": "",
-    "TableColumns": "package,subpackage,option_name,username,description,install_date,enabled,license_key,checksum,expiration_date,user_count",
     "TableHasChangeDT": ""
   },
   {
@@ -10294,23 +11165,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "st2table",
-    "PKColumns": "",
-    "TableColumns": "state_id,pay_freq,marital,ear,amt,per",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "st3table",
-    "PKColumns": "",
-    "TableColumns": "state_id,pay_freq,marital,cred",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "state_clstable",
-    "PKColumns": "",
-    "TableColumns": "class_cd,nh_stoprule_exempt,certi_req,check3",
+    "PKColumns": "class_cd",
+    "TableColumns": "class_cd,nh_stoprule_exempt,certi_req,check3,check2,check4,check5,check6,check7,check8,check9,check10,check11,check12,check13,check14,check15,char1,char2,char3,char4,decimal1,decimal2,date1,date2,cb001,cb002",
     "TableHasChangeDT": ""
   },
   {
@@ -10336,37 +11193,16 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
+    "name": "state_payroll",
+    "PKColumns": "",
+    "TableColumns": "empl_no,sta_w4_sub_date,sta_ann_cred,sta_ann_ded",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
     "name": "state_paytable",
     "PKColumns": "pay_code",
     "TableColumns": "pay_code,check1,check2,check3,check4,check5,check6,check7,check8,check9,check10,check11,check12,check13,check14,check15,char1,char2,decimal1,decimal2,date1,date2,cb001,cb002",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "states",
-    "PKColumns": "code",
-    "TableColumns": "code,desc_x,code1",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "stathist",
-    "PKColumns": "",
-    "TableColumns": "empl_no,stat,statdt",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "statustb",
-    "PKColumns": "code",
-    "TableColumns": "code,desc_x",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sttable",
-    "PKColumns": "",
-    "TableColumns": "state_id,pay_freq,marital,account,stan_rate,stan_min,stan_max,mar_exemp,depend,supp_per",
     "TableHasChangeDT": ""
   },
   {
@@ -10408,7 +11244,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "stuact_locn_act",
     "PKColumns": "locn_act_code",
-    "TableColumns": "locn_act_code,locn_act_desc,locn,act_code,start_date,end_date,bank_acct,fund,cash_account,liability_account,exp_budget_code,exp_account,rev_budget_code,rev_account,budget_required,beginning_cash_bal,check_act_bud_bal,sponsor_id,chk_pend_cash_bal,posted_deposit_tot,posted_payment_tot,unposted_trans_tot,enc_bal,change_date_time,change_uid,ap_chk_format_id,po_chk_format_id",
+    "TableColumns": "locn_act_code,locn_act_desc,locn,act_code,start_date,end_date,bank_acct,gl_key_orgn,cash_account,liability_account,exp_budget_code,exp_account,rev_budget_code,rev_account,budget_required,beginning_cash_bal,check_act_bud_bal,sponsor_id,chk_pend_cash_bal,posted_deposit_tot,posted_payment_tot,unposted_trans_tot,enc_bal,change_date_time,change_uid,ap_chk_format_id,po_chk_format_id,disb_gl_key_orgn,dep_bank_acct",
     "TableHasChangeDT": ""
   },
   {
@@ -10443,7 +11279,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "stuact_transact",
     "PKColumns": "stu_trans_no",
-    "TableColumns": "stu_trans_no,yr,period,t_c,fund,locn_act_code,trans_date,key_orgn,account,gl_cash,gl_liability,enc_no,line_no,je_number,check_no,ck_date,cleared,trans_amt,liquid,vend_no,payer_no,invoice,p_f,c_1099,cancel,due_date,disc_date,disc_amt,description,date_entered,operator,batch,je_desc,qty_paid,qty_rec,split_link_no,bnk_code,sales_tax,clear_date,alt_vend_no,fam_trans_no,deposit_no,reconciled,use_tax,disb_gl_key_orgn",
+    "TableColumns": "stu_trans_no,yr,period,t_c,gl_key_orgn,locn_act_code,trans_date,key_orgn,account,gl_cash,gl_liability,enc_no,line_no,je_number,check_no,ck_date,cleared,trans_amt,liquid,vend_no,payer_no,invoice,p_f,c_1099,cancel,due_date,disc_date,disc_amt,description,date_entered,operator,batch,je_desc,qty_paid,qty_rec,split_link_no,bnk_code,sales_tax,clear_date,alt_vend_no,fam_trans_no,deposit_no,reconciled,use_tax,disb_gl_key_orgn,bankacct,check_bankacct",
     "TableHasChangeDT": ""
   },
   {
@@ -10490,65 +11326,30 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "suffix_table",
-    "PKColumns": "",
-    "TableColumns": "suffix_code",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "sumdetdist",
     "PKColumns": "",
-    "TableColumns": "yr,empl_no,pay_run,check_no,classify,rec_type,code,orgn,acct,fund,liab_acct,amount",
+    "TableColumns": "yr,empl_no,pay_run,check_no,classify,rec_type,code,orgn,acct,gl_key_orgn,liab_acct,amount",
     "TableHasChangeDT": ""
   },
   {
     "db": "eFin",
     "name": "sumfiscdist",
     "PKColumns": "",
-    "TableColumns": "yr,empl_no,classify,rec_type,code,orgn,acct,fund,liab_acct,accr_amt,liq_amt,bal_amt,accr_status,load_date,load_user,post_date,post_user,delete_date,delete_user,complete_date,complete_user,orig_sal_orgn,orig_sal_acct,prim_sal_orgn,prim_sal_acct",
+    "TableColumns": "yr,empl_no,classify,rec_type,code,orgn,acct,gl_key_orgn,liab_acct,accr_amt,liq_amt,bal_amt,accr_status,load_date,load_user,post_date,post_user,delete_date,delete_user,complete_date,complete_user,orig_sal_orgn,orig_sal_acct,prim_sal_orgn,prim_sal_acct",
     "TableHasChangeDT": ""
   },
   {
     "db": "eFin",
     "name": "sumfiscliab",
     "PKColumns": "",
-    "TableColumns": "exp_type,code_val,orgn_mask,liab_mask,fund",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sv_search_detail",
-    "PKColumns": "row_id",
-    "TableColumns": "row_id,search_id,field_name,value",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "sv_search_master",
-    "PKColumns": "search_id",
-    "TableColumns": "search_id,form_name,uid,pgm_run_cmd",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "systb_columns",
-    "PKColumns": "tabname,colname",
-    "TableColumns": "tabname,colname,descript1,descript2,descript3,descript4,change_date,change_time,change_uid,table_help,friendly_name",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "systb_tables",
-    "PKColumns": "tabname",
-    "TableColumns": "tabname,package,subpack,customer,descript1,descript2,descript3,descript4,change_date,change_time,change_uid,friendly_name",
+    "TableColumns": "exp_type,code_val,orgn_mask,liab_mask,gl_key_orgn,liab_fullacct_mask",
     "TableHasChangeDT": ""
   },
   {
     "db": "eFin",
     "name": "system_void_chk",
     "PKColumns": "",
-    "TableColumns": "disb_fund,check_no,vend_no,ven_name,status,amount,description,int_check_no,operator",
+    "TableColumns": "disb_fund,check_no,vend_no,ven_name,status,amount,description,int_check_no,operator,disb_gl_key_orgn,check_bankacct,ck_date",
     "TableHasChangeDT": ""
   },
   {
@@ -10588,23 +11389,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "t_employee",
-    "PKColumns": "",
-    "TableColumns": "empl_no,password,dept_code,super_flag",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "t_help",
     "PKColumns": "",
     "TableColumns": "help_code,help_desc",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "t_levtable",
-    "PKColumns": "lv_code,pay_code",
-    "TableColumns": "lv_code,pay_code",
     "TableHasChangeDT": ""
   },
   {
@@ -10658,20 +11445,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "t1099",
-    "PKColumns": "",
-    "TableColumns": "form_1099,code,descrip,row_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "t99rmain",
-    "PKColumns": "",
-    "TableColumns": "taxyr,ename,addr1,addr2,city,state_id,zip,zipext,phone,eid,stid,flg_name,flg_ein,flg_sid,flg_control,flg_form,term_code,comp_name,flg_media,density,notify,pnc_1099,transco_1099,fs_file_1099,prt_detail_1099,prt_empdept_1099,contact,pid,faxno,email,flg_print,p_name",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "task_access",
     "PKColumns": "",
     "TableColumns": "task_id,usertype",
@@ -10696,13 +11469,6 @@ $dbDefinitions = @'
     "name": "task_role",
     "PKColumns": "",
     "TableColumns": "task_id,role_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "task_table",
-    "PKColumns": "task_id",
-    "TableColumns": "task_id,task_name,spi_defined,workflow_type",
     "TableHasChangeDT": ""
   },
   {
@@ -10829,13 +11595,6 @@ $dbDefinitions = @'
     "name": "termnote",
     "PKColumns": "",
     "TableColumns": "agree_no,seq,note",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "tertable",
-    "PKColumns": "code",
-    "TableColumns": "code,desc_x,state_term_code",
     "TableHasChangeDT": ""
   },
   {
@@ -10982,14 +11741,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "trans_acct",
     "PKColumns": "",
-    "TableColumns": "no_levels,orgn1b,orgn1e,orgn2b,orgn2e,orgn3b,orgn3e,orgn4b,orgn4e,orgn5b,orgn5e,orgn6b,orgn6e,orgn7b,orgn7e,orgn8b,orgn8e,orgn9b,orgn9e,orgn10b,orgn10e,acct1b,acct1e,acct2b,acct2e,default_struct",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "transact",
-    "PKColumns": "",
-    "TableColumns": "trans_no,yr,period,t_c,fund,disb_fund,key_orgn,account,project,proj_acct,gl_recv,gl_cash,trans_date,enc_no,je_number,check_no,ck_date,cleared,trans_amt,liquid,vend_no,invoice,p_f,c_1099,cancel,due_date,disc_date,disc_amt,disc_per,reported,description,date_entered,operator,batch,je_desc,qty_paid,qty_rec,line_no,warrant,bnk_code,sales_tax,use_tax,clear_date,alt_vend_no,row_id",
+    "TableColumns": "no_levels,orgn1b,orgn1e,orgn2b,orgn2e,orgn3b,orgn3e,orgn4b,orgn4e,orgn5b,orgn5e,orgn6b,orgn6e,orgn7b,orgn7e,orgn8b,orgn8e,orgn9b,orgn9e,orgn10b,orgn10e,acct1b,acct1e,acct2b,acct2e,default_struct,ledger_type,placeholder_text,acct_helpmsg",
     "TableHasChangeDT": ""
   },
   {
@@ -10997,13 +11749,6 @@ $dbDefinitions = @'
     "name": "transledgr",
     "PKColumns": "",
     "TableColumns": "yr,keyorgn,account,per,trans_type,bud,exp,enc",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "transnotes",
-    "PKColumns": "",
-    "TableColumns": "id_number,note_type,lino,vend_no,trans_date,description",
     "TableHasChangeDT": ""
   },
   {
@@ -11057,44 +11802,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "upload_detail",
-    "PKColumns": "",
-    "TableColumns": "template_name,column_name,column_number",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "upload_header",
-    "PKColumns": "",
-    "TableColumns": "template_name,template_type,template_format",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "user_def",
-    "PKColumns": "ln_type,indx,page_no",
-    "TableColumns": "ln_type,indx,page_no,slabel,type_check,table_name,help_text,default_val,req,valid_if",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "user_passthru",
     "PKColumns": "guid",
     "TableColumns": "guid,empl_no,uid,winuser,timestamp",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "user_profile",
-    "PKColumns": "user_id",
-    "TableColumns": "user_id,combo_type,impromptu_exe,upfront_exe,webcenter_exe,excel_exe,browser_exe,building,pr_command,use_tab_pur,excel_opt,keyboard_map,mouse_control,notify_type,screen_height,screen_width,document_sort,pref_dashboard",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "user_ref",
-    "PKColumns": "prefx,code",
-    "TableColumns": "prefx,code,desc_x",
     "TableHasChangeDT": ""
   },
   {
@@ -11106,30 +11816,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "ut_integration_fields",
-    "PKColumns": "table_name,field_name",
-    "TableColumns": "table_name,field_name",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "uvadminusers",
     "PKColumns": "",
     "TableColumns": "row_id,spiuser",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "uvprofile",
-    "PKColumns": "",
-    "TableColumns": "wave_id,district_name",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "vac_content",
-    "PKColumns": "row_id",
-    "TableColumns": "row_id,content_type,content_page,content_text",
     "TableHasChangeDT": ""
   },
   {
@@ -11141,23 +11830,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "vac_profile",
-    "PKColumns": "row_id",
-    "TableColumns": "row_id,setting_key,setting_value",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "vac_vendor",
     "PKColumns": "row_id",
     "TableColumns": "row_id,vend_no,trans_type,ven_name,dba_name,fed_id,web_url,w9attach_yn,b_addr1,b_addr2,b_city,b_state,b_zip,b_contact,b_phone,b_fax,po_email,p_addr1,p_addr2,p_city,p_state,p_zip,p_contact,p_phone,p_fax,ap_email,bank_routing,bank_acct_no,bank_trans_code,bank_name,user_name,user_title,login_name,user_phone,user_email,entry_date,entry_time,appr_status,appr_date,appr_uid,appr_comment,ten99_ven_name,ten99_addr1,ten99_addr2,ten99_city,ten99_state,ten99_zip,user_password,user_fax,is_primary_user,ssn_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "vbs_prof",
-    "PKColumns": "",
-    "TableColumns": "award_rec,min_cvt_amt,user_bid,next_bidno,preencum_bid,high_lev,min_bid_amt,alt_awrd,format_commod",
     "TableHasChangeDT": ""
   },
   {
@@ -11186,13 +11861,6 @@ $dbDefinitions = @'
     "name": "vem_def",
     "PKColumns": "",
     "TableColumns": "ln_type,indx,page_no,slabel,type_check,table_name,help_text,default_val,req,valid_if",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "vem_prof",
-    "PKColumns": "",
-    "TableColumns": "client,system,company,auto_ser,next_ser,due_acct,user_1,user_2,user_3,user_4,user_5,ns_exp_acct,ns_clr_orgn,ns_clr_acct",
     "TableHasChangeDT": ""
   },
   {
@@ -11295,13 +11963,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "venact",
-    "PKColumns": "",
-    "TableColumns": "vend_no,date_chg,time_chg,field_no,field_name,old_value,new_value,operator,op_type",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "venbid_alt",
     "PKColumns": "",
     "TableColumns": "bid_no,vend_no,commodity,seq_no,measure,quanity,unit_price,alt_commod,description,comments1,comments2,comments3,comments4,comments5,awarded,consider,yr",
@@ -11325,7 +11986,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "venchk_proc_tbl",
     "PKColumns": "",
-    "TableColumns": "trans_no,gl_key_orgn,fund,disb_gl_key_orgn,disb_fund,gl_cash_key_orgn,gl_cash,key_orgn,account,check_no,ck_date,enc_no,amount,vend_no,alt_vend_no,ven_name,alpha_name,b_addr_1,b_addr_2,b_city,b_state,b_zip,invoice,description,disc_dt_or,c_1099,is_eft,int_check_no,bank_trans_code,bank_code,bank_acct_no,email_me,email_addr,pcd_flag,pcd_merch_no,pcd_merch_name,disc_amt,disc_date",
+    "TableColumns": "trans_no,gl_key_orgn,fund,disb_gl_key_orgn,disb_fund,gl_cash_key_orgn,gl_cash,key_orgn,account,check_no,ck_date,enc_no,amount,vend_no,alt_vend_no,ven_name,alpha_name,b_addr_1,b_addr_2,b_city,b_state,b_zip,invoice,description,disc_dt_or,c_1099,is_eft,int_check_no,bank_trans_code,bank_code,bank_acct_no,email_me,email_addr,pcd_flag,pcd_merch_no,pcd_merch_name,disc_amt,disc_date,bankacct,check_bankacct,cash_clear_keyorgn,cash_clear_acct",
     "TableHasChangeDT": ""
   },
   {
@@ -11333,13 +11994,6 @@ $dbDefinitions = @'
     "name": "venclass",
     "PKColumns": "",
     "TableColumns": "vend_no,comm_cls",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "vendaddr",
-    "PKColumns": "",
-    "TableColumns": "vend_no,vend_seq,s_addr_1,s_addr_2,s_city,s_state,s_zip,contact,cont_phone,comm_desc,fax_no,po_print",
     "TableHasChangeDT": ""
   },
   {
@@ -11358,51 +12012,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "vendor",
-    "PKColumns": "vend_no",
-    "TableColumns": "vend_no,ven_name,alpha_name,b_addr_1,b_addr_2,b_city,b_state,b_zip,b_contact,b_phone,b_fax,p_addr_1,p_addr_2,p_city,p_state,p_zip,p_contact,p_phone,p_fax,fed_id,date_last,paid_ytd,ytd_misc,ordered_ytd,prev_ytd,prev_misc,prev_bal,comm1,comm2,comm3,comm4,comm5,comm6,comm7,comm8,comm9,comm10,comm11,form_1099,disc_ind,discount,disc_days,net_days,stax_rate,utax_rate,empl_vend,empl_no,type_misc,hold_flg,min_check_amt,type_g,ytd_g,prev_g,type_int,ytd_int,prev_int,bid_only,tax_code,dba_name,web_url,inactive_flg,ten99_ven_name,ten99_addr_1,ten99_addr_2,ten99_city,ten99_state,ten99_zip",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "viewid",
-    "PKColumns": "",
-    "TableColumns": "view_id",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "vnd_def",
     "PKColumns": "",
     "TableColumns": "ln_type,indx,page_no,slabel,type_check,table_name,help_text,default_val,req,valid_if",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "vnd_misc",
-    "PKColumns": "",
-    "TableColumns": "vend_no,bank_trans_code,bank_code,bank_acct_no,bank_routing,ap_email,po_email,eft_flag,link_vend_no,vend_acct,po_flag,use_hrm_bank",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "vnd_ssn",
-    "PKColumns": "vend_no",
-    "TableColumns": "vend_no,ssn,same_flag",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "vndasoundex",
-    "PKColumns": "",
-    "TableColumns": "soundcode,vend_no,alpha_name",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "vndnsoundex",
-    "PKColumns": "",
-    "TableColumns": "soundcode,vend_no,ven_name",
     "TableHasChangeDT": ""
   },
   {
@@ -11421,13 +12033,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "w2box12",
-    "PKColumns": "",
-    "TableColumns": "label,dbp_code,code1,code2,code3,code4,code5,code6,code7,code8,code9,code10,code11,code12,code13,code14,code15,code16,code17,code18,code19,code20,code21,code22,code23,code24,code25,code26,code27,code28,code29,code30,code31,code32,code33,code34,code35,code36,code37,code38,code39,code40",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "w2box13",
     "PKColumns": "",
     "TableColumns": "label,dbp_code,code1,code2,code3,code4,code5,code6,code7,code8,code9,code10",
@@ -11435,16 +12040,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "w2box14",
-    "PKColumns": "",
-    "TableColumns": "label,dbp_code,code1,code2,code3,code4,code5,code6,code7,code8,code9,code10,code11,code12,code13,code14,code15,code16,code17,code18,code19,code20,code21,code22,code23,code24,code25,code26,code27,code28,code29,code30,code31,code32,code33,code34,code35,code36,code37,code38,code39,code40",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "w2cemp",
-    "PKColumns": "",
-    "TableColumns": "orig_correction,row_id,orig_row_id,taxyr,batch_no,empl_no,empl_type,seq_no,ssn,fname,lname,street,street2,city,state_id,zip,zipext,ind_statute,ind_deceased,ind_pension,ind_legal,ind_defcomp,ind_void,ind_3psick,alloctips,eic,fedtax,fedwages,ficatax,ficawage,soctips,medwage,medtax,b17a,amt_b17a,b17b,amt_b17b,b17c,amt_b17c,b17d,amt_b17d,b18a,amt_b18a,b18b,amt_b18b,b18c,amt_b18c,depcare,fringe,amt_457,amt_not457,statetax,statewage,statename,stat2tax,stat2wage,stat2name,localtax,localwage,localname,loca2name,loca2tax,loca2wage,chk_locn,f_state,f_postal,country,b18d,amt_b18d,b18e,amt_b18e,m_name,name_suffix,ind_corrected,ind_ssn_name_change",
+    "PKColumns": "orig_correction,taxyr,batch_no,empl_no,seq_no",
+    "TableColumns": "orig_correction,row_id,orig_row_id,taxyr,batch_no,empl_no,empl_type,seq_no,ssn,fname,lname,street,street2,city,state_id,zip,zipext,ind_statute,ind_deceased,ind_pension,ind_legal,ind_defcomp,ind_void,ind_3psick,alloctips,eic,fedtax,fedwages,ficatax,ficawage,soctips,medwage,medtax,b17a,amt_b17a,b17b,amt_b17b,b17c,amt_b17c,b17d,amt_b17d,b18a,amt_b18a,b18b,amt_b18b,b18c,amt_b18c,depcare,fringe,amt_457,amt_not457,statetax,statewage,statename,stat2tax,stat2wage,stat2name,localtax,localwage,localname,loca2name,loca2tax,loca2wage,chk_locn,f_state,f_postal,country,b18d,amt_b18d,b18e,amt_b18e,m_name,name_suffix,ind_corrected,ind_ssn_name_change,stid,stid2",
     "TableHasChangeDT": ""
   },
   {
@@ -11456,37 +12054,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "w2employee",
-    "PKColumns": "taxyr,batch_no,empl_no,seq_no",
-    "TableColumns": "taxyr,batch_no,empl_no,empl_type,seq_no,ssn,fname,lname,street,street2,city,state_id,zip,zipext,ind_statute,ind_deceased,ind_pension,ind_legal,ind_defcomp,ind_void,ind_3psick,alloctips,eic,fedtax,fedwages,ficatax,ficawage,soctips,medwage,medtax,b17a,amt_b17a,b17b,amt_b17b,b17c,amt_b17c,b17d,amt_b17d,b18a,amt_b18a,b18b,amt_b18b,b18c,amt_b18c,depcare,fringe,amt_457,amt_not457,statetax,statewage,statename,stat2tax,stat2wage,stat2name,localtax,localwage,localname,loca2name,loca2tax,loca2wage,chk_locn,f_state,f_postal,country,b18d,amt_b18d,b18e,amt_b18e,m_name,name_suffix,ind_corrected",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "w2labels",
-    "PKColumns": "",
-    "TableColumns": "code,desc_x,code1",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "w2load",
-    "PKColumns": "",
-    "TableColumns": "taxyr,batch_no,paygrp01,paygrp02,paygrp03,paygrp04,paygrp05,paygrp06,paygrp07,paygrp08,paygrp09,paygrp10,paygrp11,paygrp12,paygrp13,paygrp14,paygrp15,paygrp16,paygrp17,paygrp18,paygrp19,paygrp20,paygrp21,paygrp22,paygrp23,paygrp24,depflg,dp01,dp02,dp03,dp04,dp05,dp06,dp07,dp08,dp09,dp10,pp01,pp02,pp03,pp04,pp05,pp06,pp07,pp08,pp09,pp10,pp11,pp12,pp13,pp14,pp15,pp16,pp17,pp18,pp19,pp20,pp21,pp22,pp23,pp24,pp25,pp26,pp27,pp28,pp29,pp30,ytdflg",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "w2loctx",
     "PKColumns": "",
     "TableColumns": "loclbl,loccod1",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "w4lockin",
-    "PKColumns": "empl_no",
-    "TableColumns": "empl_no,active,letter_date,lifted_date",
     "TableHasChangeDT": ""
   },
   {
@@ -11501,13 +12071,6 @@ $dbDefinitions = @'
     "name": "wbassign_chg",
     "PKColumns": "",
     "TableColumns": "empl_no,change_type,orig_class,orig_position,new_class,new_position,entered_by,entered_date",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "wbassign_num",
-    "PKColumns": "",
-    "TableColumns": "iname,nxt_num",
     "TableHasChangeDT": ""
   },
   {
@@ -11554,13 +12117,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "wbud_prof",
-    "PKColumns": "",
-    "TableColumns": "rev_offset_acct,rev_offset_perc,auto_approve,require_notes",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "wbudreqappr",
     "PKColumns": "",
     "TableColumns": "yr,req_num,req_seq,lvl,approver,appr_date,appr_status,appr_qty,appr_cost,appr_total",
@@ -11596,41 +12152,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "wea_prof",
-    "PKColumns": "",
-    "TableColumns": "company_name,logo,eeo_req,eeo_statement,crimecheckreq,crimecheck,crimedl_flg,crimebd_flg,admin_email,login_comment,edu_comment,exp_comment,ref_comment,cert_comment",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "wea_supplement",
-    "PKColumns": "",
-    "TableColumns": "company_name,use_flag,question1,question2,question3,question4,question5,question6,question7,question8,question9,question10,question11,question12,job_no",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "web_admin",
-    "PKColumns": "",
-    "TableColumns": "empl_no,prod_name,descript,val",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "web_admin_options",
-    "PKColumns": "",
-    "TableColumns": "prod_name,descript,long_descript,opt_type,category",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "web_disclaim",
-    "PKColumns": "",
-    "TableColumns": "prod_name,id,descript,disclaim,long_descript",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "web_link",
     "PKColumns": "row_id",
     "TableColumns": "prod_name,row_id,sort_order,link_url,link_description,update_who,update_when",
@@ -11648,41 +12169,6 @@ $dbDefinitions = @'
     "name": "web_num",
     "PKColumns": "",
     "TableColumns": "name,next_num",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "web_prof_cat",
-    "PKColumns": "category",
-    "TableColumns": "category,descript",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "web_prof_type",
-    "PKColumns": "row_id",
-    "TableColumns": "prod_name,row_id,prof_type,title,item_type,input_format,is_required,validation,selected_val,deselected_val,descript",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "web_profile",
-    "PKColumns": "",
-    "TableColumns": "prod_name,id,descript,val,long_descript,prof_type,category",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "web_sec_quest",
-    "PKColumns": "question_id",
-    "TableColumns": "question_id,question_text",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "web_sec_resp",
-    "PKColumns": "empl_no,question_id",
-    "TableColumns": "empl_no,question_id,question_response",
     "TableHasChangeDT": ""
   },
   {
@@ -11771,13 +12257,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "wet_employee",
-    "PKColumns": "empl_no",
-    "TableColumns": "empl_no,super_flag,block_flag",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "wet_input_days",
     "PKColumns": "empl_no,dept_code,pay_period,pay_code,pay_period_day,classify",
     "TableColumns": "empl_no,dept_code,pay_period,pay_code,pay_period_day,date_stamp,time_stamp,chg_empl_no,classify",
@@ -11809,13 +12288,6 @@ $dbDefinitions = @'
     "name": "wet_pay_setup",
     "PKColumns": "pay_period",
     "TableColumns": "pay_period,dept_code,start_date,start_time,end_date,end_time,pay_per_hours",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "wet_paytable",
-    "PKColumns": "pay_code",
-    "TableColumns": "pay_code,wet_comp_pay_code,wet_use_for_calc,wet_description",
     "TableHasChangeDT": ""
   },
   {
@@ -11890,13 +12362,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "wf_dataset",
-    "PKColumns": "dataset_id",
-    "TableColumns": "dataset_id,title,search_type,key_table,key_fields,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "wf_delegates",
     "PKColumns": "actor_id,role_id,start_date,delegate_actor_id",
     "TableColumns": "actor_id,role_id,start_date,end_date,delegate_actor_id,change_date_time,change_uid",
@@ -11953,13 +12418,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "wf_launch_types",
-    "PKColumns": "launch_type",
-    "TableColumns": "launch_type,title,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "wf_model",
     "PKColumns": "model_id,model_version",
     "TableColumns": "model_id,model_version,status,title,description,launch_type,dataset_id,allow_cancel,notify_cancel,cancel_template,notify_final_approval,final_approval_template,notify_needs_correction,needs_correction_template,needs_correction_interval,needs_correction_units,expiration_days,xaml,change_date_time,change_uid",
@@ -12009,13 +12467,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "wf_roles",
-    "PKColumns": "role_id",
-    "TableColumns": "role_id,title,status,change_date_time,change_uid",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "wf_stage_emails",
     "PKColumns": "row_id",
     "TableColumns": "row_id,type,empl_no,key_value1,key_value2,key_value3,key_value4,key_value5,key_value6,key_value7,key_value8,key_value9,key_value10,description,amount,app_group,app_type,app_action,url,notified,send_date,reminder_send_date",
@@ -12025,7 +12476,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "wf_task",
     "PKColumns": "id",
-    "TableColumns": "id,name,appid,status,default_groupid,approval_required,udf_required",
+    "TableColumns": "id,name,appid,status,default_groupid,approval_required,udf_required,order_no,is_all_approver,parent_id",
     "TableHasChangeDT": ""
   },
   {
@@ -12072,27 +12523,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "with_rate_sched",
-    "PKColumns": "code",
-    "TableColumns": "code,description,active",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "wkrdept",
-    "PKColumns": "",
-    "TableColumns": "work_cd,orgn,reg_sal,ot_sal",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "wkrtable",
-    "PKColumns": "",
-    "TableColumns": "work_cd,title,rate,reg_sal,ot_sal,with_acct,fringe_acct,encumber",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "work_activities",
     "PKColumns": "row_id",
     "TableColumns": "date_time,source_email,act_subject,act_status,act_notes,dest_uid,act_url,source_uid,activity_xml,row_id,wkf_instance_id,dest_email,workflow_id,delegate_item",
@@ -12135,20 +12565,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "workflow_codes",
-    "PKColumns": "workflow_type_id",
-    "TableColumns": "workflow_type_id,workflow_name,package",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "workflow_config",
-    "PKColumns": "row_id",
-    "TableColumns": "row_id,spisystem,workflow_service,subgroup,setting_key,setting_value,field_type,field_values,field_length,field_label,field_tooltip",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
     "name": "workflow_correct",
     "PKColumns": "",
     "TableColumns": "row_id,guid,workflow_type,fk_table,fk_col1,fk_val1,fk_col2,fk_val2,fk_col3,fk_val3,fk_col4,fk_val4",
@@ -12163,16 +12579,23 @@ $dbDefinitions = @'
   },
   {
     "db": "eFin",
-    "name": "workflow_log",
+    "name": "workflow_instance",
     "PKColumns": "row_id",
-    "TableColumns": "row_id,datetime_stamp,guid,workflow_type,event_type,workflow_event,parameters,info_string",
+    "TableColumns": "row_id,instance_id,workflow_type,fk_table,fk_col1,fk_val1,fk_col2,fk_val2,fk_col3,fk_val3,fk_col4,fk_val4,status",
     "TableHasChangeDT": ""
   },
   {
     "db": "eFin",
-    "name": "workflow_profile",
-    "PKColumns": "id",
-    "TableColumns": "id,var_name,var_value,create_date,update_date,created_by,updated_by",
+    "name": "workflow_instance_task",
+    "PKColumns": "row_id",
+    "TableColumns": "row_id,instance_id,status,group_id,role_id,actor_id,delegate_actor_id,start_date_time,completed_date_time,comments,change_date_time,change_uid,task_id",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eFin",
+    "name": "workflow_log",
+    "PKColumns": "row_id",
+    "TableColumns": "row_id,datetime_stamp,guid,workflow_type,event_type,workflow_event,parameters,info_string",
     "TableHasChangeDT": ""
   },
   {
@@ -12186,21 +12609,7 @@ $dbDefinitions = @'
     "db": "eFin",
     "name": "wrk1099i",
     "PKColumns": "",
-    "TableColumns": "tax_yr,vend_no,alt_vend_no,fed_id,ven_name,address1,address2,city,state_id,zip,acct_num,tin_notice2,box1,box2,box3,box4,box5n,box5,box6,box8,box9,box10,box11,box12,box13,dba_name",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "wrk1099m",
-    "PKColumns": "",
-    "TableColumns": "tax_yr,vend_no,fed_id,alt_vend_no,ven_name,address1,address2,city,state_id,zip,acct_num,tin_notice2,box1,box2,box3,box4,box5,box6,box7,box8,box9,box10,box11,box12,box13,box14,box15,box16,box17,box18,box15a,box15b,forgn_sw,f_state,f_postal,country,dba_name",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "wrk1099n",
-    "PKColumns": "",
-    "TableColumns": "tax_yr,vend_no,fed_id,alt_vend_no,ven_name,address1,address2,city,state_id,zip,acct_num,tin_notice2,box1,box2,box4,box5,box6,box7,forgn_sw,f_state,f_postal,country,dba_name,alt_ven_name",
+    "TableColumns": "tax_yr,vend_no,alt_vend_no,fed_id,ven_name,address1,address2,city,state_id,zip,acct_num,tin_notice2,box1,box2,box3,box4,box5n,box5,box6,box8,box9,box10,box11,box12,box13,dba_name,market_discount,bond_prem,bond_prem_treasury,bond_prem_taxexmpt,fatca",
     "TableHasChangeDT": ""
   },
   {
@@ -12208,48 +12617,6 @@ $dbDefinitions = @'
     "name": "wrk1099r",
     "PKColumns": "",
     "TableColumns": "taxyr,empl_no,group_x,home_orgn,ssn,l_name,f_name,addr1,addr2,city,state_id,zip,zipext,acct_num,box1,box2a,box2b1,box2b2,box3,box4,box5,box6,box7,box7a,box8,box8_per,box9,box9b,tstate,box10,box12,box13,state_dist,loc_dist,m_name,name_suffix,paydate",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "wrkdeduct",
-    "PKColumns": "",
-    "TableColumns": "taxyr,empl_no,ded_cd,taken_y,cont_y,sal_y",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "wrkemployee",
-    "PKColumns": "",
-    "TableColumns": "taxyr,empl_no,group_x,fic_ext1,fic_ext2,ssn,l_name,f_name,addr1,addr2,mail_city,mail_state,zip,zipext,home_orgn,term_code,state_id,pr_state,locl,pr_local,tearn_y,ftearn_y,fiearn_y,stearn_y,s2earn_y,loearn_y,l2earn_y,allow_y,nocash_y,fedtax_y,fictax_y,statax_y,st2tax_y,loctax_y,lt2tax_y,eic_y,ficaern1,ficatax1,medearn1,medatax1,ficaern2,ficatax2,medearn2,medatax2,chk_locn,fed_marital,fed_dep,add_fed,sta_marital,sta_dep,add_state,loc_marital,loc_dep,add_local,m_name,name_suffix",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "wrkemployer",
-    "PKColumns": "",
-    "TableColumns": "taxyr,batch_no,eid,stid,ename,street,city,state_id,zip,zipext,state2,stid2,state3,stid3,state4,stid4,state5,stid5,street2",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "wrkfica",
-    "PKColumns": "",
-    "TableColumns": "taxyr,fic_med,emp_per,emp_max,empr_per,empr_max",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "wrkmain",
-    "PKColumns": "",
-    "TableColumns": "taxyr,ename,addr1,addr2,city,state_id,zip,zipext,phone,eid,stid,flg_name,flg_ein,flg_sid,flg_control,flg_form,term_code,comp_name,flg_media,density,notify,pnc_1099,transco_1099,fs_file_1099,prt_detail_1099,prt_empdept_1099,contact,pid,faxno,email",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eFin",
-    "name": "wrkpaycode",
-    "PKColumns": "",
-    "TableColumns": "taxyr,empl_no,pay_code,sal_y",
     "TableHasChangeDT": ""
   },
   {
@@ -12275,6 +12642,5144 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
+    "name": "API_CALLER_SUBSCRIBE",
+    "PKColumns": "CALLER_ID,RULE_ID,SCOPE",
+    "TableColumns": "CALLER_ID,RULE_ID,ADDITIONAL_SQL_JOINS,ADDITIONAL_SQL_WHERE,LAST_SINCE_DATETIME,DELTA_MINUTES,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID,SCOPE",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "API_IMS_USER_ROLE",
+    "PKColumns": "",
+    "TableColumns": "DISTRICT,TABLE_NAME,CODE_VALUE,USER_TYPE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "API_PROGRAMS",
+    "PKColumns": "DISTRICT,CALLER_ID,PROGRAM_ID,HTTP_METHOD",
+    "TableColumns": "DISTRICT,CALLER_ID,PROGRAM_ID,HTTP_METHOD,DO_NOT_TRACK_BEFORE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "API_RULE_DET",
+    "PKColumns": "RULE_ID,JSON_LABEL",
+    "TableColumns": "RULE_ID,JSON_LABEL,DESCRIPTION,DATA_ORDER,DB_COLUMN,IS_KEY,SUBQUERY_RULE_ID,FORMAT_TYPE,FORMAT_MASK,LITERAL_VALUE,IS_SECURED,CHANGE_DATE_TIME,CHANGE_UID,SUBQUERY_SINGLE_QUERY",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "API_RULE_HDR",
+    "PKColumns": "RULE_ID,USE_SUMMER_SCHOOL",
+    "TableColumns": "RULE_ID,DISTRICT,API_VERSION,USE_SUMMER_SCHOOL,RULE_CONTROLLER,RULE_NAME,DESCRIPTION,SQL_VIEW,SQL_ORDER_BY,IS_SUBQUERY,USER_SCREEN_TYPE,SUNGARD_RESERVED,ACTIVE,ACCESS_TYPE,HTTP_METHOD,CUSTOM_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "API_RULE_SUBQUERY_JOIN",
+    "PKColumns": "PARENT_RULE_ID,PARENT_JSON_LABEL,SUBQUERY_RULE_ID,LINK_SUBQUERY_DB_COLUMN",
+    "TableColumns": "PARENT_RULE_ID,PARENT_JSON_LABEL,SUBQUERY_RULE_ID,LINK_SUBQUERY_DB_COLUMN,LINK_PARENT_JSON_LABEL",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_21CCLC",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_DIST_LEARN",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_DIST_LRNPROV",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_EC_ANTIC_SVC",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_EC_DISAB",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_EC_RELATE_SVC",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_INSTITUTIONS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_LEPMONITORED",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_OUT_DIST",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_RESIDENT",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_RPT_PERIODS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,END_DATE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SA_ANTIC_SVC",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SA_DISAB",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SA_RELATE_SVC",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SCHOOL_GRADE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_CERT_STAT",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_DEV_NEEDS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_EDD_3RD",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_EDD_REASON",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_EDU_ENVIRN",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_EDU_PLACE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_EVAL_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_EVL_EXCEED",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_FUNC_IMP",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_FUNC_SCORE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_GRADE_LVL",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_INT_SERV",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_PROG_TYPE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_REASON_NOT_ACCESSED",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_REFERRAL",
+    "PKColumns": "DISTRICT,REFERRAL_ID",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,STUDENT_ID,REFERRAL_ID,BUILDING,RESIDENT_LEA,PRIVATE_SCHOOL,PRIVATE_SCHOOL_NAME,ELL,TRANS_PART_C,PART_C_B_CONCURRENT,REFERRAL_DATE,PARENT_EVAL_DATE,EVAL_DATE,EVAL_REASON,EVAL_OT_REASON,ELIGIBILITY_DET_DATE,EDD_30_DAY_CODE,EDD_OT_REASON,EDD_3RD_DOB_CODE,EDD3_OT_REASON,TEMP_IEP_3RD_BDAY,SPED_PLACEMENT,EARLY_INTERV_SERV,PARENT_PLACE_DATE,RFC_REASON,CMP_OTHER,REF_COMPLETE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_RFC_REASON",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "artb_se_staf_disab",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,SENSITIVE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_TITLE_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_SE_TRANS_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ARTB_TUITION",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_AUDIT_TRAIL",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_DATE,STUDENT_ID,ATTENDANCE_PERIOD,SEQUENCE_NUM,ENTRY_ORDER_NUM,SOURCE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_DATE,STUDENT_ID,ATTENDANCE_PERIOD,SEQUENCE_NUM,ENTRY_ORDER_NUM,SOURCE,ATTENDANCE_CODE,DISMISS_TIME,ARRIVE_TIME,MINUTES_ABSENT,BOTTOMLINE,ENTRY_DATE_TIME,ENTRY_USER,ATT_COMMENT,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_BOTTOMLINE",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,STUDENT_ID,ATTENDANCE_DATE,ATTENDANCE_PERIOD,SEQUENCE_NUM",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,STUDENT_ID,ATTENDANCE_DATE,ATTENDANCE_PERIOD,SEQUENCE_NUM,SOURCE,ATTENDANCE_CODE,DISMISS_TIME,ARRIVE_TIME,MINUTES_ABSENT,ATT_COMMENT,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_CFG",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,PERIOD_TYPE,USE_TIMETABLE,BOTTOM_LINE_TYPE,POSITIVE_ATND,AUDIT_TYPE,DEFAULT_ABS_CODE,DEFAULT_TAR_CODE,DEFAULT_PRE_CODE,USE_LANG_TEMPLATE,DATA_SOURCE_FILE,PROGRAM_SCREEN,REG_USER_SCREEN,NOTIFY_DWNLD_PATH,EMAIL_OPTION,RETURN_EMAIL,RET_EMAIL_MISSUB,TWS_TAKE_ATT,TWS_ALT_ABS,TWS_NUM_VIEW_DAYS,TWS_NUM_MNT_DAYS,TWS_ATT_STU_SUMM,DEF_TAC_ABS_CODE,DEF_TAC_TAR_CODE,DEF_TAC_PRES_CODE,ATT_LOCK_DATE,CODE_LIST_TEACH_SUBST,SIF_VIEW,CHANGE_DATE_TIME,CHANGE_UID,ATT_CHECK_IN",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_CFG_CODES",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_CFG_MISS_SUB",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,LOGIN_ID",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,LOGIN_ID,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_CFG_PERIODS",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_PERIOD",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_CODE",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,ATTENDANCE_CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,ATTENDANCE_CODE,DESCRIPTION,COLOR,USE_DISMISS_TIME,USE_ARRIVE_TIME,DISTRICT_GROUP,STATE_GROUP,SIF_TYPE,SIF_STATUS,SIF_PRECEDENCE,INCLUDE_PERFPLUS,ALT_ATTENDANCE_CODE,STATE_CODE_EQUIV,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_CONFIG_PERCENT",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,ATND_INTERVAL",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,ATND_INTERVAL,DISPLAY_ORDER,TITLE,DECIMAL_PRECISION,DISPLAY_DETAIL,MINUTES_AS_HOURS,COMBINE_BUILDING,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_COURSE_SEATING",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,GRID_MODE,GRID_COLS,GRID_ROWS,WIDTH,HEIGHT,BACKGROUND,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_EMERGENCY_CFG",
+    "PKColumns": "DISTRICT,BUILDING",
+    "TableColumns": "DISTRICT,BUILDING,EMERGENCY_ATT,STUDENT_CELL_TYPE,CONTACT_TYPE1,PHONE1_TYPE1,PHONE1_TYPE2,CONTACT_TYPE2,PHONE2_TYPE1,PHONE2_TYPE2,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_HRM_SEATING",
+    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,HOMEROOM_TYPE,HOMEROOM",
+    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,HOMEROOM_TYPE,HOMEROOM,GRID_MODE,GRID_COLS,GRID_ROWS,WIDTH,HEIGHT,BACKGROUND,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_INTERVAL",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,ATND_INTERVAL",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,ATND_INTERVAL,DESCRIPTION,ATT_INTERVAL_ORDER,INTERVAL_TYPE,BEGIN_SPAN,END_SPAN,SUM_BY_ATT_CODE,SUM_BY_DISTR_GRP,SUM_BY_STATE_GRP,STATE_CODE_EQUIV,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_NOTIFY_CRIT",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_CRITERIA",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_CRITERIA,DESCRIPTION,NOTIFICATION_ORDER,NOTIFY_GROUP,EMAIL_STAFF,REPORT_CYCLE_TYPE,INTERVAL_TYPE,SUNDAY,MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,EVALUATION_TYPE,EVALUATION_SOURCE,EVAL_VIEW_TYPE,DETAIL_DATE_RANGE,DATE_ORDER,SEND_LETTER,MIN_ABS_TYPE,MAX_ABS_TYPE,MIN_OVERALL_ABS,MAX_OVERALL_ABS,OVERALL_ABS_BY,MIN_ABSENCE,MAX_ABSENCE,ABSENCE_PATTERN,MIN_DAY,MAX_DAY,DAY_PATTERN,MIN_PERCENT_DAY,MAX_PERCENT_DAY,CALC_SELECTION,USE_ELIGIBILITY,ELIG_INCLUDE_PRIOR,ELIGIBILITY_CODE,ELIG_DURATION,ELIG_DURATION_DAYS,MAX_LETTER,USE_DISCIPLINE,IS_STUDENT,PERSON_ID,INCIDENT_CODE,ACTION_CODE,INCLUDE_FINE,USE_AT_RISK,AT_RISK_REASON,AT_RISK_DURATION,AT_RISK_DAYS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_NOTIFY_CRIT_CD",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_CRITERIA,EVALUATION_CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_CRITERIA,EVALUATION_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_NOTIFY_CRIT_PD",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_CRITERIA,ATTENDANCE_PERIOD",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_CRITERIA,ATTENDANCE_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_NOTIFY_GROUP",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_GROUP",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_GROUP,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_NOTIFY_STU_DET",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE,ATTENDANCE_DATE,ATTENDANCE_PERIOD,SEQUENCE_NUM",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE,ATTENDANCE_DATE,ATTENDANCE_PERIOD,SEQUENCE_NUM,EVALUATION_CODE,INVALID_NOTIFY,ATTENDANCE_COUNT,ABSENCE_TYPE,ABSENCE_VALUE,SECTION_KEY,INCIDENT_ID,ACTION_NUMBER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_NOTIFY_STU_HDR",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE,EVALUATION_CODE,PUBLISHED,INVALID_NOTIFY,CHANGE_DATE_TIME,CHANGE_UID,PUBLISHED_NOTIFICATION",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_PERIOD",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_PERIOD",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_PERIOD,DESCRIPTION,ATT_PERIOD_ORDER,PERIOD_VALUE,START_TIME,END_TIME,INC_IN_ATT_VIEW,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_STU_AT_RISK",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE,AT_RISK_REASON,EFFECTIVE_DATE,EXPIRATION_DATE,PLAN_NUM,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_STU_COURSE_SEAT",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STUDENT_ID",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STUDENT_ID,HAS_SEAT,SEAT_NUMBER,POSITION_X,POSITION_Y,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_STU_DAY_TOT_LAST",
+    "PKColumns": "DISTRICT,VIEW_TYPE,STUDENT_ID,BUILDING,LAST_CALC_DATE",
+    "TableColumns": "DISTRICT,VIEW_TYPE,STUDENT_ID,BUILDING,LAST_CALC_DATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_STU_DAY_TOTALS",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,ATTENDANCE_DATE,VIEW_TYPE,CRITERIA",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,ATTENDANCE_DATE,VIEW_TYPE,CRITERIA,ATTENDANCE_CODE,ATT_CODE_VALUE,TOTAL_DAY_TIME,STUDENT_SCHD_TIME,STU_UNSCHD_TIME,PRESENT_TIME,ABSENT_TIME,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID,LOCATION_TYPE,MAX_DAY_TIME",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_STU_ELIGIBLE",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE,ELIGIBILITY_CODE,EFFECTIVE_DATE,EXPIRATION_DATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_STU_HRM_SEAT",
+    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,HOMEROOM_TYPE,HOMEROOM,STUDENT_ID",
+    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,HOMEROOM_TYPE,HOMEROOM,STUDENT_ID,HAS_SEAT,SEAT_NUMBER,POSITION_X,POSITION_Y,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_STU_INT_CRIT",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,VIEW_TYPE,CRITERIA,ATND_INTERVAL",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,VIEW_TYPE,CRITERIA,ATND_INTERVAL,TOTAL_DAY_TIME,STUDENT_SCHD_TIME,STU_UNSCHD_TIME,PRESENT_TIME,ABSENT_TIME,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_STU_INT_GROUP",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,VIEW_TYPE,ATND_INTERVAL,INTERVAL_TYPE,INTERVAL_CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,VIEW_TYPE,ATND_INTERVAL,INTERVAL_TYPE,INTERVAL_CODE,ATT_CODE_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_STU_INT_MEMB",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,ATND_INTERVAL",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,ATND_INTERVAL,TOTAL_MEMBERSHIP,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_TWS_TAKEN",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_DATE,PERIOD_KEY,ATTENDANCE_PERIOD",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_DATE,PERIOD_KEY,ATTENDANCE_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_VIEW_ABS",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA,ATTENDANCE_CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA,ATTENDANCE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_VIEW_CYC",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA,CYCLE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA,CYCLE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_VIEW_DET",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA,CALENDAR,MIN_OCCURRENCE,MAX_OCCURRENCE,CONSECUTIVE_ABS,SAME_ABS,ATT_CODE_CONVERT,ATT_CODE_VALUE,PERCENT_ABSENT,USE_SCHD_PERIODS,USE_ALL_PERIODS,CHANGE_DATE_TIME,CHANGE_UID,LOCATION_TYPE",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_VIEW_HDR",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,DESCRIPTION,CRITERIA_TYPE,LAST_DAY_CALCED,ATT_TOTALS_UNITS,DAY_UNITS,INCLUDE_PERFPLUS,INCLD_PASSING_TIME,MAX_PASSING_TIME,SEPARATE_BUILDINGS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_VIEW_INT",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,ATT_INTERVAL",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,ATT_INTERVAL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATT_VIEW_PER",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA,ATTENDANCE_PERIOD",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA,ATTENDANCE_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ATTTB_STATE_GRP",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "CRN_CFG",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,CRN_SERVER,GATEWAY_SERVER,GATEWAY_URL,AVAILABLE,CRN_VERSION,CRN_DESCRIPTION,ADD_PARAMS,USE_SSL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_CFG",
+    "PKColumns": "DISTRICT,BUILDING",
+    "TableColumns": "DISTRICT,BUILDING,FORM_LTR_FILENAME,USE_MULTI_LANGUAGE,PROGRAM_SCREEN,REG_USER_SCREEN,NOTIFY_DWNLD_PATH,EMAIL_OPTION,RETURN_EMAIL,MAGISTRATE_NUMBER,REFERRAL_RPT_HEADER,REFERRAL_RPT_FOOTER,ENABLE_ATTENDANCE,CHANGE_DATE_TIME,CHANGE_UID,EDIT_REFERRALS",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_DISTRICT_ACT",
+    "PKColumns": "DISTRICT,TOTAL_CODE,ACTION_CODE",
+    "TableColumns": "DISTRICT,TOTAL_CODE,ACTION_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_DISTRICT_CFG",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,PRIVATE_NOTES,TRACK_OCCURRENCES,MULTIPLE_OFFENSES,CURRENT_YEAR_SUM,OFFENSE_ACT_TOTALS,OFF_ACT_PREV_LST,OFF_ACT_PREV_DET,OFF_ACT_TOTAL_CNT,INCIDENT_LOCKING,ENFORCE_ACT_LEVELS,RESPONSIBLE_ADMIN,RESP_ADMIN_REQ,AUTOCALC_END_DATE,DEFAULT_SCHEDULED_DURATION,USE_LONG_DESCRIPTION,DEFAULT_INCIDENT_DATE,LIMIT_OFFENDER_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_DISTRICT_CFG_DETAIL",
+    "PKColumns": "DISTRICT,PAGE,PAGE_SECTION",
+    "TableColumns": "DISTRICT,PAGE,PAGE_SECTION,QUICKVIEW,DISPLAY_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_DISTRICT_TOT",
+    "PKColumns": "DISTRICT,TOTAL_CODE",
+    "TableColumns": "DISTRICT,TOTAL_CODE,TOTAL_LABEL,TOTAL_SUFFIX,WARNING_THRESHOLD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_INCIDENT",
+    "PKColumns": "DISTRICT,INCIDENT_ID",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,INCIDENT_CODE,INCIDENT_SUBCODE,INCIDENT_DATE,INCIDENT_TIME,INCIDENT_TIME_FRAME,LOCATION,IS_STUDENT,PERSON_ID,REPORTED_TO,GANG_RELATED,POLICE_NOTIFIED,POLICE_NOTIFY_DATE,POLICE_DEPARTMENT,COMPLAINT_NUMBER,OFFICER_NAME,BADGE_NUMBER,COMMENTS,LONG_COMMENT,INCIDENT_GUID,INCIDENT_LOCKED,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_INCIDENT_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,LEVEL_MIN,LEVEL_MAX,STATE_CODE_EQUIV,SEVERITY_ORDER,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_LINK_ISSUE",
+    "PKColumns": "DISTRICT,INCIDENT_ID,ISSUE_ID",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,ISSUE_ID,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_LTR_CRIT",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CRITERION",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CRITERION,DESCRIPTION,OFFENSE_COUNT_MIN,OFFENSE_COUNT_MAX,ACTION_COUNT_MIN,ACTION_COUNT_MAX,LETTER_COUNT_TYPE,MAXIMUM_LETTERS,RESET_COUNT,LINES_OF_DETAIL,INCIDENTS_TO_PRINT,USE_ELIGIBILITY,ELIG_INCLUDE_PRIOR,ELIGIBILITY_CODE,ELIG_DURATION,ELIG_DURATION_DAYS,USE_AT_RISK,AT_RISK_REASON,AT_RISK_DURATION,AT_RISK_DAYS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_LTR_CRIT_ACT",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CRITERION,ACTION_CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CRITERION,ACTION_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_LTR_CRIT_OFF",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CRITERION,OFFENSE_CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CRITERION,OFFENSE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_NON_STUDENT",
+    "PKColumns": "DISTRICT,NON_STUDENT_ID",
+    "TableColumns": "DISTRICT,NON_STUDENT_ID,FIRST_NAME,MIDDLE_NAME,LAST_NAME,GENERATION,APARTMENT,COMPLEX,STREET_NUMBER,STREET_NAME,CITY,STATE,ZIP,PHONE,PHONE_EXTENSION,BIRTHDATE,GRADE,GENDER,ETHNIC_CODE,HISPANIC,FED_RACE_ETHNIC,CLASSIFICATION,STAFF_MEMBER,BUILDING,PERSON_DIST_CODE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_NOTES",
+    "PKColumns": "DISTRICT,INCIDENT_ID,NOTE_TYPE,OFF_VIC_WIT_ID,PAGE_NUMBER",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,NOTE_TYPE,OFF_VIC_WIT_ID,PAGE_NUMBER,NOTE_TEXT,PRIVATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_OCCURRENCE",
+    "PKColumns": "DISTRICT,INCIDENT_ID,OFFENDER,ACTION_NUMBER,OCCURRENCE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,OFFENDER,ACTION_NUMBER,OCCURRENCE,SCHD_START_DATE,ACTUAL_START_DATE,SCHD_START_TIME,SCHD_END_TIME,ACTUAL_START_TIME,ACTUAL_END_TIME,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_OFF_ACTION",
+    "PKColumns": "DISTRICT,INCIDENT_ID,OFFENDER,ACTION_NUMBER",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,OFFENDER,ACTION_NUMBER,ACTION_CODE,SCHD_DURATION,ACTUAL_DURATION,REASON_CODE,DISPOSITION_CODE,START_DATE,END_DATE,TOTAL_OCCURRENCES,RESP_BUILDING,ASSIGN_BUILDING,DATE_DETERMINED,ACTION_OUTCOME,YEAREND_CARRY_OVER,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_OFF_CODE",
+    "PKColumns": "DISTRICT,INCIDENT_ID,OFFENDER,OFFENSE_CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,OFFENDER,OFFENSE_CODE,OFFENSE_COMMENT,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_OFF_FINE",
+    "PKColumns": "DISTRICT,INCIDENT_ID,OFFENDER,ACTION_NUMBER",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,OFFENDER,ACTION_NUMBER,PERSON_ID,IS_STUDENT,FINE_CODE,ISSUED_DATE,FINE_AMOUNT,PAID_DATE,COST,CITATION_NUMBER,STU_CITATION_NUM,MAGISTRATE_NUMBER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_OFFENDER",
+    "PKColumns": "DISTRICT,INCIDENT_ID,OFFENDER",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,OFFENDER,IS_STUDENT,PERSON_ID,GUARDIAN_NOTIFIED,NOTIFY_DATE,HOW_NOTIFIED,REFERRED_TO,POLICE_ACTION,CHARGES_FILED_BY,CHARGES_FILED_WITH,RESP_ADMIN,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_VICTIM",
+    "PKColumns": "DISTRICT,INCIDENT_ID,VICTIM",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,VICTIM,VICTIM_CODE,VICTIM_SUBCODE,IS_STUDENT,PERSON_ID,HOSPITAL_CODE,DOCTOR,GUARDIAN_NOTIFIED,NOTIFY_DATE,HOW_NOTIFIED,REFERRED_TO,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_VICTIM_INJURY",
+    "PKColumns": "DISTRICT,INCIDENT_ID,VICTIM,INJURY_CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,VICTIM,INJURY_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISC_WITNESS",
+    "PKColumns": "DISTRICT,INCIDENT_ID,WITNESS",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,WITNESS,WITNESS_CODE,WITNESS_SUBCODE,IS_STUDENT,PERSON_ID,GUARDIAN_NOTIFIED,NOTIFY_DATE,HOW_NOTIFIED,REFERRED_TO,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISCTB_INC_SUBCODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISCTB_LOCATION",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISCTB_NOTIFIED",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISCTB_OFF_ACTION",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,LEVEL_NUMBER,ATTENDANCE_CODE,CARRYOVER,STATE_CODE_EQUIV,ACTIVE,SEVERITY_LEVEL,SIF_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISCTB_POLICE_ACT",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,STATE_CODE_EQUIV,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISCTB_REFERRAL",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID,STATE_CODE_EQUIV",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISCTB_TIMEFRAME",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISCTB_VIC_ACTION",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISCTB_VIC_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISCTB_VIC_SUBCODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISCTB_WIT_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "DISCTB_WIT_SUBCODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ESP_MENU_FAVORITES",
+    "PKColumns": "DISTRICT,LOGIN_ID,FAVORITE_ID",
+    "TableColumns": "DISTRICT,LOGIN_ID,FAVORITE_ID,FAVORITE_TYPE,FOLDER_ID,FAVORITE_ORDER,DESCRIPTION,AREA,CONTROLLER,ACTION,PAGEURL,QUERY_STRING,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ESP_MENU_ITEMS",
+    "PKColumns": "DISTRICT,MENU_ID,MENU_TYPE",
+    "TableColumns": "DISTRICT,MENU_ID,MENU_TYPE,PARENT_ID,PARENT_TYPE,TITLE,DESCRIPTION,ICONURL,SEQUENCE,DISPLAY_COLUMN,AREA,CONTROLLER,ACTION,PAGEURL,TARGET,QUERY_STRING,TAC_ACCESS,RESERVED,CHANGE_DATE_TIME,CHANGE_UID,FEATURE_FLAG",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "ESP_PRSG_SCRIPT_HASH",
+    "PKColumns": "SCRIPT_FOLDER,SCRIPT_NAME",
+    "TableColumns": "SCRIPT_FOLDER,SCRIPT_NAME,SCRIPT_HASH,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "HAC_Building_Cfg",
+    "PKColumns": "DISTRICT,BUILDING,CONFIG_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,CONFIG_TYPE,ENABLE_HAC,BUILDING_LOGO,LOGO_HEADER_COLOR,LOGO_TEXT_COLOR,FIRST_PAGE,SHOW_PERSONAL,UPD_EMAIL,UPD_PHONE,SHOW_EMERGENCY,UPD_EMERGENCY,SHOW_CONTACT,SHOW_FERPA,UPD_FERPA,FERPA_EXPLANATION,SHOW_TRANSPORT,SHOW_SCHEDULE,SHOW_SCHD_GRID,SHOW_DROPPED_CRS,SHOW_REQUESTS,SHOW_ATTENDANCE,SHOW_DISCIPLINE,CURRENT_YEAR_DISC_ONLY,SHOW_ASSIGN,AVG_MARK_TYPE,INC_UNPUB_AVG,SHOW_CLASS_AVG,SHOW_ATTACHMENTS,DEF_CLASSWORK_VIEW,SHOW_IPR,SHOW_RC,SHOW_STU_COMP,SHOW_CRS_COMP,SHOW_LTDB,SHOW_EMAIL,SHOW_TRANSCRIPT,SHOW_CAREER_PLANNER,REQUEST_BY,REQUEST_YEAR,REQUEST_INTERVAL,PREREQ_CHK_REQ,SHOW_SUCCESS_PLAN,SHOW_SENS_PLAN,SHOW_SENS_INT,SHOW_SENS_INT_COMM,UPD_SSP_PARENT_GOAL,UPD_SSP_STUDENT_GOAL,SHOW_HONOR_ROLL_CREDIT,SHOW_HONOR_ROLL_GPA,SHOW_HONOR_MESSAGE,SHOW_REQUEST_ENTRY,MIN_CREDIT_REQ,MAX_CREDIT_REQ,SHOW_RC_ATTENDANCE,RC_HOLD_MESSAGE,SHOW_EO,SHOW_PERFORMANCEPLUS,SHOW_AVG_INHDR,HDR_AVG_MARKTYPE,SHOW_LAST_UPDDT,HDR_SHORT_DESC,AVG_TOOLTIP_DESC,HIDE_PERCENTAGE,HIDE_OVERALL_AVG,HIDE_COMP_SCORE,SHOW_SDE,SHOW_FEES,ENABLE_ONLINE_PAYMENT,SHOW_CALENDAR,AVG_ON_HOME_PAGE,HELP_URL,SHOW_IEP,SHOW_GIFTED,SHOW_504PLAN,SHOW_IEP_INVITATION,SHOW_EVAL_RPT,SHOW_IEP_PROGRESS,IEP_LIVING_WITH_ONLY,SHOW_WEEK_VIEW,SHOW_WEEK_VIEW_DISC,SHOW_WEEK_VIEW_FEES,SHOW_WEEK_VIEW_ATT,SHOW_WEEK_VIEW_CRS,SHOW_WEEK_VIEW_COMP,SHOW_REQUEST_ALTERNATE,AVERAGE_DISPLAY_TYPE,SHOW_RC_PRINT,SHOW_GENDER,SHOW_STUDENT_ID,SHOW_HOMEROOM,SHOW_HOMEROOM_TEACHER,SHOW_COUNSELOR,SHOW_HOUSE_TEAM,SHOW_LOCKER_NO,SHOW_LOCKER_COMBO,CHANGE_DATE_TIME,CHANGE_UID,SHOW_LEARNING_LOCATION,SHOW_MEETING_LINK,SHOW_MANUAL_CHECKIN,SHOW_FILE_UPLOAD,SHOW_STUDENT_SSID,VIEW_ADDITIONAL_EMAIL,UPD_ADDITIONAL_EMAIL,DISPLAY_TURNED_IN",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "HAC_BUILDING_CFG_AUX",
+    "PKColumns": "DISTRICT,BUILDING,CONFIG_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,CONFIG_TYPE,DISPLAY_REG_YEAR,DISPLAY_REG_YEAR_SPECIFY,DISPLAY_SUM_YEAR,DISPLAY_SUM_YEAR_SPECIFY,RESTRICT_CALENDAR,CLASSWORK_VIEW,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "HAC_BUILDING_CFG_CONTACTS",
+    "PKColumns": "DISTRICT,BUILDING,CONFIG_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,CONFIG_TYPE,SHOW_GUARDIANS,SHOW_EMERGENCY,SHOW_OTHER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "HAC_BUILDING_CFG_DISC",
+    "PKColumns": "DISTRICT,BUILDING,CONFIG_TYPE,INCIDENT_CODE",
+    "TableColumns": "DISTRICT,BUILDING,CONFIG_TYPE,INCIDENT_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "HAC_BUILDING_CFG_INTER",
+    "PKColumns": "DISTRICT,BUILDING,CONFIG_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,CONFIG_TYPE,SHOW_INTERVENTION_MARK,SHOW_INTERVENTION_COMMENT,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "HAC_CHALLENGE_QUES",
+    "PKColumns": "DISTRICT,CONTACT_ID,SEQ_NBR",
+    "TableColumns": "DISTRICT,CONTACT_ID,SEQ_NBR,QUESTION,ANSWER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "HAC_DIST_CFG_ONLINE_PAYMT",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,USE_FRONTSTREAM,FRONTSTREAM_URL,PAYMENT_TYPE_CODE,FRONTSTREAM_STATUS_URL,FRONTSTREAM_MERCHANT_TOKEN,POLL_TASK_OWNER,POLL_DAYS,POLL_START_TIME,POLL_END_TIME,POLL_FREQ_MIN,KEEP_LOG_DAYS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "HAC_DIST_CFG_PWD",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,USE_ENCRYPTION,HAC_ENCRYPTION_TYPE,PWD_MIN_LIMIT_ENABLED,PWD_MIN_LIMIT,PWD_MAX_LIMIT_ENABLED,PWD_MAX_LIMIT,PWD_COMP_RULE,PWD_CHNG_REQ,PWD_CHNG_REQ_ENABLED,PWD_LK_ACC,PWD_LK_ACC_MODE,PWD_LOCK_TOL_AUTO_TIMES,PWD_LOCK_TOL_AUTO_DUR,PWD_LOCK_TOL_AUTO_TIMES_HOLD,PWD_LOCK_TOL_AUTO_TIMES_LIMIT,PWD_LOCK_TOL_AUTO_TIMES_LIM_DUR,PWD_LOCK_TOL_MAN_ATTEMPT,PWD_LOCK_TOL_MAN_TIMES,PWD_LOCK_TOL_MAN_DUR,CHALLENGE_NO_QUESTIONS,CHALLENGE_ANSWER_QUESTIONS,PWD_UNSUCCESS_MSG,CONFIRMATION_MESSAGE,EMAIL_MESSAGE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "HAC_DIST_CFG_REG_EMAIL",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,FROM_EMAIL,FROM_NAME,ALLOW_REPLY_TO,REPLY_TO_EMAIL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "HAC_District_Cfg",
+    "PKColumns": "DISTRICT,CONFIG_TYPE",
+    "TableColumns": "DISTRICT,CONFIG_TYPE,ENABLE_HAC,ENABLE_HAC_TRANSLATION,HAC_TRANS_LANGUAGE,DISTRICT_LOGO,ALLOW_REG,REGISTER_STMT,CHANGE_PASSWORDS,PRIVACY_STMT,TERMS_OF_USE_STMT,LOGIN_VAL,SHOW_USERVOICE,LOGO_HEADER_COLOR,LOGO_TEXT_COLOR,HELP_URL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "HAC_FAILED_LOGIN_ATTEMPTS",
+    "PKColumns": "DISTRICT,CONTACT_ID,FAILURE_DATE_TIME",
+    "TableColumns": "DISTRICT,CONTACT_ID,FAILURE_DATE_TIME,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "HAC_MENU_LINKED_PAGES",
+    "PKColumns": "DISTRICT,PARENT_CODE,CODE",
+    "TableColumns": "DISTRICT,PARENT_CODE,CODE,DESCRIPTION,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "HAC_MENULIST",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "HAC_TRANSLATION",
+    "PKColumns": "DISTRICT,LANG,PAGE,CONTROL_ID",
+    "TableColumns": "DISTRICT,LANG,PAGE,CONTROL_ID,ROW_NUM,TEXT_TRANSLATION,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "LTDB_INTERFACE_DEF",
+    "PKColumns": "DISTRICT,INTERFACE_ID",
+    "TableColumns": "DISTRICT,INTERFACE_ID,DESCRIPTION,UPLOAD_DOWNLOAD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "LTDB_INTERFACE_DET",
+    "PKColumns": "DISTRICT,INTERFACE_ID,HEADER_ID,FIELD_ID",
+    "TableColumns": "DISTRICT,INTERFACE_ID,HEADER_ID,FIELD_ID,FIELD_ORDER,TABLE_NAME,TABLE_ALIAS,COLUMN_NAME,SCREEN_TYPE,SCREEN_NUMBER,FORMAT_STRING,START_POSITION,END_POSITION,FIELD_LENGTH,VALIDATION_TABLE,CODE_COLUMN,VALIDATION_LIST,ERROR_MESSAGE,EXTERNAL_TABLE,EXTERNAL_COL_IN,EXTERNAL_COL_OUT,LITERAL,COLUMN_OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "LTDB_INTERFACE_HDR",
+    "PKColumns": "DISTRICT,INTERFACE_ID,HEADER_ID",
+    "TableColumns": "DISTRICT,INTERFACE_ID,HEADER_ID,HEADER_ORDER,DESCRIPTION,FILENAME,LAST_RUN_DATE,DELIMIT_CHAR,USE_CHANGE_FLAG,TABLE_AFFECTED,ADDITIONAL_SQL,COLUMN_HEADERS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "LTDB_INTERFACE_STU",
+    "PKColumns": "DISTRICT,INTERFACE_ID,STUDENT_ID",
+    "TableColumns": "DISTRICT,INTERFACE_ID,STUDENT_ID,DATE_ADDED,DATE_DELETED,DATE_CHANGED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "LTDBTB_SUBTEST_PESC_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "LTDBTB_TEST_PESC_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "LTI_CLIENT",
+    "PKColumns": "DISTRICT,CLIENT_CODE",
+    "TableColumns": "DISTRICT,CLIENT_CODE,CHANGE_DATE_TIME,CHANGE_UID,DESCRIPTION,ACTIVE",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "LTI_CLIENT_TOOL",
+    "PKColumns": "DISTRICT,CLIENT_CODE,TOOL_ID",
+    "TableColumns": "DISTRICT,CLIENT_CODE,TOOL_ID,CHANGE_DATE_TIME,CHANGE_UID,ACTIVE",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "LTI_TOOL",
+    "PKColumns": "DISTRICT,TOOL_ID",
+    "TableColumns": "DISTRICT,TOOL_ID,CHANGE_DATE_TIME,CHANGE_UID,DESCRIPTION,API_SCOPE,APP_URL",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_CFG",
+    "PKColumns": "DISTRICT,BUILDING",
+    "TableColumns": "DISTRICT,BUILDING,AUTO_CREATE,CALL_MAINT,RESET_COUNT,PRT_LTR_MER_FILE,OTHER_LANGUAGE,USER_SCREEN,MED_SCREEN,USE_MONTH_YEAR,USE_WARNING_STATUS,PRIOR_DAYS_UPDATE,ALLOW_NOTES_UPDATE,EXAM_PRI_DAYS_UPD,USE_LAST,NOTIFY_DWNLD_PATH,EMAIL_OPTION,RETURN_EMAIL,USE_HOME_ROOM,USE_OUTCOME,VALID_NURSE_INIT,INIT_OTH_NURSE_LOG,USE_VALIDATE_SAVE,DEFAULT_TO_SAVE,USE_IMMUN_ALERTS,IMM_GRACE_PERIOD,GRACE_ENTRY_DATE,CLEAR_EXP_DATE,IMM_PARENT_ALERTS,IMM_INT_EMAILS,SUBJECT_LINE,FROM_EMAIL,HEADER_TEXT,FOOTER_TEXT,DEFAULT_MARGIN_ERR,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_CUSTOM_EXAM_COLUMN",
+    "PKColumns": "COLUMN_ID",
+    "TableColumns": "COLUMN_ID,EXAM_TYPE_ID,COLUMN_NAME,COLUMN_ORDER,IS_BASE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "MED_CUSTOM_EXAM_ELEMENT",
+    "PKColumns": "FIELD_ID",
+    "TableColumns": "FIELD_ID,DISTRICT,EXAM_ID,COLUMN_ID,COLUMN_VALUE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "MED_CUSTOM_EXAM_KEY",
+    "PKColumns": "EXAM_ID",
+    "TableColumns": "EXAM_ID,DISTRICT,STUDENT_ID,EXAM_TYPE_ID,TEST_DATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_CUSTOM_EXAM_TYPE",
+    "PKColumns": "EXAM_TYPE_ID",
+    "TableColumns": "EXAM_TYPE_ID,EXAM_SYMBOL,DESCRIPTION",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "MED_DENTAL",
+    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
+    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,GRADE,LOCATION,STATUS,INITIALS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_GENERAL",
+    "PKColumns": "DISTRICT,STUDENT_ID",
+    "TableColumns": "DISTRICT,STUDENT_ID,IMMUNE_STATUS,IMMUNE_EXEMPT,CALC_DATE,OVERRIDE,GROUP_CODE,GRACE_PERIOD_DATE,COMMENT,IMM_ALERT,ALERT_END_DATE,ALERT_OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_GRACE_SCHD",
+    "PKColumns": "DISTRICT,SERIES_SCHD,YEAR_IN_DISTRICT,UP_TO_DAY",
+    "TableColumns": "DISTRICT,SERIES_SCHD,YEAR_IN_DISTRICT,UP_TO_DAY,MIN_DOSES,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_GROWTH",
+    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
+    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,GRADE,LOCATION,HEIGHT,PERCENT_HEIGHT,WEIGHT,PERCENT_WEIGHT,BMI,PERCENT_BMI,AN_READING,BLOOD_PRESSURE_DIA,BLOOD_PRESSURE_SYS_AN,BLOOD_PRESSURE_DIA_AN,BLOOD_PRESSURE_SYS,INITIALS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_GROWTH_ARK",
+    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
+    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,REASON_NOT_ACCESSED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_GROWTH_BMI_ARK",
+    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
+    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,BMI,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_HEARING",
+    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
+    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,GRADE,LOCATION,RIGHT_EAR,LEFT_EAR,INITIALS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_HEARING_DET",
+    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE,DECIBEL,FREQUENCY",
+    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,DECIBEL,FREQUENCY,RIGHT_EAR,LEFT_EAR,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_IMM_CRIT",
+    "PKColumns": "DISTRICT,CRITERIA_NUMBER",
+    "TableColumns": "DISTRICT,CRITERIA_NUMBER,DESCRIPTION,MAX_LETTERS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_IMM_CRIT_GRP",
+    "PKColumns": "DISTRICT,CRITERIA_NUMBER,SEQUENCE_NUM",
+    "TableColumns": "DISTRICT,CRITERIA_NUMBER,SEQUENCE_NUM,GROUP_TYPE,GROUP_MIN,GROUP_MAX,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_IMM_CRIT_SHOTS",
+    "PKColumns": "DISTRICT,CRITERIA_NUMBER,SERIES_CODE,SERIES_CODE_ORDER",
+    "TableColumns": "DISTRICT,CRITERIA_NUMBER,SERIES_CODE,SERIES_CODE_ORDER,SERIES_SCHEDULE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_ISSUED",
+    "PKColumns": "DISTRICT,STUDENT_ID,ISSUED,MED_CODE,DOSE_NUMBER",
+    "TableColumns": "DISTRICT,STUDENT_ID,ISSUED,MED_CODE,DOSE_NUMBER,EVENT_TYPE,COMMENT,INITIALS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_NOTES",
+    "PKColumns": "DISTRICT,STUDENT_ID,EVENT_TYPE,EVENT_DATE",
+    "TableColumns": "DISTRICT,STUDENT_ID,EVENT_TYPE,EVENT_DATE,NOTE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_OFFICE",
+    "PKColumns": "DISTRICT,STUDENT_ID,OFFICE_DATE_IN",
+    "TableColumns": "DISTRICT,STUDENT_ID,OFFICE_DATE_IN,OFFICE_DATE_OUT,ROOM_ID,COMMENT,INITIALS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_OFFICE_DET",
+    "PKColumns": "DISTRICT,STUDENT_ID,OFFICE_DATE_IN,SEQUENCE_NUM",
+    "TableColumns": "DISTRICT,STUDENT_ID,OFFICE_DATE_IN,SEQUENCE_NUM,VISIT_REASON,TREATMENT_CODE,OUTCOME,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_REFERRAL",
+    "PKColumns": "DISTRICT,STUDENT_ID,TEST_TYPE,TEST_DATE,SEQUENCE_NUMBER",
+    "TableColumns": "DISTRICT,STUDENT_ID,TEST_TYPE,TEST_DATE,SEQUENCE_NUMBER,REFERRAL_CODE,REFERRAL_DATE,FOLLOW_UP_CODE,FOLLOW_UP_DATE,DOCTOR_NAME,COMMENT,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_REQUIRED",
+    "PKColumns": "DISTRICT,STUDENT_ID,MED_CODE,START_DATE,DOSE_NUMBER",
+    "TableColumns": "DISTRICT,STUDENT_ID,MED_CODE,START_DATE,END_DATE,DOSE_NUMBER,DOSE_TIME,PHYSICIAN_NAME,DOSE_COMMENT,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_SCOLIOSIS",
+    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
+    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,GRADE,LOCATION,STATUS,INITIALS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_SCREENING",
+    "PKColumns": "DISTRICT,STUDENT_ID,EXAM_CODE,TEST_DATE",
+    "TableColumns": "DISTRICT,STUDENT_ID,EXAM_CODE,TEST_DATE,GRADE,LOCATION,STATUS,INITIALS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_SERIES",
+    "PKColumns": "DISTRICT,STUDENT_ID,SERIES_CODE",
+    "TableColumns": "DISTRICT,STUDENT_ID,SERIES_CODE,SERIES_EXEMPTION,TOTAL_DOSES,SERIES_STATUS,CALC_DATE,OVERRIDE,COMMENT,NUMBER_LETTERS,HAD_DISEASE,DISEASE_DATE,CHANGE_DATE_TIME,CHANGE_UID,NUMBER_NOTIFICATIONS",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_SERIES_DET",
+    "PKColumns": "DISTRICT,STUDENT_ID,SERIES_CODE,SERIES_DATE",
+    "TableColumns": "DISTRICT,STUDENT_ID,SERIES_CODE,SERIES_DATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_SERIES_SCHD_HDR",
+    "PKColumns": "DISTRICT,SERIES_SCHEDULE",
+    "TableColumns": "DISTRICT,SERIES_SCHEDULE,EXPIRES_AFTER,EXPIRES_UNITS,EXPIRES_CODE,NUM_REQUIRED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_SERIES_SCHED",
+    "PKColumns": "DISTRICT,SERIES_SCHEDULE,DOSE_NUMBER",
+    "TableColumns": "DISTRICT,SERIES_SCHEDULE,DOSE_NUMBER,DESCRIPTION,SERIES_CODE,EVENT_DOSE,TIME_EVENTS,TIME_EVENTS_UNITS,OVERDUE_MS,OVERDUE_MS_UNITS,TIME_BIRTH,UNITS_TIME_BIRTH,OVERDUE_RS,OVERDUE_RS_UNITS,NOT_BEFORE,NOT_BEFORE_UNITS,EXCEPTIONS,EXCEPTIONS_DOSE,GIVEN_AFTER,GIVEN_AFTER_UNITS,EXPIRES_AFTER,EXPIRES_UNITS,EXPIRES_CODE,NOT_UNTIL_DOSE,NOT_UNTIL_TIME,NOT_UNTIL_UNITS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_SHOT",
+    "PKColumns": "DISTRICT,STUDENT_ID,SHOT_CODE",
+    "TableColumns": "DISTRICT,STUDENT_ID,SHOT_CODE,EXEMPT,COMMENT,OVERRIDE,HAD_DISEASE,DISEASE_DATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_SHOT_DET",
+    "PKColumns": "DISTRICT,STUDENT_ID,SHOT_CODE,SHOT_DATE",
+    "TableColumns": "DISTRICT,STUDENT_ID,SHOT_CODE,SHOT_DATE,SHOT_ORDER,SOURCE_DOC,SIGNED_DOC,WARNING_STATUS,OVERRIDE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_STU_LETTER",
+    "PKColumns": "DISTRICT,STUDENT_ID,CRIT_NUMBER,CALC_DATE,SERIES_CODE",
+    "TableColumns": "DISTRICT,STUDENT_ID,CRIT_NUMBER,CALC_DATE,SERIES_CODE,DATE_PRINTED,NOTIFICATION_DATE,SERIES_REASON,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_USER",
+    "PKColumns": "DISTRICT,STUDENT_ID,SCREEN_NUMBER,FIELD_NUMBER",
+    "TableColumns": "DISTRICT,STUDENT_ID,SCREEN_NUMBER,FIELD_NUMBER,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_VISION",
+    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
+    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,GRADE,LOCATION,LENS,RIGHT_EYE,LEFT_EYE,MUSCLE,MUSCLE_LEFT,COLOR_BLIND,PLUS_LENS,BINOC,INITIALS,TEST_TYPE,STEREOPSIS,NEAR_FAR_TYPE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MED_VITALS",
+    "PKColumns": "ROW_IDENTITY",
+    "TableColumns": "ROW_IDENTITY,MED_OFFICE_ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID,TIME_VITALS_TAKEN,BLOOD_PRESSURE_SYS,BLOOD_PRESSURE_DIA,PULSE,TEMPERATURE,TEMPERATURE_METHOD,RESPIRATION,PULSE_OXIMETER",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_ALT_DOSE",
+    "PKColumns": "DISTRICT,SERIES_CODE,ALT_NUMBER",
+    "TableColumns": "DISTRICT,SERIES_CODE,ALT_NUMBER,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_ALT_DOSE_DET",
+    "PKColumns": "DISTRICT,SERIES_CODE,ALT_NUMBER,SEQ_NUMBER",
+    "TableColumns": "DISTRICT,SERIES_CODE,ALT_NUMBER,SEQ_NUMBER,ALT_DOSE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_BMI_STATUS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,MIN_BMI,MAX_BMI,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_CDC_LMS",
+    "PKColumns": "DISTRICT,GENDER,AGE,CHART_TYPE",
+    "TableColumns": "DISTRICT,GENDER,AGE,CHART_TYPE,L,M,S",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_DECIBEL",
+    "PKColumns": "DISTRICT,DECIBEL_LEVEL",
+    "TableColumns": "DISTRICT,DECIBEL_LEVEL,SEQUENCE_NUMBER,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_EXAM",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE_NORMAL,ACTIVE_ATHLETIC,SEQ_NUMBER,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_EXEMPT",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_FOLLOWUP",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,DENTAL,GROWTH,HEARING,IMMUN,OFFICE,OTHER,PHYSICAL,SCOLIOSIS,VISION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_FREQUENCY",
+    "PKColumns": "DISTRICT,FREQUENCY_LEVEL",
+    "TableColumns": "DISTRICT,FREQUENCY_LEVEL,SEQUENCE_NUMBER,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_LENS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_LOCATION",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_MEDICINE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,PRN,MEDICAID_CODE,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_OUTCOME",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_PERCENTS",
+    "PKColumns": "DISTRICT,AGE,GENDER,PERCENTILE",
+    "TableColumns": "DISTRICT,AGE,GENDER,PERCENTILE,HEIGHT,WEIGHT,BMI,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_PERCENTS_ARK",
+    "PKColumns": "DISTRICT,AGE,GENDER,PERCENTILE",
+    "TableColumns": "DISTRICT,AGE,GENDER,PERCENTILE,HEIGHT,WEIGHT,BMI,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_REFER",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,DENTAL,GROWTH,HEARING,IMMUN,OFFICE,OTHER,PHYSICAL,SCOLIOSIS,VISION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_SCREENING",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_SHOT",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,SHOT_ORDER,AUTO_GENERATE,LIVE_VIRUS,SHOT_REQUIREMENT,SERIES_FLAG,LICENSING_DATE,STATE_CODE_EQUIV,PESC_CODE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_SOURCE_DOC",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_STATUS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_TEMP_METHOD",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "CHANGE_DATE_TIME,CHANGE_UID,DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_TREATMENT",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,MEDICAID_CODE,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_VACCINATION_PESC_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "medtb_vis_exam_ark",
+    "PKColumns": "DISTRICT,FOLLOWUP_CODE",
+    "TableColumns": "DISTRICT,FOLLOWUP_CODE,DESCRIPTION,CONFIRMED_NORMAL,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MEDTB_VISIT",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MENU_ITEMS",
+    "PKColumns": "DISTRICT,PARENT_MENU,SEQUENCE",
+    "TableColumns": "DISTRICT,PARENT_MENU,SEQUENCE,MENU_ID,DESCRIPTION,TARGET,PAGE,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_ABSENCE_TYPES",
+    "PKColumns": "DISTRICT,BUILDING,ABSENCE_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,ABSENCE_TYPE,ABSENCE_ORDER,ABSENCE_WHEN,DESCRIPTION,SUM_TO_YEARLY,YEARLY_TYPE,ACTIVE,TWS_ACCESS,MULTI_PERIOD_RULE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_AVERAGE_CALC",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,AVERAGE_ID,AVERAGE_SEQUENCE,CALC_TYPE,MARK_TYPE,MARK_TYPE_MP",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,AVERAGE_ID,AVERAGE_SEQUENCE,CALC_TYPE,MARK_TYPE,MARK_TYPE_MP,PERCENT_WEIGHT,EXEMPT_STATUS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_AVERAGE_SETUP",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,AVERAGE_ID,AVERAGE_SEQUENCE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,AVERAGE_TYPE,AVERAGE_ID,AVERAGE_SEQUENCE,MARK_TYPE,DURATION,MARK_TYPE_MP,CALC_AT_MP,USE_GRADEBOOK,USE_STATUS_T,USE_STATUS_O,COURSE_ENDED,BLANK_MARKS,AVERAGE_PASS_FAIL,AVERAGE_REGULAR,STATE_CRS_EQUIV,USE_RAW_AVERAGES,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_CFG",
+    "PKColumns": "DISTRICT,BUILDING",
+    "TableColumns": "DISTRICT,BUILDING,CURRENT_RC_RUN,INCLUDE_XFER_IN_RC,DISPLAY_MBS_BLDG,MAINTAIN_ATTEND,PROCESS_IPR,USE_LANG_TEMPLATE,DATA_SOURCE_FILE,PROGRAM_SCREEN,REG_USER_SCREEN,NOTIFY_DWNLD_PATH,EMAIL_OPTION,RETURN_EMAIL,RET_EMAIL_MISSUB,TEA_IPR_MNT,SUB_IPR_MNT,TEA_IPR_STU_SUMM,SUB_IPR_STU_SUMM,TEA_RC_MNT,SUB_RC_MNT,TEA_RC_STU_SUMM,SUB_RC_STU_SUMM,TEA_SC_MNT,SUB_SC_MNT,TEA_SC_STU_SUMM,SUB_SC_STU_SUMM,TEA_GB_DEFINE,TEA_GB_SCORE,SUB_GB_DEFINE,SUB_GB_SCORE,PROCESS_SC,SC_COMMENT_LINES,GB_ENTRY_B4_ENRLMT,TAC_CHANGE_CREDIT,GB_ALLOW_TEA_SCALE,GB_LIMIT_CATEGORIES,GB_LIMIT_DROP_SCORE,GB_LIMIT_MISS_MARKS,GB_ALLOW_OVR_WEIGHT,GB_ALLOW_TRUNC_RND,ASMT_DATE_VAL,VALIDATE_TRANSFER,MP_CRS_CREDIT_OVR,TEA_GB_VIEW,SUB_GB_VIEW,TEA_PRINT_RC,SUB_PRINT_RC,TEA_TRANSCRIPT,SUB_TRANSCRIPT,TEA_GB_SUM_VIEW,SUB_GB_SUM_VIEW,USE_RC_HOLD,STATUS_REASON,OVERALL_BALANCE,OVERALL_BAL_REASON,COURSE_BALANCE,COURSE_BAL_REASON,STUDENT_BALANCE,STUDENT_BAL_REASON,ACTIVITY_BALANCE,ACTIVITY_BAL_REASON,ALLOW_COURSE_FREE_TEXT,MAX_COURSE_FREE_TEXT_CHARACTERS,SECONDARY_TEACHER_ACCESS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_CFG_MISS_SUB",
+    "PKColumns": "DISTRICT,BUILDING,LOGIN_ID",
+    "TableColumns": "DISTRICT,BUILDING,LOGIN_ID,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_CLASS_SIZE",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,GPA_TYPE,RUN_TERM_YEAR,BUILDING,GRADE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,GPA_TYPE,RUN_TERM_YEAR,BUILDING,GRADE,CLASS_SIZE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_COMMENT_TYPES",
+    "PKColumns": "DISTRICT,BUILDING,COMMENT_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,COMMENT_TYPE,COMMENT_ORDER,DESCRIPTION,ACTIVE,REQUIRED,USAGE,RC_USAGE,IPR_USAGE,SC_USAGE,TWS_ACCESS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_COMMENT_VALID",
+    "PKColumns": "DISTRICT,BUILDING,COMMENT_TYPE,CODE",
+    "TableColumns": "DISTRICT,BUILDING,COMMENT_TYPE,CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_COMMENTS",
+    "PKColumns": "DISTRICT,BUILDING,CODE",
+    "TableColumns": "DISTRICT,BUILDING,CODE,IPR_USAGE,SC_USAGE,RC_USAGE,FT_USAGE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_CRDOVR_REASON",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_CREDIT_SETUP",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,USE_STATUS_T,USE_STATUS_O,COURSE_ENDED,LIMIT_STU_GRADE,LIMIT_CRS_GRADE,ISSUE_PARTIAL,USE_CRS_AVG_RULE,AVG_MARK_TYPE,AVG_PASS_RULE,MIN_FAILING_MARK,CHECK_ABSENCES,ABS_TYPE,ABS_TOTAL,ABS_CRDOVR_REASON,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_CREDIT_SETUP_AB",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ABS_TYPE,ABS_TOTAL",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ABS_TYPE,ABS_TOTAL,PER_MP_TERM_YR,REVOKE_TERM_COURSE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_CREDIT_SETUP_GD",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,GRADE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,GRADE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_CREDIT_SETUP_MK",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,MARK_TYPE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,MARK_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_CRSEQU_SETUP",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,CRSEQU_FULL_YEAR,CRSEQU_TWO_PART,CRSEQU_THREE_PART,CRSEQU_FOUR_PART,RETAKE_RULE,RETAKE_LEVEL,CALC_GRAD_REQ,CALC_CREDIT,RC_WAREHOUSE,TRN_WAREHOUSE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_ALPHA_MARKS",
+    "PKColumns": "DISTRICT,BUILDING,CODE",
+    "TableColumns": "DISTRICT,BUILDING,CODE,DESCRIPTION,EXCLUDE,PERCENT_VALUE,CHANGE_DATE_TIME,CHANGE_UID,SGY_EQUIV,IMS_EQUIV,TURNED_IN",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_ASMT",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,CRS_ASMT_NUMBER,CATEGORY,EXTRA_CREDIT,ASSIGN_DATE,DUE_DATE,DESCRIPTION,DESC_DETAIL,POINTS,WEIGHT,PUBLISH_ASMT,PUBLISH_SCORES,RUBRIC_NUMBER,USE_RUBRIC,CANNOT_DROP,HIGHLIGHT_POINTS,POINTS_THRESHOLD,HIGHLIGHT_PURPLE,UC_STUDENT_WORK_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_CAT_SESS_MARK",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,MARKING_PERIOD,CATEGORY",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,MARKING_PERIOD,CATEGORY,CATEGORY_WEIGHT,DROP_LOWEST,EXCLUDE_MISSING,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_CAT_SESSION",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,CATEGORY,MARKING_PERIOD",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,CATEGORY,MARKING_PERIOD,CATEGORY_WEIGHT,DROP_LOWEST,EXCLUDE_MISSING,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_COMMENT",
+    "PKColumns": "DISTRICT,BUILDING,CODE",
+    "TableColumns": "DISTRICT,BUILDING,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_IPR_AVG",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,IPR_DATE,MARKING_PERIOD,STUDENT_ID",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,IPR_DATE,MARKING_PERIOD,STUDENT_ID,OVERRIDE_AVERAGE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_LOAD_AVG_ERR",
+    "PKColumns": "RUN_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARK_TYPE,ERROR_SEQ",
+    "TableColumns": "RUN_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARK_TYPE,ERROR_SEQ,ERROR_MESSAGE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_MP_MARK",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,MARKING_PERIOD",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,MARKING_PERIOD,OVERRIDE,ROUND_TRUNC,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_RUBRIC_HDR",
+    "PKColumns": "DISTRICT,RUBRIC_NUMBER,DESCRIPTION",
+    "TableColumns": "DISTRICT,RUBRIC_NUMBER,DESCRIPTION,NUMBER_OF_CRITERIA,NUMBER_OF_PERF_LEVEL,RUBRIC_TYPE,RUBRIC_STYLE,RUBRIC_MODE,AUTHOR,DESC_DETAIL,TEMPLATE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_SCALE",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SCALE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SCALE,DESCRIPTION,LONG_DESCRIPTION,DEFAULT_SCALE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_SCALE_DET",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SCALE,MARK",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SCALE,MARK,CUTOFF,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_SESSION_PROP",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,USE_TOTAL_POINTS,USE_CAT_WEIGHT,ROUND_TRUNC,DEFAULT_SCALE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_STU_ALIAS",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STUDENT_ID",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STUDENT_ID,ALIAS_NAME,DISPLAY_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_STU_ASMT_CMT",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,STUDENT_ID",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,STUDENT_ID,COMMENT_CODE,COMMENT_TEXT,PUBLISH,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_STU_NOTES",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STUDENT_ID,NOTE_DATE",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STUDENT_ID,NOTE_DATE,STU_NOTES,PUBLISH_NOTE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_STU_SCALE",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,STUDENT_ID",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,STUDENT_ID,SCALE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_STU_SCORE",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,STUDENT_ID",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,STUDENT_ID,ASMT_SCORE,ASMT_EXCEPTION,ASMT_ALPHA_MARK,EXCLUDE_LOWEST,CHANGE_DATE_TIME,CHANGE_UID,IMS_ID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GB_STU_SCORE_HIST",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,STUDENT_ID,SCORE_CHANGED_DATE",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,STUDENT_ID,SCORE_CHANGED_DATE,OLD_VALUE,NEW_VALUE,CHANGE_TYPE,PRIVATE_NOTES,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GPA_SETUP",
+    "PKColumns": "DISTRICT,GPA_TYPE",
+    "TableColumns": "DISTRICT,GPA_TYPE,DESCRIPTION,ISSUE_GPA,ATT_CREDIT_TO_USE,USE_PARTIAL,COURSE_NOT_ENDED,BLANK_MARKS,INCLUDE_AS_DEFAULT,ACTIVE,GPA_PRECISION,RANK_INACTIVES,STATE_CRS_EQUIV,ADD_ON_POINTS,DISTRICT_WIDE_RANK,INCLUDE_PERFPLUS,DISPLAY_RANK,DISPLAY_PERCENTILE,DISPLAY_DECILE,DISPLAY_QUARTILE,DISPLAY_QUINTILE,RANK_ON_GPA,PERCENTILE_MODE,PERCENTILE_RANK_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GPA_SETUP_EXCL",
+    "PKColumns": "DISTRICT,GPA_TYPE,WITH_CODE",
+    "TableColumns": "DISTRICT,GPA_TYPE,WITH_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GPA_SETUP_GD",
+    "PKColumns": "DISTRICT,GPA_TYPE,GRADE",
+    "TableColumns": "DISTRICT,GPA_TYPE,GRADE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GPA_SETUP_MK_GD",
+    "PKColumns": "DISTRICT,GPA_TYPE,MARK_ORDER,GRADE",
+    "TableColumns": "DISTRICT,GPA_TYPE,MARK_ORDER,GRADE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GPA_SETUP_MRK",
+    "PKColumns": "DISTRICT,GPA_TYPE,MARK_TYPE,MARK_ORDER",
+    "TableColumns": "DISTRICT,GPA_TYPE,MARK_TYPE,MARK_ORDER,GROUP_MARKS,GROUP_ORDER,WEIGHT,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GRAD_REQ_DET",
+    "PKColumns": "DISTRICT,REQ_GROUP,STU_GRAD_YEAR,REQUIRE_CODE",
+    "TableColumns": "DISTRICT,REQ_GROUP,STU_GRAD_YEAR,REQUIRE_CODE,REQ_ORDER,CREDIT,MIN_MARK_VALUE,REQ_VALUE,REQ_UNITS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GRAD_REQ_HDR",
+    "PKColumns": "DISTRICT,REQ_GROUP,STU_GRAD_YEAR",
+    "TableColumns": "DISTRICT,REQ_GROUP,STU_GRAD_YEAR,RETAKE_COURSE_RULE,WAIVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_GRAD_REQ_MRK_TYPE",
+    "PKColumns": "DISTRICT,REQ_GROUP,STU_GRAD_YEAR,MARK_TYPE",
+    "TableColumns": "DISTRICT,REQ_GROUP,STU_GRAD_YEAR,MARK_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_HONOR_SETUP",
+    "PKColumns": "DISTRICT,BUILDING,HONOR_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,HONOR_TYPE,DESCRIPTION,HONOR_GROUP,PROCESSING_ORDER,PROCESS_GPA,CURRENT_OR_YTD_GPA,MINIMUM_GPA,MAXIMUM_GPA,GPA_PRECISION,MINIMUM_COURSES,INCLUDE_NOT_ENDED,INCLUDE_NON_HR_CRS,MINIMUM_ERN_CREDIT,MINIMUM_ATT_CREDIT,ATT_CREDIT_TO_USE,USE_PARTIAL_CREDIT,INCLUDE_NON_HR_CRD,INCLUDE_BLANK_MARK,DISQUAL_BLANK_MARK,MAX_BLANK_MARK,INCLUDE_AS_DEFAULT,HONOR_MESSAGE,ACTIVE,ELIG_INCLUDE_PRIOR,ELIGIBILITY_CODE,ELIG_DURATION,ELIG_DURATION_DAYS,AT_RISK_REASON,AT_RISK_RESET_NUM,AT_RISK_RESET_TYPE,OPTION_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_HONOR_SETUP_GD",
+    "PKColumns": "DISTRICT,BUILDING,HONOR_TYPE,GRADE",
+    "TableColumns": "DISTRICT,BUILDING,HONOR_TYPE,GRADE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_HONOR_SETUP_MKS",
+    "PKColumns": "DISTRICT,BUILDING,HONOR_TYPE,MARK_TYPE,MARK_ORDER",
+    "TableColumns": "DISTRICT,BUILDING,HONOR_TYPE,MARK_TYPE,MARK_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_HONOR_SETUP_Q_D",
+    "PKColumns": "DISTRICT,BUILDING,HONOR_TYPE,QUALIFY_DISQUALIFY,SEQUENCE_NUM",
+    "TableColumns": "DISTRICT,BUILDING,HONOR_TYPE,QUALIFY_DISQUALIFY,SEQUENCE_NUM,NUMBER_OF_MARKS,MINIMUM_MARK,MAXIMUM_MARK,COURSE_LEVEL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_IPR_PRINT_HDR",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,IPR_DATE,GRADE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,IPR_DATE,GRADE,RUN_DATE,HEADER_TEXT,FOOTER_TEXT,DATA_TITLE_01,DATA_TITLE_02,DATA_TITLE_03,DATA_TITLE_04,DATA_TITLE_05,DATA_TITLE_06,DATA_TITLE_07,DATA_TITLE_08,DATA_TITLE_09,DATA_TITLE_10,DATA_TITLE_11,DATA_TITLE_12,DATA_TITLE_13,DATA_TITLE_14,DATA_TITLE_15,DATA_TITLE_16,DATA_TITLE_17,DATA_TITLE_18,DATA_TITLE_19,DATA_TITLE_20,DATA_TITLE_21,DATA_TITLE_22,DATA_TITLE_23,DATA_TITLE_24,DATA_TITLE_25,DATA_TITLE_26,DATA_TITLE_27,DATA_TITLE_28,DATA_TITLE_29,DATA_TITLE_30,IPR_PRINT_KEY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_IPR_PRT_STU_COM",
+    "PKColumns": "IPR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION",
+    "TableColumns": "IPR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATA_DESCR_01,IPR_DATA_DESCR_02,IPR_DATA_DESCR_03,IPR_DATA_DESCR_04,IPR_DATA_DESCR_05,IPR_DATA_DESCR_06,IPR_DATA_DESCR_07,IPR_DATA_DESCR_08,IPR_DATA_DESCR_09,IPR_DATA_DESCR_10,IPR_DATA_DESCR_11,IPR_DATA_DESCR_12,IPR_DATA_DESCR_13,IPR_DATA_DESCR_14,IPR_DATA_DESCR_15,IPR_DATA_DESCR_16,IPR_DATA_DESCR_17,IPR_DATA_DESCR_18,IPR_DATA_DESCR_19,IPR_DATA_DESCR_20,IPR_DATA_DESCR_21,IPR_DATA_DESCR_22,IPR_DATA_DESCR_23,IPR_DATA_DESCR_24,IPR_DATA_DESCR_25,IPR_DATA_DESCR_26,IPR_DATA_DESCR_27,IPR_DATA_DESCR_28,IPR_DATA_DESCR_29,IPR_DATA_DESCR_30,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_IPR_PRT_STU_DET",
+    "PKColumns": "IPR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION",
+    "TableColumns": "IPR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_BUILDING,COURSE,COURSE_SECTION,COURSE_SESSION,DESCRIPTION,CRS_PERIOD,PRIMARY_STAFF_ID,STAFF_NAME,ROOM_ID,IPR_DATA_VALUE_01,IPR_DATA_VALUE_02,IPR_DATA_VALUE_03,IPR_DATA_VALUE_04,IPR_DATA_VALUE_05,IPR_DATA_VALUE_06,IPR_DATA_VALUE_07,IPR_DATA_VALUE_08,IPR_DATA_VALUE_09,IPR_DATA_VALUE_10,IPR_DATA_VALUE_11,IPR_DATA_VALUE_12,IPR_DATA_VALUE_13,IPR_DATA_VALUE_14,IPR_DATA_VALUE_15,IPR_DATA_VALUE_16,IPR_DATA_VALUE_17,IPR_DATA_VALUE_18,IPR_DATA_VALUE_19,IPR_DATA_VALUE_20,IPR_DATA_VALUE_21,IPR_DATA_VALUE_22,IPR_DATA_VALUE_23,IPR_DATA_VALUE_24,IPR_DATA_VALUE_25,IPR_DATA_VALUE_26,IPR_DATA_VALUE_27,IPR_DATA_VALUE_28,IPR_DATA_VALUE_29,IPR_DATA_VALUE_30,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_IPR_PRT_STU_HDR",
+    "PKColumns": "IPR_PRINT_KEY,STUDENT_ID",
+    "TableColumns": "IPR_PRINT_KEY,STUDENT_ID,STUDENT_NAME,BUILDING,GRADE,TRACK,COUNSELOR,HOUSE_TEAM,HOMEROOM_PRIMARY,DAILY_ATT_DESCR_01,DAILY_ATT_DESCR_02,DAILY_ATT_DESCR_03,DAILY_ATT_DESCR_04,DAILY_ATT_DESCR_05,DAILY_ATT_DESCR_06,DAILY_ATT_DESCR_07,DAILY_ATT_DESCR_08,DAILY_ATT_DESCR_09,DAILY_ATT_DESCR_10,DAILY_ATT_CURR_01,DAILY_ATT_CURR_02,DAILY_ATT_CURR_03,DAILY_ATT_CURR_04,DAILY_ATT_CURR_05,DAILY_ATT_CURR_06,DAILY_ATT_CURR_07,DAILY_ATT_CURR_08,DAILY_ATT_CURR_09,DAILY_ATT_CURR_10,DAILY_ATT_YTD_01,DAILY_ATT_YTD_02,DAILY_ATT_YTD_03,DAILY_ATT_YTD_04,DAILY_ATT_YTD_05,DAILY_ATT_YTD_06,DAILY_ATT_YTD_07,DAILY_ATT_YTD_08,DAILY_ATT_YTD_09,DAILY_ATT_YTD_10,REPORT_TEMPLATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_IPR_PRT_STU_MSG",
+    "PKColumns": "IPR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION",
+    "TableColumns": "IPR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_MESSAGE_01,IPR_MESSAGE_02,IPR_MESSAGE_03,IPR_MESSAGE_04,IPR_MESSAGE_05,IPR_MESSAGE_06,IPR_MESSAGE_07,IPR_MESSAGE_08,IPR_MESSAGE_09,IPR_MESSAGE_10,IPR_MESSAGE_11,IPR_MESSAGE_12,IPR_MESSAGE_13,IPR_MESSAGE_14,IPR_MESSAGE_15,IPR_MESSAGE_16,IPR_MESSAGE_17,IPR_MESSAGE_18,IPR_MESSAGE_19,IPR_MESSAGE_20,IPR_MESSAGE_21,IPR_MESSAGE_22,IPR_MESSAGE_23,IPR_MESSAGE_24,IPR_MESSAGE_25,IPR_MESSAGE_26,IPR_MESSAGE_27,IPR_MESSAGE_28,IPR_MESSAGE_29,IPR_MESSAGE_30,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_IPR_RUN",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,TRACK,RUN_DATE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,TRACK,RUN_DATE,ELIGIBILITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_IPR_STU_COM",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE,COMMENT_TYPE",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE,COMMENT_TYPE,COMMENT_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_IPR_STU_HDR",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE,INDIVIDUAL_IPR,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_IPR_STU_MARKS",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE,MARK_TYPE",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE,MARK_TYPE,MARK_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_IPR_TAKEN",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,RUN_DATE",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,RUN_DATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_IPR_VIEW_ATT",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE,VIEW_ORDER",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE,ATT_VIEW_TYPE,VIEW_ORDER,ATT_TITLE,ATT_VIEW_INTERVAL,ATT_VIEW_SUM_BY,ATT_VIEW_CODE_GRP,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_IPR_VIEW_ATT_IT",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE,VIEW_ORDER,ATT_VIEW_INTERVAL",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE,VIEW_ORDER,ATT_VIEW_INTERVAL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_IPR_VIEW_DET",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE,VIEW_SEQUENCE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE,VIEW_SEQUENCE,VIEW_ORDER,SLOT_TYPE,SLOT_CODE,TITLE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_IPR_VIEW_HDR",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE,REPORT_TEMPLATE,PRINT_DROPPED_CRS,PRINT_LEGEND,PRINT_MBS,HEADER_TEXT,FOOTER_TEXT,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_LEVEL_DET",
+    "PKColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,MARK",
+    "TableColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,MARK,NUMERIC_VALUE,POINT_VALUE,PASSING_MARK,RC_PRINT_VALUE,TRN_PRINT_VALUE,IPR_PRINT_VALUE,ADDON_POINTS,WEIGHT_BY_CRED,AVERAGE_USAGE,STATE_CODE_EQUIV,COLOR_LEVEL,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_LEVEL_GPA",
+    "PKColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,MARK,GPA_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,MARK,GPA_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_LEVEL_HDR",
+    "PKColumns": "DISTRICT,BUILDING,LEVEL_NUMBER",
+    "TableColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,DESCRIPTION,ACTIVE,PESC_CODE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_LEVEL_HONOR",
+    "PKColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,MARK,HONOR_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,MARK,HONOR_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_LEVEL_MARKS",
+    "PKColumns": "DISTRICT,BUILDING,MARK",
+    "TableColumns": "DISTRICT,BUILDING,MARK,DISPLAY_ORDER,ACTIVE,STATE_CODE_EQUIV,COURSE_COMPLETED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_MARK_ISSUED_AT",
+    "PKColumns": "DISTRICT,BUILDING,MARK_TYPE,MARKING_PERIOD",
+    "TableColumns": "DISTRICT,BUILDING,MARK_TYPE,MARKING_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_MARK_TYPES",
+    "PKColumns": "DISTRICT,BUILDING,MARK_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,MARK_TYPE,MARK_ORDER,MARK_WHEN,DESCRIPTION,INCLUDE_AS_DEFAULT,REQUIRED,ACTIVE,TWS_ACCESS,RECEIVE_GB_RESULT,INCLUDE_PERFPLUS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID,STATE_CODE_EQUIV",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_MARK_TYPES_LMS_MAP",
+    "PKColumns": "DISTRICT,BUILDING,MARK_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,MARK_TYPE,MARK_TYPE_EQUIV,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_PRINT_GD_SCALE",
+    "PKColumns": "MR_PRINT_KEY,STUDENT_ID,GRADING_SCALE_TYPE",
+    "TableColumns": "MR_PRINT_KEY,STUDENT_ID,PRINT_ORDER,GRADING_SCALE_TYPE,GRADING_SCALE_DESC,MARK_01,MARK_02,MARK_03,MARK_04,MARK_05,MARK_06,MARK_07,MARK_08,MARK_09,MARK_10,MARK_11,MARK_12,MARK_13,MARK_14,MARK_15,MARK_16,MARK_17,MARK_18,MARK_19,MARK_20,MARK_21,MARK_22,MARK_23,MARK_24,MARK_25,MARK_26,MARK_27,MARK_28,MARK_29,MARK_30,MARK_DESCR_01,MARK_DESCR_02,MARK_DESCR_03,MARK_DESCR_04,MARK_DESCR_05,MARK_DESCR_06,MARK_DESCR_07,MARK_DESCR_08,MARK_DESCR_09,MARK_DESCR_10,MARK_DESCR_11,MARK_DESCR_12,MARK_DESCR_13,MARK_DESCR_14,MARK_DESCR_15,MARK_DESCR_16,MARK_DESCR_17,MARK_DESCR_18,MARK_DESCR_19,MARK_DESCR_20,MARK_DESCR_21,MARK_DESCR_22,MARK_DESCR_23,MARK_DESCR_24,MARK_DESCR_25,MARK_DESCR_26,MARK_DESCR_27,MARK_DESCR_28,MARK_DESCR_29,MARK_DESCR_30,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_PRINT_HDR",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,RC_RUN,GRADE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,RC_RUN,GRADE,AS_OF_DATE,RUN_DATE,HEADER_TEXT,FOOTER_TEXT,MR_DATA_TITLE_01,MR_DATA_TITLE_02,MR_DATA_TITLE_03,MR_DATA_TITLE_04,MR_DATA_TITLE_05,MR_DATA_TITLE_06,MR_DATA_TITLE_07,MR_DATA_TITLE_08,MR_DATA_TITLE_09,MR_DATA_TITLE_10,MR_DATA_TITLE_11,MR_DATA_TITLE_12,MR_DATA_TITLE_13,MR_DATA_TITLE_14,MR_DATA_TITLE_15,MR_DATA_TITLE_16,MR_DATA_TITLE_17,MR_DATA_TITLE_18,MR_DATA_TITLE_19,MR_DATA_TITLE_20,MR_DATA_TITLE_21,MR_DATA_TITLE_22,MR_DATA_TITLE_23,MR_DATA_TITLE_24,MR_DATA_TITLE_25,MR_DATA_TITLE_26,MR_DATA_TITLE_27,MR_DATA_TITLE_28,MR_DATA_TITLE_29,MR_DATA_TITLE_30,MR_SC_TITLE_01,MR_SC_TITLE_02,MR_SC_TITLE_03,MR_SC_TITLE_04,MR_SC_TITLE_05,MR_SC_TITLE_06,MR_SC_TITLE_07,MR_SC_TITLE_08,MR_SC_TITLE_09,MR_SC_TITLE_10,MR_SC_TITLE_11,MR_SC_TITLE_12,MR_SC_TITLE_13,MR_SC_TITLE_14,MR_SC_TITLE_15,MR_SC_TITLE_16,MR_SC_TITLE_17,MR_SC_TITLE_18,MR_SC_TITLE_19,MR_SC_TITLE_20,MR_SC_TITLE_21,MR_SC_TITLE_22,MR_SC_TITLE_23,MR_SC_TITLE_24,MR_SC_TITLE_25,MR_SC_TITLE_26,MR_SC_TITLE_27,MR_SC_TITLE_28,MR_SC_TITLE_29,MR_SC_TITLE_30,PROGRAM_TITLE_01,PROGRAM_TITLE_02,PROGRAM_TITLE_03,PROGRAM_TITLE_04,PROGRAM_TITLE_05,PROGRAM_TITLE_06,PROGRAM_TITLE_07,PROGRAM_TITLE_08,PROGRAM_TITLE_09,PROGRAM_TITLE_10,PROGRAM_TITLE_11,PROGRAM_TITLE_12,MR_PRINT_KEY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_PRINT_KEY",
+    "PKColumns": "DISTRICT,KEY_TYPE",
+    "TableColumns": "DISTRICT,KEY_TYPE,PRINT_KEY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_PRINT_STU_COMM",
+    "PKColumns": "MR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION",
+    "TableColumns": "MR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MR_DATA_DESCR_01,MR_DATA_DESCR_02,MR_DATA_DESCR_03,MR_DATA_DESCR_04,MR_DATA_DESCR_05,MR_DATA_DESCR_06,MR_DATA_DESCR_07,MR_DATA_DESCR_08,MR_DATA_DESCR_09,MR_DATA_DESCR_10,MR_DATA_DESCR_11,MR_DATA_DESCR_12,MR_DATA_DESCR_13,MR_DATA_DESCR_14,MR_DATA_DESCR_15,MR_DATA_DESCR_16,MR_DATA_DESCR_17,MR_DATA_DESCR_18,MR_DATA_DESCR_19,MR_DATA_DESCR_20,MR_DATA_DESCR_21,MR_DATA_DESCR_22,MR_DATA_DESCR_23,MR_DATA_DESCR_24,MR_DATA_DESCR_25,MR_DATA_DESCR_26,MR_DATA_DESCR_27,MR_DATA_DESCR_28,MR_DATA_DESCR_29,MR_DATA_DESCR_30,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_PRINT_STU_CRSTXT",
+    "PKColumns": "MR_PRINT_KEY,STUDENT_ID,MARKING_PERIOD",
+    "TableColumns": "MR_PRINT_KEY,STUDENT_ID,MARKING_PERIOD,SECTION_KEY_01,SECTION_KEY_02,SECTION_KEY_03,SECTION_KEY_04,SECTION_KEY_05,SECTION_KEY_06,SECTION_KEY_07,SECTION_KEY_08,SECTION_KEY_09,SECTION_KEY_10,SECTION_KEY_11,SECTION_KEY_12,SECTION_KEY_13,SECTION_KEY_14,SECTION_KEY_15,STAFF_ID_01,STAFF_ID_02,STAFF_ID_03,STAFF_ID_04,STAFF_ID_05,STAFF_ID_06,STAFF_ID_07,STAFF_ID_08,STAFF_ID_09,STAFF_ID_10,STAFF_ID_11,STAFF_ID_12,STAFF_ID_13,STAFF_ID_14,STAFF_ID_15,STAFF_NAME_01,STAFF_NAME_02,STAFF_NAME_03,STAFF_NAME_04,STAFF_NAME_05,STAFF_NAME_06,STAFF_NAME_07,STAFF_NAME_08,STAFF_NAME_09,STAFF_NAME_10,STAFF_NAME_11,STAFF_NAME_12,STAFF_NAME_13,STAFF_NAME_14,STAFF_NAME_15,COURSE_COMMENT_01,COURSE_COMMENT_02,COURSE_COMMENT_03,COURSE_COMMENT_04,COURSE_COMMENT_05,COURSE_COMMENT_06,COURSE_COMMENT_07,COURSE_COMMENT_08,COURSE_COMMENT_09,COURSE_COMMENT_10,COURSE_COMMENT_11,COURSE_COMMENT_12,COURSE_COMMENT_13,COURSE_COMMENT_14,COURSE_COMMENT_15,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_PRINT_STU_DET",
+    "PKColumns": "MR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION",
+    "TableColumns": "MR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_BUILDING,COURSE,COURSE_SECTION,COURSE_SESSION,DESCRIPTION,CRS_PERIOD,PRIMARY_STAFF_ID,STAFF_NAME,ROOM_ID,ATTEMPTED_CREDIT,ATT_OVERRIDE,ATT_OVR_REASON,EARNED_CREDIT,EARN_OVERRIDE,EARN_OVR_REASON,MR_DATA_VALUE_01,MR_DATA_VALUE_02,MR_DATA_VALUE_03,MR_DATA_VALUE_04,MR_DATA_VALUE_05,MR_DATA_VALUE_06,MR_DATA_VALUE_07,MR_DATA_VALUE_08,MR_DATA_VALUE_09,MR_DATA_VALUE_10,MR_DATA_VALUE_11,MR_DATA_VALUE_12,MR_DATA_VALUE_13,MR_DATA_VALUE_14,MR_DATA_VALUE_15,MR_DATA_VALUE_16,MR_DATA_VALUE_17,MR_DATA_VALUE_18,MR_DATA_VALUE_19,MR_DATA_VALUE_20,MR_DATA_VALUE_21,MR_DATA_VALUE_22,MR_DATA_VALUE_23,MR_DATA_VALUE_24,MR_DATA_VALUE_25,MR_DATA_VALUE_26,MR_DATA_VALUE_27,MR_DATA_VALUE_28,MR_DATA_VALUE_29,MR_DATA_VALUE_30,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_PRINT_STU_HDR",
+    "PKColumns": "MR_PRINT_KEY,STUDENT_ID",
+    "TableColumns": "MR_PRINT_KEY,STUDENT_ID,STUDENT_NAME,BUILDING,GRADE,TRACK,COUNSELOR,HOUSE_TEAM,HOMEROOM_PRIMARY,RANK_NUM_CURR,RANK_NUM_CUM,RANK_OUT_OF,DAILY_ATT_DESCR_01,DAILY_ATT_DESCR_02,DAILY_ATT_DESCR_03,DAILY_ATT_DESCR_04,DAILY_ATT_DESCR_05,DAILY_ATT_DESCR_06,DAILY_ATT_DESCR_07,DAILY_ATT_DESCR_08,DAILY_ATT_DESCR_09,DAILY_ATT_DESCR_10,DAILY_ATT_CURR_01,DAILY_ATT_CURR_02,DAILY_ATT_CURR_03,DAILY_ATT_CURR_04,DAILY_ATT_CURR_05,DAILY_ATT_CURR_06,DAILY_ATT_CURR_07,DAILY_ATT_CURR_08,DAILY_ATT_CURR_09,DAILY_ATT_CURR_10,DAILY_ATT_YTD_01,DAILY_ATT_YTD_02,DAILY_ATT_YTD_03,DAILY_ATT_YTD_04,DAILY_ATT_YTD_05,DAILY_ATT_YTD_06,DAILY_ATT_YTD_07,DAILY_ATT_YTD_08,DAILY_ATT_YTD_09,DAILY_ATT_YTD_10,CREDIT_HONOR,CREDIT_SEM,CREDIT_CUM,CREDIT_ATT_CUR,CREDIT_ATT_SEM,CREDIT_ATT_CUM,GPA_HONOR,GPA_SEM,GPA_CUM,HONOR_TYPE_01,HONOR_TYPE_02,HONOR_TYPE_03,HONOR_TYPE_04,HONOR_TYPE_05,HONOR_TYPE_06,HONOR_TYPE_07,HONOR_TYPE_08,HONOR_TYPE_09,HONOR_TYPE_10,HONOR_MSG_01,HONOR_MSG_02,HONOR_MSG_03,HONOR_MSG_04,HONOR_MSG_05,HONOR_MSG_06,HONOR_MSG_07,HONOR_MSG_08,HONOR_MSG_09,HONOR_MSG_10,HONOR_GPA_01,HONOR_GPA_02,HONOR_GPA_03,HONOR_GPA_04,HONOR_GPA_05,HONOR_GPA_06,HONOR_GPA_07,HONOR_GPA_08,HONOR_GPA_09,HONOR_GPA_10,HONOR_CREDIT_01,HONOR_CREDIT_02,HONOR_CREDIT_03,HONOR_CREDIT_04,HONOR_CREDIT_05,HONOR_CREDIT_06,HONOR_CREDIT_07,HONOR_CREDIT_08,HONOR_CREDIT_09,HONOR_CREDIT_10,HONOR_QUALIFIED_01,HONOR_QUALIFIED_02,HONOR_QUALIFIED_03,HONOR_QUALIFIED_04,HONOR_QUALIFIED_05,HONOR_QUALIFIED_06,HONOR_QUALIFIED_07,HONOR_QUALIFIED_08,HONOR_QUALIFIED_09,HONOR_QUALIFIED_10,REPORT_TEMPLATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_PRINT_STU_SEC_TEACHER",
+    "PKColumns": "MR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION",
+    "TableColumns": "MR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,SEC_STAFF_ID_01,SEC_STAFF_NAME_01,SEC_STAFF_ID_02,SEC_STAFF_NAME_02,SEC_STAFF_ID_03,SEC_STAFF_NAME_03,SEC_STAFF_ID_04,SEC_STAFF_NAME_04,SEC_STAFF_ID_05,SEC_STAFF_NAME_05,SEC_STAFF_ID_06,SEC_STAFF_NAME_06,SEC_STAFF_ID_07,SEC_STAFF_NAME_07,SEC_STAFF_ID_08,SEC_STAFF_NAME_08,SEC_STAFF_ID_09,SEC_STAFF_NAME_09,SEC_STAFF_ID_10,SEC_STAFF_NAME_10,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_RC_TAKEN",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_RC_VIEW_ATT",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_ORDER",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,ATT_VIEW_TYPE,VIEW_ORDER,ATT_TITLE,ATT_VIEW_INTERVAL,ATT_VIEW_SUM_BY,ATT_VIEW_CODE_GRP,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_RC_VIEW_ATT_INT",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_ORDER,ATT_VIEW_INTERVAL",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_ORDER,ATT_VIEW_INTERVAL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_RC_VIEW_DET",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_SEQUENCE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_SEQUENCE,VIEW_ORDER,TITLE,SLOT_TYPE,SLOT_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_RC_VIEW_GRD_SC",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_ORDER",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_ORDER,LABEL,GRADING_SCALE_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_RC_VIEW_HDR",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,REPORT_TEMPLATE,RANK_GPA_TYPE,PRINT_CLASS_RANK,PRINT_HONOR_MSG,PRINT_DROPPED_CRS,PRINT_LEGEND,PRINT_MBS,HEADER_TEXT,FOOTER_TEXT,CREDIT_TO_PRINT,USE_RC_HOLD,HOLD_HEADER_TEXT,HOLD_FOOTER_TEXT,CURRENT_GPA,SEMESTER_GPA,CUMULATIVE_GPA,CURRENT_CREDIT,SEMESTER_CREDIT,CUMULATIVE_CREDIT,ALT_CURRENT_LBL,ALT_SEMESTER_LBL,ALT_CUMULATIVE_LBL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_RC_VIEW_HONOR",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,HONOR_SEQUENCE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,HONOR_SEQUENCE,HONOR_GPA_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_RC_VIEW_MPS",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_SEQUENCE,MARKING_PERIOD",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_SEQUENCE,MARKING_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_RC_VIEW_SP_COLS",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,COLUMN_NUMBER",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,COLUMN_NUMBER,TITLE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_REQ_AREAS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,AREA_TYPE,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_SC_GD_SCALE_DET",
+    "PKColumns": "DISTRICT,BUILDING,GRADING_SCALE_TYPE,DISPLAY_ORDER",
+    "TableColumns": "DISTRICT,BUILDING,GRADING_SCALE_TYPE,DISPLAY_ORDER,MARK,DESCRIPTION,POINT_VALUE,PASSING_MARK,ACTIVE,AVERAGE,COLOR_LEVEL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_SC_GD_SCALE_HDR",
+    "PKColumns": "DISTRICT,BUILDING,GRADING_SCALE_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,GRADING_SCALE_TYPE,DESCRIPTION,DEFAULT_MARK,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_SC_ST_STANDARD",
+    "PKColumns": "DISTRICT,STATE,DOCUMENT_NAME,SUBJECT,SCHOOL_YEAR,GRADE,GUID",
+    "TableColumns": "DISTRICT,STATE,DOCUMENT_NAME,SUBJECT,SCHOOL_YEAR,GRADE,GUID,STATE_STANDARD_NUM,LEVEL_NUMBER,NUM_OF_CHILDREN,LABEL,TITLE,DESCRIPTION,PARENT_GUID,LOW_GRADE,HIGH_GRADE,AB_GUID,PP_GUID,PP_PARENT_GUID,PP_ID,PP_PARENT_ID,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_STU_ABSENCES",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,ABSENCE_TYPE",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,ABSENCE_TYPE,ABSENCE_VALUE,OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_STU_COMMENTS",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SEQUENCE_NUM",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SEQUENCE_NUM,TRN_COMMENT,EXCLUDE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_STU_CRS_DATES",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,START_DATE",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,START_DATE,END_DATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_STU_GPA",
+    "PKColumns": "DISTRICT,STUDENT_ID,GPA_TYPE,SCHOOL_YEAR,RUN_TERM_YEAR",
+    "TableColumns": "DISTRICT,STUDENT_ID,GPA_TYPE,SCHOOL_YEAR,RUN_TERM_YEAR,BUILDING,GRADE,NEEDS_RECALC,OVERRIDE,CUR_GPA_CALC_DATE,CUR_GPA,CUR_QUALITY_POINTS,CUR_ADD_ON_POINTS,CUR_ATT_CREDIT,CUR_EARN_CREDIT,CUR_RNK_CALC_DATE,CUR_RANK,CUR_PERCENTILE,CUR_DECILE,CUR_QUINTILE,CUR_QUARTILE,CUR_RANK_GPA,CUM_GPA_CALC_DATE,CUM_GPA,CUM_QUALITY_POINTS,CUM_ADD_ON_POINTS,CUM_ATT_CREDIT,CUM_EARN_CREDIT,CUM_RNK_CALC_DATE,CUM_RANK,CUM_PERCENTILE,CUM_DECILE,CUM_QUINTILE,CUM_QUARTILE,CUM_RANK_GPA,CUR_RANK_QUAL_PTS,CUM_RANK_QUAL_PTS,BLDG_OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_STU_GRAD",
+    "PKColumns": "DISTRICT,STUDENT_ID,REQUIRE_CODE",
+    "TableColumns": "DISTRICT,STUDENT_ID,REQUIRE_CODE,SUBJ_AREA_CREDIT,CUR_ATT_CREDITS,CUR_EARN_CREDITS,SUBJ_AREA_CRD_WAV,CUR_ATT_CRD_WAV,CUR_EARN_CRD_WAV,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_STU_GRAD_AREA",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,REQUIRE_CODE",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,REQUIRE_CODE,CODE_OVERRIDE,SUBJ_AREA_CREDIT,CREDIT_OVERRIDE,WAIVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_STU_HDR",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,RC_STATUS,ATT_CREDIT,ATT_OVERRIDE,ATT_OVR_REASON,EARN_CREDIT,EARN_OVERRIDE,ERN_OVR_REASON,STATE_CRS_EQUIV,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_STU_HONOR",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,HONOR_TYPE,RC_RUN",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,HONOR_TYPE,RC_RUN,QUALIFIED,DISQUAL_REASON,HONOR_GPA,HONOR_CREDIT,HONOR_POINTS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_STU_MARKS",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,MARK_TYPE",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,MARK_TYPE,MARK_VALUE,OVERRIDE,RAW_MARK_VALUE,OVERRIDE_REASON,OVERRIDE_NOTES,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_STU_MP",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,ATT_CREDIT,ATT_OVERRIDE,ATT_OVR_REASON,EARN_CREDIT,EARN_OVERRIDE,ERN_OVR_REASON,TRAIL_FLAG,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_STU_MP_COMMENTS",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,COMMENT_TYPE",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,COMMENT_TYPE,CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_STU_TEXT",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD",
+    "TableColumns": "DISTRICT,BUILDING,STUDENT_ID,SCHOOL_YEAR,SECTION_KEY,COURSE_SESSION,STAFF_ID,MARKING_PERIOD,COMMENT_TEXT,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_STU_XFER_BLDGS",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,STUDENT_ID,TRANSFER_SEQUENCE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,STUDENT_ID,BUILDING,TRANSFER_SEQUENCE,STATE_BUILDING,BUILDING_NAME,GRADE,ABBREVIATION,STREET1,STREET2,CITY,STATE,ZIP_CODE,COUNTRY,PHONE,FAX,PRINCIPAL,BUILDING_TYPE,TRANSFER_COMMENT,STATE_CODE_EQUIV,ENTRY_DATE,WITHDRAWAL_DATE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_STU_XFER_RUNS",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,STUDENT_ID,TRANSFER_SEQUENCE,RC_RUN",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,STUDENT_ID,TRANSFER_SEQUENCE,RC_RUN,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_TRN_PRINT_HDR",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,GROUP_BY,GRADE,RUN_TERM_YEAR",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,GROUP_BY,GRADE,RUN_TERM_YEAR,RUN_DATE,TRN_PRINT_KEY,BLDG_NAME,STREET1,STREET2,CITY,STATE,ZIP,PRINCIPAL,PHONE,CEEB_NUMBER,HEADER_TEXT,FOOTER_TEXT,DATA_TITLE_01,DATA_TITLE_02,DATA_TITLE_03,DATA_TITLE_04,DATA_TITLE_05,DATA_TITLE_06,DATA_TITLE_07,DATA_TITLE_08,DATA_TITLE_09,DATA_TITLE_10,DATA_TITLE_11,DATA_TITLE_12,DATA_TITLE_13,DATA_TITLE_14,DATA_TITLE_15,DATA_TITLE_16,DATA_TITLE_17,DATA_TITLE_18,DATA_TITLE_19,DATA_TITLE_20,DATA_TITLE_21,DATA_TITLE_22,DATA_TITLE_23,DATA_TITLE_24,DATA_TITLE_25,DATA_TITLE_26,DATA_TITLE_27,DATA_TITLE_28,DATA_TITLE_29,DATA_TITLE_30,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_TRN_PRT_STU_ACT",
+    "PKColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID",
+    "TableColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID,ACTIVITY01,ACTIVITY02,ACTIVITY03,ACTIVITY04,ACTIVITY05,ACTIVITY06,ACTIVITY07,ACTIVITY08,ACTIVITY09,ACTIVITY10,ACTIVITY11,ACTIVITY12,ACTIVITY13,ACTIVITY14,ACTIVITY15,ACTIVITY16,ACTIVITY17,ACTIVITY18,ACTIVITY19,ACTIVITY20,ACTIVITY21,ACTIVITY22,ACTIVITY23,ACTIVITY24,ACTIVITY25,ACTIVITY26,ACTIVITY27,ACTIVITY28,ACTIVITY29,ACTIVITY30,ACTIVITY_YEARS01,ACTIVITY_YEARS02,ACTIVITY_YEARS03,ACTIVITY_YEARS04,ACTIVITY_YEARS05,ACTIVITY_YEARS06,ACTIVITY_YEARS07,ACTIVITY_YEARS08,ACTIVITY_YEARS09,ACTIVITY_YEARS10,ACTIVITY_YEARS11,ACTIVITY_YEARS12,ACTIVITY_YEARS13,ACTIVITY_YEARS14,ACTIVITY_YEARS15,ACTIVITY_YEARS16,ACTIVITY_YEARS17,ACTIVITY_YEARS18,ACTIVITY_YEARS19,ACTIVITY_YEARS20,ACTIVITY_YEARS21,ACTIVITY_YEARS22,ACTIVITY_YEARS23,ACTIVITY_YEARS24,ACTIVITY_YEARS25,ACTIVITY_YEARS26,ACTIVITY_YEARS27,ACTIVITY_YEARS28,ACTIVITY_YEARS29,ACTIVITY_YEARS30,ACTIVITY_COMMENTS01,ACTIVITY_COMMENTS02,ACTIVITY_COMMENTS03,ACTIVITY_COMMENTS04,ACTIVITY_COMMENTS05,ACTIVITY_COMMENTS06,ACTIVITY_COMMENTS07,ACTIVITY_COMMENTS08,ACTIVITY_COMMENTS09,ACTIVITY_COMMENTS10,ACTIVITY_COMMENTS11,ACTIVITY_COMMENTS12,ACTIVITY_COMMENTS13,ACTIVITY_COMMENTS14,ACTIVITY_COMMENTS15,ACTIVITY_COMMENTS16,ACTIVITY_COMMENTS17,ACTIVITY_COMMENTS18,ACTIVITY_COMMENTS19,ACTIVITY_COMMENTS20,ACTIVITY_COMMENTS21,ACTIVITY_COMMENTS22,ACTIVITY_COMMENTS23,ACTIVITY_COMMENTS24,ACTIVITY_COMMENTS25,ACTIVITY_COMMENTS26,ACTIVITY_COMMENTS27,ACTIVITY_COMMENTS28,ACTIVITY_COMMENTS29,ACTIVITY_COMMENTS30,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_TRN_PRT_STU_BRK",
+    "PKColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID,SCHOOL_YEAR,RUN_TERM_YEAR",
+    "TableColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID,SCHOOL_YEAR,RUN_TERM_YEAR,DISPLAY_YEAR,STUDENT_GRADE,CUR_GPA,CUM_GPA,BUILDING,BLDG_NAME,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_TRN_PRT_STU_COM",
+    "PKColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID",
+    "TableColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID,COMMENT01,COMMENT02,COMMENT03,COMMENT04,COMMENT05,COMMENT06,COMMENT07,COMMENT08,COMMENT09,COMMENT10,COMMENT11,COMMENT12,COMMENT13,COMMENT14,COMMENT15,COMMENT16,COMMENT17,COMMENT18,COMMENT19,COMMENT20,COMMENT21,COMMENT22,COMMENT23,COMMENT24,COMMENT25,COMMENT26,COMMENT27,COMMENT28,COMMENT29,COMMENT30,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_TRN_PRT_STU_DET",
+    "PKColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,RUN_TERM_YEAR",
+    "TableColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_BUILDING,COURSE,COURSE_SECTION,COURSE_SESSION,RUN_TERM_YEAR,SCHOOL_YEAR,STUDENT_GRADE,DESCRIPTION,CRS_PERIOD,COURSE_LEVEL,PRIMARY_STAFF_ID,STAFF_NAME,ROOM_ID,ATTEMPTED_CREDIT,EARNED_CREDIT,DEPARTMENT,DEPT_DESCR,TRN_DATA_VALUE_01,TRN_DATA_VALUE_02,TRN_DATA_VALUE_03,TRN_DATA_VALUE_04,TRN_DATA_VALUE_05,TRN_DATA_VALUE_06,TRN_DATA_VALUE_07,TRN_DATA_VALUE_08,TRN_DATA_VALUE_09,TRN_DATA_VALUE_10,TRN_DATA_VALUE_11,TRN_DATA_VALUE_12,TRN_DATA_VALUE_13,TRN_DATA_VALUE_14,TRN_DATA_VALUE_15,TRN_DATA_VALUE_16,TRN_DATA_VALUE_17,TRN_DATA_VALUE_18,TRN_DATA_VALUE_19,TRN_DATA_VALUE_20,TRN_DATA_VALUE_21,TRN_DATA_VALUE_22,TRN_DATA_VALUE_23,TRN_DATA_VALUE_24,TRN_DATA_VALUE_25,TRN_DATA_VALUE_26,TRN_DATA_VALUE_27,TRN_DATA_VALUE_28,TRN_DATA_VALUE_29,TRN_DATA_VALUE_30,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_TRN_PRT_STU_HDR",
+    "PKColumns": "DISTRICT,TRN_PRINT_KEY,STUDENT_ID",
+    "TableColumns": "DISTRICT,TRN_PRINT_KEY,STUDENT_ID,STUDENT_NAME,BUILDING,GRADE,TRACK,COUNSELOR,HOUSE_TEAM,HOMEROOM_PRIMARY,BIRTHDATE,GRADUATION_YEAR,GRADUATION_DATE,GENDER,GUARDIAN_NAME,PHONE,APARTMENT,COMPLEX,STREET_NUMBER,STREET_PREFIX,STREET_NAME,STREET_SUFFIX,STREET_TYPE,CITY,STATE,ZIP,DAILY_ATT_DESCR_01,DAILY_ATT_DESCR_02,DAILY_ATT_DESCR_03,DAILY_ATT_DESCR_04,DAILY_ATT_DESCR_05,DAILY_ATT_DESCR_06,DAILY_ATT_DESCR_07,DAILY_ATT_DESCR_08,DAILY_ATT_DESCR_09,DAILY_ATT_DESCR_10,DAILY_ATT_TOT_01,DAILY_ATT_TOT_02,DAILY_ATT_TOT_03,DAILY_ATT_TOT_04,DAILY_ATT_TOT_05,DAILY_ATT_TOT_06,DAILY_ATT_TOT_07,DAILY_ATT_TOT_08,DAILY_ATT_TOT_09,DAILY_ATT_TOT_10,GPA_TYPE_01,GPA_TYPE_02,GPA_TYPE_03,GPA_TYPE_04,GPA_TYPE_05,GPA_TYPE_06,GPA_TYPE_07,GPA_TYPE_08,GPA_TYPE_09,GPA_TYPE_10,GPA_DESCR_01,GPA_DESCR_02,GPA_DESCR_03,GPA_DESCR_04,GPA_DESCR_05,GPA_DESCR_06,GPA_DESCR_07,GPA_DESCR_08,GPA_DESCR_09,GPA_DESCR_10,GPA_CUM_01,GPA_CUM_02,GPA_CUM_03,GPA_CUM_04,GPA_CUM_05,GPA_CUM_06,GPA_CUM_07,GPA_CUM_08,GPA_CUM_09,GPA_CUM_10,GPA_RANK_01,GPA_RANK_02,GPA_RANK_03,GPA_RANK_04,GPA_RANK_05,GPA_RANK_06,GPA_RANK_07,GPA_RANK_08,GPA_RANK_09,GPA_RANK_10,GPA_PERCENTILE_01,GPA_PERCENTILE_02,GPA_PERCENTILE_03,GPA_PERCENTILE_04,GPA_PERCENTILE_05,GPA_PERCENTILE_06,GPA_PERCENTILE_07,GPA_PERCENTILE_08,GPA_PERCENTILE_09,GPA_PERCENTILE_10,GPA_DECILE_01,GPA_DECILE_02,GPA_DECILE_03,GPA_DECILE_04,GPA_DECILE_05,GPA_DECILE_06,GPA_DECILE_07,GPA_DECILE_08,GPA_DECILE_09,GPA_DECILE_10,GPA_QUARTILE_01,GPA_QUARTILE_02,GPA_QUARTILE_03,GPA_QUARTILE_04,GPA_QUARTILE_05,GPA_QUARTILE_06,GPA_QUARTILE_07,GPA_QUARTILE_08,GPA_QUARTILE_09,GPA_QUARTILE_10,GPA_QUINTILE_01,GPA_QUINTILE_02,GPA_QUINTILE_03,GPA_QUINTILE_04,GPA_QUINTILE_05,GPA_QUINTILE_06,GPA_QUINTILE_07,GPA_QUINTILE_08,GPA_QUINTILE_09,GPA_QUINTILE_10,GPA_CLASS_SIZE_01,GPA_CLASS_SIZE_02,GPA_CLASS_SIZE_03,GPA_CLASS_SIZE_04,GPA_CLASS_SIZE_05,GPA_CLASS_SIZE_06,GPA_CLASS_SIZE_07,GPA_CLASS_SIZE_08,GPA_CLASS_SIZE_09,GPA_CLASS_SIZE_10,REPORT_TEMPLATE,GENDER_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_TRN_PRT_STU_REQ",
+    "PKColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID",
+    "TableColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID,REQ_GROUP,GRADUATION_YEAR,REQUIRE_CODE01,REQUIRE_CODE02,REQUIRE_CODE03,REQUIRE_CODE04,REQUIRE_CODE05,REQUIRE_CODE06,REQUIRE_CODE07,REQUIRE_CODE08,REQUIRE_CODE09,REQUIRE_CODE10,REQUIRE_CODE11,REQUIRE_CODE12,REQUIRE_CODE13,REQUIRE_CODE14,REQUIRE_CODE15,REQUIRE_CODE16,REQUIRE_CODE17,REQUIRE_CODE18,REQUIRE_CODE19,REQUIRE_CODE20,REQUIRE_CODE21,REQUIRE_CODE22,REQUIRE_CODE23,REQUIRE_CODE24,REQUIRE_CODE25,REQUIRE_CODE26,REQUIRE_CODE27,REQUIRE_CODE28,REQUIRE_CODE29,REQUIRE_CODE30,REQUIRE_DESC01,REQUIRE_DESC02,REQUIRE_DESC03,REQUIRE_DESC04,REQUIRE_DESC05,REQUIRE_DESC06,REQUIRE_DESC07,REQUIRE_DESC08,REQUIRE_DESC09,REQUIRE_DESC10,REQUIRE_DESC11,REQUIRE_DESC12,REQUIRE_DESC13,REQUIRE_DESC14,REQUIRE_DESC15,REQUIRE_DESC16,REQUIRE_DESC17,REQUIRE_DESC18,REQUIRE_DESC19,REQUIRE_DESC20,REQUIRE_DESC21,REQUIRE_DESC22,REQUIRE_DESC23,REQUIRE_DESC24,REQUIRE_DESC25,REQUIRE_DESC26,REQUIRE_DESC27,REQUIRE_DESC28,REQUIRE_DESC29,REQUIRE_DESC30,SUBJ_AREA_CREDIT01,SUBJ_AREA_CREDIT02,SUBJ_AREA_CREDIT03,SUBJ_AREA_CREDIT04,SUBJ_AREA_CREDIT05,SUBJ_AREA_CREDIT06,SUBJ_AREA_CREDIT07,SUBJ_AREA_CREDIT08,SUBJ_AREA_CREDIT09,SUBJ_AREA_CREDIT10,SUBJ_AREA_CREDIT11,SUBJ_AREA_CREDIT12,SUBJ_AREA_CREDIT13,SUBJ_AREA_CREDIT14,SUBJ_AREA_CREDIT15,SUBJ_AREA_CREDIT16,SUBJ_AREA_CREDIT17,SUBJ_AREA_CREDIT18,SUBJ_AREA_CREDIT19,SUBJ_AREA_CREDIT20,SUBJ_AREA_CREDIT21,SUBJ_AREA_CREDIT22,SUBJ_AREA_CREDIT23,SUBJ_AREA_CREDIT24,SUBJ_AREA_CREDIT25,SUBJ_AREA_CREDIT26,SUBJ_AREA_CREDIT27,SUBJ_AREA_CREDIT28,SUBJ_AREA_CREDIT29,SUBJ_AREA_CREDIT30,CUR_ATT_CREDITS01,CUR_ATT_CREDITS02,CUR_ATT_CREDITS03,CUR_ATT_CREDITS04,CUR_ATT_CREDITS05,CUR_ATT_CREDITS06,CUR_ATT_CREDITS07,CUR_ATT_CREDITS08,CUR_ATT_CREDITS09,CUR_ATT_CREDITS10,CUR_ATT_CREDITS11,CUR_ATT_CREDITS12,CUR_ATT_CREDITS13,CUR_ATT_CREDITS14,CUR_ATT_CREDITS15,CUR_ATT_CREDITS16,CUR_ATT_CREDITS17,CUR_ATT_CREDITS18,CUR_ATT_CREDITS19,CUR_ATT_CREDITS20,CUR_ATT_CREDITS21,CUR_ATT_CREDITS22,CUR_ATT_CREDITS23,CUR_ATT_CREDITS24,CUR_ATT_CREDITS25,CUR_ATT_CREDITS26,CUR_ATT_CREDITS27,CUR_ATT_CREDITS28,CUR_ATT_CREDITS29,CUR_ATT_CREDITS30,CUR_EARN_CREDITS01,CUR_EARN_CREDITS02,CUR_EARN_CREDITS03,CUR_EARN_CREDITS04,CUR_EARN_CREDITS05,CUR_EARN_CREDITS06,CUR_EARN_CREDITS07,CUR_EARN_CREDITS08,CUR_EARN_CREDITS09,CUR_EARN_CREDITS10,CUR_EARN_CREDITS11,CUR_EARN_CREDITS12,CUR_EARN_CREDITS13,CUR_EARN_CREDITS14,CUR_EARN_CREDITS15,CUR_EARN_CREDITS16,CUR_EARN_CREDITS17,CUR_EARN_CREDITS18,CUR_EARN_CREDITS19,CUR_EARN_CREDITS20,CUR_EARN_CREDITS21,CUR_EARN_CREDITS22,CUR_EARN_CREDITS23,CUR_EARN_CREDITS24,CUR_EARN_CREDITS25,CUR_EARN_CREDITS26,CUR_EARN_CREDITS27,CUR_EARN_CREDITS28,CUR_EARN_CREDITS29,CUR_EARN_CREDITS30,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_TRN_VIEW_ATT",
+    "PKColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,VIEW_ORDER",
+    "TableColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,ATT_VIEW_TYPE,VIEW_ORDER,ATT_TITLE,ATT_VIEW_INTERVAL,ATT_VIEW_SUM_BY,ATT_VIEW_CODE_GRP,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_TRN_VIEW_BLDTYP",
+    "PKColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,BLDG_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,BLDG_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_TRN_VIEW_DET",
+    "PKColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,RUN_TERM_YEAR,VIEW_SEQUENCE",
+    "TableColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,RUN_TERM_YEAR,VIEW_SEQUENCE,TITLE,VIEW_ORDER,SLOT_TYPE,SLOT_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_TRN_VIEW_GPA",
+    "PKColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,GPA_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,GPA_TYPE,VIEW_ORDER,GPA_TITLE,INCLUDE_RANK,INCLUDE_PERCENTILE,INCLUDE_DECILE,INCLUDE_QUARTILE,INCLUDE_QUINTILE,GPA_LEVEL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_TRN_VIEW_HDR",
+    "PKColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY",
+    "TableColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,DISPLAY_ATTCREDIT,DISPLAY_ERNCREDIT,DISPLAY_CRSLEVEL,DISPLAY_CRSTYPE,STU_ADDRESS_TYPE,PRINT_BLDG_INFO,PRINT_STU_DATA,PRINT_CREDIT_SUM,CRS_AREA_GPA,PRINT_CLASS_RANK,PRINT_COMMENTS,PRINT_ACTIVITIES,PRINT_GRAD_REQ,CEEB_NUMBER,HEADER_TEXT,FOOTER_TEXT,REPORT_TEMPLATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_TRN_VIEW_MPS",
+    "PKColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,RUN_TERM_YEAR,VIEW_SEQUENCE,MARKING_PERIOD",
+    "TableColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,RUN_TERM_YEAR,VIEW_SEQUENCE,MARKING_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MR_TRN_VIEW_MS",
+    "PKColumns": "DISTRICT,BUILDING,GRADE,VIEW_ID",
+    "TableColumns": "DISTRICT,BUILDING,GRADE,VIEW_ID,VIEW_ORDER,TABLE_NAME,COLUMN_NAME,SCREEN_NUMBER,FIELD_NUMBER,DEFAULT_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MRTB_DISQUALIFY_REASON",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MRTB_GB_CATEGORY",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CATEGORY_ID,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MRTB_LEVEL_HDR_PESC_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MRTB_MARKOVR_REASON",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MSG_BUILDING_SETUP",
+    "PKColumns": "DISTRICT,BUILDING,EVENT_CODE",
+    "TableColumns": "DISTRICT,BUILDING,EVENT_CODE,EVENT_AVAILABILITY,ALLOW_ESP,ALLOW_TAC,ALLOW_HAC,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MSG_BUILDING_SETUP_ENABLE",
+    "PKColumns": "DISTRICT,BUILDING,EVENT_PACKAGE",
+    "TableColumns": "DISTRICT,BUILDING,EVENT_PACKAGE,IS_ENABLED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MSG_BUILDING_SETUP_VALUES",
+    "PKColumns": "DISTRICT,BUILDING,EVENT_CODE,WORKFLOW_VALUE",
+    "TableColumns": "DISTRICT,BUILDING,EVENT_CODE,WORKFLOW_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MSG_DISTRICT_SETUP",
+    "PKColumns": "DISTRICT,EVENT_CODE",
+    "TableColumns": "DISTRICT,EVENT_CODE,EVENT_AVAILABILITY,ALLOW_ESP,ALLOW_TAC,ALLOW_HAC,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MSG_DISTRICT_SETUP_ENABLE",
+    "PKColumns": "DISTRICT,EVENT_PACKAGE",
+    "TableColumns": "DISTRICT,EVENT_PACKAGE,IS_ENABLED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MSG_DISTRICT_SETUP_VALUES",
+    "PKColumns": "DISTRICT,EVENT_CODE,WORKFLOW_VALUE",
+    "TableColumns": "DISTRICT,EVENT_CODE,WORKFLOW_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MSG_EVENT",
+    "PKColumns": "DISTRICT,EVENT_CODE",
+    "TableColumns": "DISTRICT,EVENT_CODE,EVENT_DESCRIPTION,EVENT_PACKAGE,EVENT_ORDER,ESP_SEC_PACKAGE,ESP_SEC_SUBPACKAGE,ESP_SEC_FEATURE,USE_ESP,USE_TAC,USE_HAC,USE_WATCHLIST,SCHEDULE_POPUP,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MSG_SUB_EVENT",
+    "PKColumns": "DISTRICT,EVENT_CODE,EVENT_SUB_CODE",
+    "TableColumns": "DISTRICT,EVENT_CODE,EVENT_SUB_CODE,PNRS_SHORTMESSAGE,PNRS_LONGMESSAGE,PNRS_LONGMESSAGEREMOTE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MSG_USER_PREFERENCE_DET",
+    "PKColumns": "DISTRICT,APPLICATION_TYPE,LOGIN_ID,EVENT_CODE",
+    "TableColumns": "DISTRICT,APPLICATION_TYPE,LOGIN_ID,EVENT_CODE,SEND_EMAIL,WATCH_NAME,HOME_BUILDING_ONLY,SEND_HIGH_PRIORITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MSG_USER_PREFERENCE_HDR",
+    "PKColumns": "DISTRICT,APPLICATION_TYPE,LOGIN_ID",
+    "TableColumns": "DISTRICT,APPLICATION_TYPE,LOGIN_ID,DAILY_DIGEST,NO_IEP_LOGIN,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "MSG_VALUE_SPECIFICATION",
+    "PKColumns": "DISTRICT,EVENT_CODE",
+    "TableColumns": "DISTRICT,EVENT_CODE,VALUE_LABEL,DATA_TYPE,VALIDATION_TABLE,VALIDATION_CODE_COLUMN,VALIDATION_DESCRIPTION_COLUMN,USE_SUBSCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "NSE_CONFIGURABLE_FIELDS",
+    "PKColumns": "FIELD_ID",
+    "TableColumns": "FIELD_ID,TAB_ID,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "NSE_CONTROLSLIST",
+    "PKColumns": "CONTROL_ID",
+    "TableColumns": "CONTROL_ID,CONTROL_TYPE,CONTROL_NAME,DEFAULT_TRANSLATION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "NSE_CONTROLTRANSLATION",
+    "PKColumns": "TRANSLATION_ID",
+    "TableColumns": "TRANSLATION_ID,CONTROL_ID,LANGUAGE_ID,TRANSLATION,LASTMODIFIEDBY,LASTMODIFIEDDATE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "NSE_FIELDS",
+    "PKColumns": "FIELD_ID",
+    "TableColumns": "FIELD_ID,RESOURCE_ID,FIELD_TYPE,DB_FIELD_NAME,TAB_ID,LASTMODIFIEDBY,LASTMODIFIEDDATE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "NSE_RESOURCE",
+    "PKColumns": "RESOURCE_ID",
+    "TableColumns": "RESOURCE_ID,RESOURCE_VALUE,RESOURCE_TYPE_ID,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "NSE_RESOURCE_TYPE",
+    "PKColumns": "RESOURCE_TYPE_ID",
+    "TableColumns": "RESOURCE_TYPE_ID,RESOURCE_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "NSE_TABS",
+    "PKColumns": "TAB_ID",
+    "TableColumns": "TAB_ID,RESOURCE_ID,TAB_ORDER,APPLICATION_ID,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "NSE_TRANSLATION",
+    "PKColumns": "TRANS_ID,LANGUAGE_ID,RESOURCE_ID",
+    "TableColumns": "TRANS_ID,LANGUAGE_ID,RESOURCE_ID,TRANSLATION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "P360_NotificationResultSet",
+    "PKColumns": "PNRS_ID",
+    "TableColumns": "PNRS_ID,PNRS_TStamp,PNRS_LastUser,PNRS_District,PNRS_PNR_ID,PNRS_PNRU_ID,PNRS_PNR_Subquery_ID,PNRS_SentToPOD,PNRS_Category,PNRS_ShortMessage,PNRS_LongMessage,PNRS_LongMessageRemote,PNRS_Value01,PNRS_Value02,PNRS_Value03,PNRS_Value04,PNRS_Value05,PNRS_Value06,PNRS_Value07,PNRS_Value08,PNRS_Value09,PNRS_Value10,PNRS_Value11,PNRS_Value12,PNRS_Value13,PNRS_Value14,PNRS_Value15,PNRS_Value16",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "P360_NotificationResultSetUser",
+    "PKColumns": "PNRSU_ID",
+    "TableColumns": "PNRSU_ID,PNRSU_TStamp,PNRSU_LastUser,PNRSU_District,PNRSU_PNRS_ID,PNRSU_UserId,PNRSU_UserApplication,PNRSU_EmailAddress,PNRSU_DeliveryMethod,PNRSU_InstantAlert",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "PESC_SUBTEST_CODE",
+    "PKColumns": "DISTRICT,SUBTEST_CODE",
+    "TableColumns": "DISTRICT,SUBTEST_CODE,SUBTEST_NAME,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "PESC_TEST_CODE",
+    "PKColumns": "DISTRICT,TEST_CODE",
+    "TableColumns": "DISTRICT,TEST_CODE,TEST_NAME,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "PESCTB_GEND_XWALK",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,PESCCODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "PESCTB_GPA_XWALK",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,PESCCODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "PESCTB_GRADE_XWALK",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,PESCCODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "PESCTB_SCORE_XWALK",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,PESCCODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "PESCTB_SHOT_XWALK",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,PESCCODE,PESC_DESC_HELP,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "PESCTB_SUFFIX_XWALK",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,PESCCODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "PP_SECURITY",
+    "PKColumns": "DISTRICT,CUBE_NAME,ITEM_TYPE,ITEM_NAME",
+    "TableColumns": "DISTRICT,CUBE_NAME,ITEM_TYPE,ITEM_NAME,PACKAGE,SUBPACKAGE,FEATURE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "PS_SPECIAL_ED_PHONE_TYPE_MAP",
+    "PKColumns": "SPECIAL_ED_PHONE_TYPE",
+    "TableColumns": "DISTRICT,SPECIAL_ED_PHONE_TYPE,ESCHOOLPLUS_PHONE_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG",
+    "PKColumns": "DISTRICT,STUDENT_ID",
+    "TableColumns": "DISTRICT,STUDENT_ID,FIRST_NAME,MIDDLE_NAME,LAST_NAME,GENERATION,BUILDING,HOME_BUILDING,BUILDING_OVERRIDE,BUILDING_REASON,GRADE,GENDER,LANGUAGE,NATIVE_LANGUAGE,CALENDAR,TRACK,CURRENT_STATUS,SUMMER_STATUS,COUNSELOR,HOUSE_TEAM,HOMEROOM_PRIMARY,HOMEROOM_SECONDARY,BIRTHDATE,FAMILY_CENSUS,ALT_BUILDING,ALT_DISTRICT,NICKNAME,HOME_DISTRICT,ATTENDING_DISTRICT,ALT_BLDG_ACCT,DIST_ENROLL_DATE,STATE_ENROLL_DATE,US_ENROLL_DATE,STUDENT_GUID,RES_COUNTY_CODE,STATE_RES_BUILDING,GRADE_9_DATE,GENDER_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID,HOME_DISTRICT_OVERRIDE,UNIQUE_REG_ID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_ACADEMIC",
+    "PKColumns": "DISTRICT,STUDENT_ID",
+    "TableColumns": "DISTRICT,STUDENT_ID,GRADUATION_YEAR,GRADUATION_DATE,PROMOTION,CURRICULUM,SCHD_PRIORITY,GRADUATE_REQ_GROUP,MODELED_GRAD_PLAN,PENDING_GRAD_PLAN,EXP_GRAD_PLAN,ACT_GRAD_PLAN,DIPLOMA_TYPE,ELIG_STATUS,ELIG_REASON,ELIG_EFFECTIVE_DTE,ELIG_EXPIRES_DATE,HOLD_REPORT_CARD,RC_HOLD_OVERRIDE,VOTEC,ADVISOR,DISCIPLINARIAN,FEDERAL_GRAD_YEAR,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_ACT_PREREQ",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,SEQUENCE_NUM",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,SEQUENCE_NUM,AND_OR_FLAG,TABLE_NAME,COLUMN_NAME,OPERATOR,LOW_VALUE,HIGH_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_ACTIVITY_ADV",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,STAFF_ID",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,STAFF_ID,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_ACTIVITY_DET",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,STUDENT_ID",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,STUDENT_ID,ACTIVITY_STATUS,INELIGIBLE,OVERRIDE,START_DATE,END_DATE,DURATION,ACTIVITY_COMMENT,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_ACTIVITY_HDR",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,DESCRIPTION,MODERATOR,MAX_ENROLLMENT,CURRENT_ENROLLMENT,EXCEED_MAXIMUM,STATE_CODE_EQUIV,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_ACTIVITY_MP",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,MARKING_PERIOD",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,MARKING_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_BUILDING",
+    "PKColumns": "DISTRICT,BUILDING",
+    "TableColumns": "DISTRICT,BUILDING,NAME,TRANSFER_BUILDING,ABBREVIATION,STREET1,STREET2,CITY,STATE,ZIP,PHONE,FAX,PRINCIPAL,CALENDAR,BUILDING_TYPE,DEFAULT_ZIP,STATE_CODE_EQUIV,COUNTY_CODE,OUT_OF_DISTRICT,PESC_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_BUILDING_GRADE",
+    "PKColumns": "DISTRICT,BUILDING,GRADE",
+    "TableColumns": "DISTRICT,BUILDING,GRADE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_CAL_DAYS",
+    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,TRACK,CALENDAR,CAL_DATE",
+    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,TRACK,CALENDAR,CAL_DATE,CYCLE_FLAG,CYCLE_CODE,MEMBERSHIP_DAY,MEMBERSHIP_VALUE,TAKE_ATTENDANCE,INCLUDE_TOTALS,DAY_TYPE,DAY_NUMBER,DAY_IN_MEMBERSHIP,ALTERNATE_CYCLE,WEEK_NUMBER,INSTRUCT_TIME,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_CALENDAR",
+    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,TRACK,CALENDAR",
+    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,TRACK,CALENDAR,DESCRIPTION,DEF_MEM_VALUE,FIRST_DAY,LAST_DAY,SUNDAY,MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,DAYS_IN_CYCLE,FIRST_DAY_CYCLE,DAYS_IN_CALENDAR,DAYS_IN_MEMBERSHIP,STATE_CODE_EQUIV,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_CFG",
+    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR",
+    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,AUTO_ASSIGN,OVERIDE_AUTO_ASSGN,STARTING_ID,MAX_ID_ALLOWED,HIGHEST_ID_USED,DEFAULT_ENTRY_CODE,DEFAULT_ENTRY_DATE,YEAREND_WD_CODE,YEAREND_ENTRY_CODE,DROP_OUT_CODE,EMAIL,YEAR_ROUND,PHOTO_PATH,PHOTO_EXTENSION,ST_ID_PREFIX,ST_STARTING_ID,ST_MAX_ID_ALLOWED,ST_HIGHEST_ID_USED,ST_AUTO_ASSIGN_OV,TEA_PERS_STU_SUMM,SUB_PERS_STU_SUMM,TEA_EMERG_STU_SUMM,SUB_EMERG_STU_SUMM,TEA_STUDENT_SEARCH,SUB_STUDENT_SEARCH,TEA_VIEW_IEP,SUB_VIEW_IEP,TEA_VIEW_GIFTED,SUB_VIEW_GIFTED,TEA_VIEW_504,SUB_VIEW_504,LOCKER_ASSIGN,AUTO_LOCKER_ASSIGN,REGISTRAR_EMAIL,MAX_WITH_BACKDATE,MSG_NEW_STUD,MSG_NEW_PR_STUD,MSG_PRIM_HOMEROOM,MSG_SEC_HOMEROOM,MSG_STU_COUNS,MSG_SUMMER_COUNS,MSG_EW_REENTRY,MSG_EW_CHG_BLDG,CHANGE_DATE_TIME,CHANGE_UID,PHOTO_DIRECTORY",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_CFG_ALERT",
+    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,ALERT_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,ALERT_TYPE,VISIBLE_TO_TEACHER,VISIBLE_TO_SUB,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_CFG_ALERT_CODE",
+    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,ALERT_TYPE,CODE",
+    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,ALERT_TYPE,CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_CLASSIFICATION",
+    "PKColumns": "DISTRICT,STUDENT_ID,CLASSIFICATION_CODE",
+    "TableColumns": "DISTRICT,STUDENT_ID,CLASSIFICATION_CODE,CLASSIFICATION_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_CONTACT",
+    "PKColumns": "DISTRICT,CONTACT_ID",
+    "TableColumns": "DISTRICT,CONTACT_ID,TITLE,SALUTATION,FIRST_NAME,MIDDLE_NAME,LAST_NAME,GENERATION,LANGUAGE,HOME_LANGUAGE,USE_FOR_MAILING,EMPLOYER,DEVELOPMENT,APARTMENT,COMPLEX,STREET_NUMBER,STREET_PREFIX,STREET_NAME,STREET_SUFFIX,STREET_TYPE,CITY,STATE,ZIP,PLAN_AREA_NUMBER,HOME_BUILDING_TYPE,EMAIL,EMAIL_PREFERENCE,DELIVERY_POINT,LOGIN_ID,WEB_PASSWORD,PWD_CHG_DATE_TIME,LAST_LOGIN_DATE,EDUCATION_LEVEL,SIF_REFID,HAC_LDAP_FLAG,ACCT_LOCKED,ACCT_LOCKED_DATE_TIME,CHG_PW_NEXT_LOGIN,ONBOARD_TOKEN,ONBOARD_TOKEN_USED,ROW_IDENTITY,KEY_USED,CONTACT_KEY,CHANGE_DATE_TIME,CHANGE_UID,UNIQUE_REG_CONTACT_ID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_CONTACT_HIST",
+    "PKColumns": "DISTRICT,STUDENT_ID,ADDRESS_TYPE,CONTACT_ID,CHANGE_DATE_TIME",
+    "TableColumns": "DISTRICT,STUDENT_ID,ADDRESS_TYPE,CONTACT_ID,DEVELOPMENT,APARTMENT,COMPLEX,STREET_NUMBER,STREET_PREFIX,STREET_NAME,STREET_SUFFIX,STREET_TYPE,CITY,STATE,ZIP,DELIVERY_POINT,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_CONTACT_HIST_TMP",
+    "PKColumns": "DISTRICT,STUDENT_ID,ADDRESS_TYPE,CONTACT_ID,CHANGE_DATE_TIME",
+    "TableColumns": "DISTRICT,STUDENT_ID,ADDRESS_TYPE,CONTACT_ID,DEVELOPMENT,APARTMENT,COMPLEX,STREET_NUMBER,STREET_PREFIX,STREET_NAME,STREET_SUFFIX,STREET_TYPE,CITY,STATE,ZIP,DELIVERY_POINT,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_CONTACT_PHONE",
+    "PKColumns": "DISTRICT,CONTACT_ID,PHONE_TYPE",
+    "TableColumns": "DISTRICT,CONTACT_ID,PHONE_TYPE,PHONE_LISTING,PHONE,PHONE_EXTENSION,SIF_REFID,PHONE_PRIORITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_CYCLE",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CYCLE_ORDER,CODE,DESCRIPTION,ALTERNATE_CYCLE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_DISABILITY",
+    "PKColumns": "DISTRICT,STUDENT_ID,DISABILITY,SEQUENCE_NUM",
+    "TableColumns": "DISTRICT,STUDENT_ID,DISABILITY,SEQUENCE_NUM,DISABILITY_ORDER,START_DATE,END_DATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_DISTRICT",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,NAME,VALIDATION_ONLY,SCHOOL_YEAR,SUMMER_SCHOOL_YEAR,ADDRESS_FORMAT,STREET1,STREET2,CITY,STATE,ZIP,PHONE,SUPERINTENDENT,EMAIL,ALPHANUMERIC_IDS,STUDENT_ID_LENGTH,ZERO_FILL_IDS,AUTO_ASSIGN,OVERIDE_AUTO_ASSGN,STARTING_ID,HIGHEST_ID_USED,SHOW_SSN,TRANSPORT_STUDENT,ST_ID_REQUIRED,ST_ID_LABEL,ST_ID_LENGTH,ST_ID_ENFORCE_LEN,CHANGE_ID_IN_PRIOR,ID_ON_STATE_REPORT,ST_AUTO_ASSIGN,ST_ID_PREFIX,ST_STARTING_ID,ST_MAX_ID_ALLOWED,ST_HIGHEST_ID_USED,ST_ID_INCLUDE,ST_AUTO_ASSIGN_OV,FMS_DEPARTMENT,FMS_HOME_ORGN,FMS_PROGRAM,AGGREGATE,LIST_MAX,ETHNICITY_REQUIRED,USE_ETHNIC_PERCENT,USE_DIS_DATES,USE_ALERT_DATES,STATE_CODE_EQUIV,AUDIT_UPDATES,AUDIT_DELETE_ONLY,AUDIT_CLEAR_INT,LANGUAGE_REQUIRED,SPECIAL_ED_TABLE,SPECIAL_ED_SCR_NUM,SPECIAL_ED_COLUMN,IEPPLUS_INTEGRATION,PARAM_KEY,CRN_FROM_TAC,SHOW_RES_BLDG,ALT_ATTENDANCE_AGE,ALT_ATT_GRADES,CUTOFF_DATE,EW_MEMBERSHIP,ROLL_ENTRY_RULE,ROLL_WD_RULE,USE_RANK_CLASS_SIZE_EXCLUDE,INCLUDE_IEP,INCLUDE_GIFTED,INCLUDE_504,MIN_AGE_CITATION,LOCKOUT_USERS,DISABLE_SCHEDULED_TASKS,FIRSTWAVE_ID,SHOW_USERVOICE,EMAIL_DELIMITER,ALLOW_USERS_TO_SET_THEMES,AUTO_GENERATE_FAMILY_NUMBER,LOG_HAC_LOGINS,LOG_TAC_LOGINS,LOG_TAC_PUBLISH_EVENTS,MULTIPLE_CLASSIFICATIONS,CURRENT_KEY,PREVIOUS_KEY,COMPROMISED,CHANGE_DATE_TIME,CHANGE_UID,HIDE_GENDER_IDENTITY,HOME_PHONE_TYPE,MOBILE_PHONE_TYPE,GAINSIGHTS_ENABLED,ALLOW_MULTIPLE_STUDENT_EMAIL,ALLOW_MULTIPLE_CONTACT_EMAIL,ADDITIONAL_GENDERS",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_DISTRICT_ATTACHMENT",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,ALLOW_ATTACHMENTS,MAX_FILES,MAX_KB_SIZE,ATTACHMENT_FILE_TYPES,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_DISTRICT_SMTP",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,USE_LOCALHOST,SERVER_ADDRESS,SERVER_PORT,USE_SSL,LOGIN_ID,LOGIN_DOMAIN,PASSWORD,USE_GENERIC_FROM,GENERIC_FROM_ADDRESS,GENERIC_FROM_NAME,GENERIC_REPLY_ALLOWED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_DURATION",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,CODE,DESCRIPTION,SUMMER_SCHOOL,NUMBER_WEEKS,NUMBER_IN_YEAR,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_EMERGENCY",
+    "PKColumns": "DISTRICT,STUDENT_ID",
+    "TableColumns": "DISTRICT,STUDENT_ID,DOCTOR_NAME,DOCTOR_PHONE,DOCTOR_EXTENSION,HOSPITAL_CODE,INSURANCE_COMPANY,INSURANCE_ID,INSURANCE_GROUP,INSURANCE_GRP_NAME,INSURANCE_SUBSCR,CHANGE_DATE_TIME,CHANGE_UID,DENTIST,DENTIST_PHONE,DENTIST_EXT,MEDICAL_SPECIALIST,MEDICAL_SPECIALIST_PHONE,MEDICAL_SPECIALIST_EXT",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_ENTRY_WITH",
+    "PKColumns": "DISTRICT,STUDENT_ID,ENTRY_WD_TYPE,SCHOOL_YEAR,ENTRY_DATE",
+    "TableColumns": "DISTRICT,STUDENT_ID,ENTRY_WD_TYPE,SCHOOL_YEAR,ENTRY_DATE,ENTRY_CODE,BUILDING,GRADE,TRACK,CALENDAR,WITHDRAWAL_DATE,WITHDRAWAL_CODE,COMMENTS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_ETHNICITY",
+    "PKColumns": "DISTRICT,STUDENT_ID,ETHNIC_CODE",
+    "TableColumns": "DISTRICT,STUDENT_ID,ETHNIC_CODE,ETHNICITY_ORDER,PERCENTAGE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_EXCLUDE_RANK",
+    "PKColumns": "DISTRICT,STUDENT_ID,RANK_TYPE",
+    "TableColumns": "DISTRICT,STUDENT_ID,RANK_TYPE,INCLUDE_CLASS_SIZE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_GEO_CFG",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,USE_GEO_CODE,USE_ZONES,SHARE_PLANS,ADDRESS_REQUIRED,ALLOW_OVERLAP,USE_PREFIX_SUFFIX,NEXT_ASSIGN_YEAR,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_GRADE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,NEXT_GRADE,YEARS_TILL_GRAD,STATE_CODE_EQUIV,FEDERAL_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,PESC_CODE,GRADE_ORDER,GRAD_PLAN_LABEL,CHANGE_DATE_TIME,CHANGE_UID,CEDS_CODE",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_HISTORY_CFG",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,USE_ADDRESS_HISTORY,HIST_CONTACT_TYPE,HIST_RELATIONSHIP,HIST_LIVING_WITH,HIST_TRANSPORT_TO,HIST_TRANSPORT_FROM,HIST_DEVELOPMENT,HIST_APARTMENT,HIST_COMPLEX,HIST_STREET_NUMBER,HIST_STREET_PREFIX,HIST_STREET_NAME,HIST_STREET_SUFFIX,HIST_STREET_TYPE,HIST_CITY,HIST_STATE,HIST_ZIP,HIST_DELIVERY_POINT,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_KEY_CONTACT_ID",
+    "PKColumns": "DISTRICT,CONTACT_ID",
+    "TableColumns": "DISTRICT,CONTACT_ID,WRAPPED,MAX_VALUE,EXTERNAL_VALUE,LAST_CMD,CMD_VALUE,CMD_DATE_TIME,CMD_UID,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_LEGAL_INFO",
+    "PKColumns": "DISTRICT,STUDENT_ID",
+    "TableColumns": "DISTRICT,STUDENT_ID,LEGAL_FIRST_NAME,LEGAL_MIDDLE_NAME,LEGAL_LAST_NAME,LEGAL_GENERATION,LEGAL_GENDER,CHANGE_REASON,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_LOCKER",
+    "PKColumns": "DISTRICT,BUILDING,LOCKER_ID",
+    "TableColumns": "DISTRICT,BUILDING,LOCKER_ID,LOCKER_DESC,SERIAL_NUM,LOCATION,IS_LOCKED,MAX_ASSIGNED,HOMEROOM,GRADE,GENDER,HOUSE_TEAM,IN_SERVICE,CURRENT_COMBO,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_LOCKER_COMBO",
+    "PKColumns": "DISTRICT,BUILDING,LOCKER_ID,COMBO_SEQUENCE",
+    "TableColumns": "DISTRICT,BUILDING,LOCKER_ID,COMBO_SEQUENCE,COMBINATION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_MED_ALERTS",
+    "PKColumns": "DISTRICT,STUDENT_ID,MED_ALERT_CODE,SEQUENCE_NUM",
+    "TableColumns": "DISTRICT,STUDENT_ID,MED_ALERT_CODE,SEQUENCE_NUM,MED_ALERT_COMMENT,START_DATE,END_DATE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_MP_DATES",
+    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,TRACK,MARKING_PERIOD",
+    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,TRACK,MARKING_PERIOD,START_DATE,END_DATE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_MP_WEEKS",
+    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,MARKING_PERIOD",
+    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,MARKING_PERIOD,MP_ORDER,DURATION_TYPE,DESCRIPTION,START_WEEK_NUMBER,END_WEEK_NUMBER,SCHD_INTERVAL,TERM,RC_RUN,STATE_CODE_EQUIV,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_NEXT_YEAR",
+    "PKColumns": "DISTRICT,STUDENT_ID",
+    "TableColumns": "DISTRICT,STUDENT_ID,BUILDING,HOME_BUILDING,BUILDING_OVERRIDE,BUILDING_REASON,GRADE,COUNSELOR,HOMEROOM_PRIMARY,HOMEROOM_SECONDARY,HOUSE_TEAM,TRACK,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_NOTES",
+    "PKColumns": "DISTRICT,STUDENT_ID,NOTE_TYPE,ENTRY_DATE_TIME",
+    "TableColumns": "DISTRICT,STUDENT_ID,NOTE_TYPE,ENTRY_DATE_TIME,ENTRY_UID,NOTE_TEXT,SENSITIVE,PRIVATE_FLAG,PUBLISH_TO_WEB,APPOINTMENT_ID,CHANGE_DATE_TIME,CHANGE_UID,STUDENT_ALERT_TYPE",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_PERSONAL",
+    "PKColumns": "DISTRICT,STUDENT_ID",
+    "TableColumns": "DISTRICT,STUDENT_ID,SSN,BIRTH_CITY,BIRTH_STATE,BIRTH_COUNTRY,MEAL_STATUS,CLASSIFICATION,LOCKER_NUMBER,LOCKER_COMBINATION,COMMENTS,ETHNIC_CODE,HISPANIC,FED_RACE_ETHNIC,RESIDENCY_CODE,STATE_REPORT_ID,PREVIOUS_ID,PREVIOUS_ID_ASOF,SHOW_ALERTS,MIGRANT,AT_RISK,ESL,HAS_IEP,IEP_STATUS,SECTION_504_PLAN,HOMELESS_STATUS,MIGRANT_ID,CITIZEN_STATUS,MOTHER_MAIDEN_NAME,FEE_STATUS,FEE_STATUS_OVR,FEE_BALANCE,FERPA_NAME,FERPA_ADDRESS,FERPA_PHONE,FERPA_PHOTO,TRANSFER_BLDG_FROM,ACADEMIC_DIS,HAS_SSP,IEP_INTEGRATION,FOSTER_CARE,ORIGIN_COUNTRY,ELL_YEARS,IMMIGRANT,AT_RISK_CALC_OVR,AT_RISK_LAST_CALC,PRIVATE_MILITARY,PRIVATE_COLLEGE,PRIVATE_COMPANY,PRIVATE_ORGANIZATIONS,PRIVATE_INDIVIDUAL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_PHONE_HIST",
+    "PKColumns": "DISTRICT,CONTACT_ID,PHONE_TYPE,STUDENT_ID,ADDRESS_TYPE,CHANGE_DATE_TIME",
+    "TableColumns": "DISTRICT,CONTACT_ID,PHONE_TYPE,STUDENT_ID,ADDRESS_TYPE,PHONE_LISTING,PHONE,PHONE_EXTENSION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_PHONE_HISTORY_CFG",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,USE_PHONE_HISTORY,HIST_STU_NUMBER,HIST_STU_EXT,HIST_STU_LISTING,HIST_CONTACT_NUM,HIST_CONTACT_EXT,HIST_CONTACT_LISTING,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_PROGRAM_COLUMN",
+    "PKColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER",
+    "TableColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER,FIELD_ORDER,FIELD_LEVEL,TABLE_NAME,SCREEN_NUMBER,COLUMN_NAME,LINK_DATES_TO,LINK_TYPE,LABEL,SCREEN_TYPE,DATA_TYPE,DATA_SIZE,ADD_DEFAULT,VALIDATION_LIST,VALIDATION_TABLE,CODE_COLUMN,DESCRIPTION_COLUMN,STATE_CODE_EQUIV,USE_REASONS,USE_OVERRIDE,YREND_INACTIVES,INACTIVE_SRC_RESET,INACTIVE_WD_CODE,YREND_ACTIVES,ACTIVE_SRC_RESET,ACTIVE_WD_CODE,YREND_ENTRY_DATE,YREND_ACTPRES,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,YREND_LOCKED,CHANGE_DATE_TIME,CHANGE_UID,ROW_IDENTITY",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_PROGRAM_SETUP",
+    "PKColumns": "DISTRICT,PROGRAM_ID",
+    "TableColumns": "DISTRICT,PROGRAM_ID,DESCRIPTION,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,START_DATE,END_DATE,INSTRUCT_HOURS,INSTRUCT_HOUR_UNIT,RESERVED,RULES_LOCKED,CHANGE_DATE_TIME,CHANGE_UID,ROW_IDENTITY",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_PROGRAMS",
+    "PKColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER,STUDENT_ID,START_DATE,SUMMER_SCHOOL",
+    "TableColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER,STUDENT_ID,START_DATE,SUMMER_SCHOOL,ENTRY_REASON,PROGRAM_VALUE,END_DATE,WITHDRAWAL_REASON,PROGRAM_OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID,ROW_IDENTITY",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_PRT_FLG_DFLT",
+    "PKColumns": "DISTRICT,CONTACT_TYPE",
+    "TableColumns": "DISTRICT,CONTACT_TYPE,MAIL_ATT,MAIL_DISC,MAIL_FEES,MAIL_IPR,MAIL_MED,MAIL_RC,MAIL_REG,MAIL_SCHD,MAIL_SSP,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_ROOM",
+    "PKColumns": "DISTRICT,BUILDING,ROOM_ID",
+    "TableColumns": "DISTRICT,BUILDING,ROOM_ID,DESCRIPTION,ROOM_TYPE,MAX_STUDENTS,ROOM_AVAILABLE,HANDICAPPED_ACCESS,COMPUTERS_COUNT,PHONE,PHONE_EXTENSION,COMMENTS,GROUP_CODE,REGULAR_YEAR,SUMMER_SCHOOL,STATE_CODE_EQUIV,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_ROOM_AIN",
+    "PKColumns": "DISTRICT,BUILDING,ROOM_ID",
+    "TableColumns": "DISTRICT,BUILDING,ROOM_ID,IS_HRM_SCHD_PRIMARY_HOMEROOM,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STAFF",
+    "PKColumns": "DISTRICT,STAFF_ID",
+    "TableColumns": "DISTRICT,STAFF_ID,FIRST_NAME,MIDDLE_NAME,LAST_NAME,MAIDEN_NAME,TITLE_CODE,EMAIL,SSN,FMS_DEPARTMENT,FMS_EMPL_NUMBER,FMS_LOCATION,TEACHER_LOAD,LOGIN_ID,SUB_LOGIN_ID,SUB_EXPIRATION,GENDER,PRIM_ETHNIC_CODE,HISPANIC,FED_RACE_ETHNIC,BIRTHDATE,STAFF_STATE_ID,ESP_LOGIN_ID,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID,GENDER_IDENTITY,CLASSLINK_ID,UNIQUE_REG_STAFF_ID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STAFF_ADDRESS",
+    "PKColumns": "DISTRICT,STAFF_ID",
+    "TableColumns": "DISTRICT,STAFF_ID,APARTMENT,COMPLEX,STREET_NUMBER,STREET_PREFIX,STREET_NAME,STREET_SUFFIX,STREET_TYPE,CITY,STATE,ZIP,DELIVERY_POINT,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STAFF_BLDGS",
+    "PKColumns": "DISTRICT,BUILDING,STAFF_ID",
+    "TableColumns": "DISTRICT,BUILDING,STAFF_ID,STAFF_NAME,INITIALS,IS_COUNSELOR,IS_TEACHER,IS_ADVISOR,HOMEROOM_PRIMARY,HOMEROOM_SECONDARY,ROOM,HOUSE_TEAM,DEPARTMENT,PHONE,PHONE_EXTENSION,ACTIVE,IS_PRIMARY_BLDG,GROUP_CODE,MAXIMUM_CONTIGUOUS,MAXIMUM_PER_DAY,ALLOW_OVERRIDE,REGULAR_YEAR,SUMMER_SCHOOL,TAKE_LUNCH_COUNTS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STAFF_BLDGS_HRM_AIN",
+    "PKColumns": "DISTRICT,BUILDING,STAFF_ID",
+    "TableColumns": "DISTRICT,BUILDING,STAFF_ID,NEXT_YEAR_PRIMARY_HRM,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STAFF_ETHNIC",
+    "PKColumns": "DISTRICT,STAFF_ID,ETHNIC_CODE",
+    "TableColumns": "DISTRICT,STAFF_ID,ETHNIC_CODE,ETHNICITY_ORDER,PERCENTAGE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STAFF_PHOTO_CFG",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,PHOTO_PATH,PHOTO_DIRECTORY,PHOTO_NAME,PHOTO_EXTENSION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STAFF_QUALIFY",
+    "PKColumns": "DISTRICT,STAFF_ID,QUALIFICATION",
+    "TableColumns": "DISTRICT,STAFF_ID,QUALIFICATION,EXPIRATION_DATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STATE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STU_WITHDRAW_RULE,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STU_AT_RISK_CALC",
+    "PKColumns": "DISTRICT,STUDENT_ID",
+    "TableColumns": "DISTRICT,STUDENT_ID,LTDB_CALC_DATE,ATT_CALC_DATE,REG_CALC_DATE,MR_CALC_DATE,DISC_CALC_DATE,IPR_CALC_DATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STU_CONT_HIST",
+    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,CONTACT_TYPE,LIVING_WITH,TRANSPORT_TO,TRANSPORT_FROM,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,CONTACT_TYPE,RELATION_CODE,LIVING_WITH,TRANSPORT_TO,TRANSPORT_FROM,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STU_CONTACT",
+    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,CONTACT_TYPE",
+    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,CONTACT_TYPE,CONTACT_PRIORITY,RELATION_CODE,LIVING_WITH,WEB_ACCESS,COMMENTS,TRANSPORT_TO,TRANSPORT_FROM,MAIL_ATT,MAIL_DISC,MAIL_FEES,MAIL_IPR,MAIL_MED,MAIL_RC,MAIL_REG,MAIL_SCHD,MAIL_SSP,LEGAL_GUARD,CUST_GUARD,UPD_STU_EO_INFO,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STU_CONTACT_ALERT",
+    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,ALERT_TYPE",
+    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,ALERT_TYPE,SIGNUP_DATE,LAST_ALERT_DATE,NEXT_ALERT_DATE,SCHEDULE_TYPE,SCHD_INTERVAL,SCHD_DOW,NOTIFICATION_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STU_CONTACT_ALERT_ATT",
+    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,ATTENDANCE_CODE",
+    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,ATTENDANCE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STU_CONTACT_ALERT_AVG",
+    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID",
+    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,MIN_AVG,MAX_AVG,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STU_CONTACT_ALERT_DISC",
+    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,CODE",
+    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_STU_CONTACT_ALERT_GB",
+    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID",
+    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,MIN_AVG,MAX_AVG,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_TRACK",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,CODE,DESCRIPTION,START_DATE,END_DATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_TRAVEL",
+    "PKColumns": "DISTRICT,STUDENT_ID,TRAVEL_DIRECTION,TRAVEL_TRIP,TRAVEL_SEGMENT",
+    "TableColumns": "DISTRICT,STUDENT_ID,TRAVEL_DIRECTION,TRAVEL_TRIP,START_DATE,END_DATE,TRAVEL_SEGMENT,SUNDAY,MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,TRAVEL_TYPE,TRANSPORT_DISTANCE,BUS_NUMBER,BUS_ROUTE,STOP_NUMBER,STOP_TIME,STOP_DESCRIPTION,SHUTTLE_STOP,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_USER",
+    "PKColumns": "DISTRICT,STUDENT_ID,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE",
+    "TableColumns": "DISTRICT,STUDENT_ID,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE,FIELD_VALUE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_USER_BUILDING",
+    "PKColumns": "DISTRICT,BUILDING,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE",
+    "TableColumns": "DISTRICT,BUILDING,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_USER_DISTRICT",
+    "PKColumns": "DISTRICT,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE",
+    "TableColumns": "DISTRICT,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_USER_STAFF",
+    "PKColumns": "DISTRICT,STAFF_ID,SCREEN_NUMBER,LIST_SEQUENCE,FIELD_NUMBER",
+    "TableColumns": "DISTRICT,STAFF_ID,SCREEN_NUMBER,LIST_SEQUENCE,FIELD_NUMBER,FIELD_VALUE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_YREND_CRITERIA",
+    "PKColumns": "DISTRICT,RUN_PROCESS,CRITERION",
+    "TableColumns": "DISTRICT,RUN_PROCESS,CRITERION,SEQUENCE,DESCRIPTION,STUDENT_STATUS,ROLLOVER_ENTRY,ROLLOVER_WITH,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_YREND_RUN",
+    "PKColumns": "DISTRICT,RUN_KEY",
+    "TableColumns": "DISTRICT,RUN_KEY,SCHOOL_YEAR,SUMMER_SCHOOL,RUN_STATUS,CALENDAR_SELECT,CRITERIA_SELECT,PURGE_APPT_DATE,PURGE_TAC_MSG_DATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_YREND_SELECT",
+    "PKColumns": "DISTRICT,RUN_PROCESS,CRITERION,LINE_NUMBER",
+    "TableColumns": "DISTRICT,RUN_PROCESS,CRITERION,LINE_NUMBER,AND_OR_FLAG,TABLE_NAME,COLUMN_NAME,OPERATOR,SEARCH_VALUE1,SEARCH_VALUE2,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_YREND_STUDENTS",
+    "PKColumns": "DISTRICT,STUDENT_ID,RUN_PROCESS",
+    "TableColumns": "DISTRICT,STUDENT_ID,RUN_PROCESS,SCHOOL_YEAR,REG_ROLLOVER,REG_CRITERION,WAS_PREREG,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REG_YREND_UPDATE",
+    "PKColumns": "DISTRICT,RUN_PROCESS,CRITERION,LINE_NUMBER",
+    "TableColumns": "DISTRICT,RUN_PROCESS,CRITERION,LINE_NUMBER,TABLE_NAME,COLUMN_NAME,NEW_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGPROG_YREND_RUN",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,RUN_KEY",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,RUN_KEY,RUN_DATE,RUN_STATUS,RESTORE_KEY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_ALT_PORTFOLIO",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_APPT_TYPE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,LINK_PATH,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_ACT641",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_ANTICSVCE",
+    "PKColumns": "DISTRICT,code",
+    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_BARRIER",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_BIRTHVER",
+    "PKColumns": "DISTRICT,code",
+    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_CNTYRESID",
+    "PKColumns": "DISTRICT,code",
+    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_COOPS",
+    "PKColumns": "DISTRICT,code",
+    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_CORECONT",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_DEVICE_ACC",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_ELDPROG",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_ELL_MONI",
+    "PKColumns": "DISTRICT,code",
+    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_FACTYPE",
+    "PKColumns": "DISTRICT,code",
+    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_IMMSTATUS",
+    "PKColumns": "district,code",
+    "TableColumns": "district,code,description,ACTIVE,change_date_time,change_uid",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_INS_CARRI",
+    "PKColumns": "DISTRICT,code",
+    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_LEARNDVC",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_MILITARYDEPEND",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_NETPRFRM",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_NETTYPE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_PRESCHOOL",
+    "PKColumns": "DISTRICT,code",
+    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_RAEL",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_SCH_LEA",
+    "PKColumns": "DISTRICT,code",
+    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_SEND_LEA",
+    "PKColumns": "DISTRICT,code",
+    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_SHAREDDVC",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_STU_INSTRUCT",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_AR_SUP_SVC",
+    "PKColumns": "DISTRICT,code",
+    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_BLDG_REASON",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_BLDG_TYPES",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_CITIZENSHIP",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_CLASSIFY",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,SCHEDULING_WEIGHT,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_COUNTRY",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_COUNTY",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_CURR_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_DAY_TYPE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_DEPARTMENT",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,DEPT_ORDER,STATE_CODE_EQUIV,PERF_PLUS_CODE,ACTIVE,SIF_CODE,SIF2_CODE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_DIPLOMAS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,TRANSCRIPT_DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_DISABILITY",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,SENSITIVE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_ENTRY",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_ETHNICITY",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,FEDERAL_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID,PREVIOUSLY_REPORTED_AS",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_GENDER",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,FEDERAL_CODE_EQUIV,SIF_CODE,SIF2_CODE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_GENDER_IDENTITY",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV_01,STATE_CODE_EQUIV_02,STATE_CODE_EQUIV_03,STATE_CODE_EQUIV_04,STATE_CODE_EQUIV_05,STATE_CODE_EQUIV_06,STATE_CODE_EQUIV_07,STATE_CODE_EQUIV_08,STATE_CODE_EQUIV_09,STATE_CODE_EQUIV_10,FED_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_GENERATION",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_GRAD_PLANS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,EXPECTED,ACTUAL,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_GRADE_CEDS_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_GRADE_PESC_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_GROUP_USED_FOR",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_HOLD_RC_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_HOMELESS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,SIF2_CODE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_HOSPITAL",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_HOUSE_TEAM",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_IEP_STATUS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_IMMUN_STATUS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_LANGUAGE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,ALTERNATE_LANGUAGE,HAC_LANGUAGE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID,USE_IN_HOME,USE_IN_NATIVE",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_MEAL_STATUS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_MEDIC_ALERT",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,SENSITIVE,ACTIVE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_NAME_CHGRSN ",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_NOTE_TYPE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,SENSITIVE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID,STATE_CODE_EQUIV",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_PESC_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_PHONE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,STATE_CODE_EQUIV,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_PROC_STATUS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_PROG_WITH",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_QUALIFY",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_RELATION",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,PESC_CODE,CHANGE_DATE_TIME,CHANGE_UID,IMS_EQUIV",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_RELATION_PESC_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_REQ_GROUP",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,IMAGE_FILE_NAME,GRAD_OR_SUPP,STATE_CODE_EQUIV,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_RESIDENCY",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_ROOM_TYPE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_SCHOOL_YEAR",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,DISPLAY_YEAR,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_ST_PREFIX",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_ST_SUFFIX",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_ST_TYPE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_TITLE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_TRAVEL",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "REGTB_WITHDRAWAL",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,DROPOUT_CODE,STUDENT_EXIT,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_CFG",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,MAXIMUM_TIMESLOTS,DEF_ADD_DATE_CODE,DEFAULT_ADD_DATE,CURRENT_INTERVAL,DATE_CHECK,IN_PROGRESS,DISPLAY_MSE_BLDG,OUTPUT_FILE_PATH,MAX_SCAN_GUID,TRAIL_MARKS,MULTIPLE_BELL_SCHD,DEFAULT_DURATION,DEFAULT_MAX_SEATS,DEFAULT_MARKS_ARE,TEA_SCHD_STU_SUMM,SUB_SCHD_STU_SUMM,TEA_SCHD_STU_REC,SUB_SCHD_STU_REC,TAC_LIMIT_REC_NUM,TAC_LIMIT_REC_DEPT,PREREQ_CRS_BLDG,PREREQ_CHK_REQ,PREREQ_CHK_SCHD,PREREQ_CRS_TOOK,DEFAULT_NOMARKS_FIRST_DAYS,DEFAULT_UNGRADED_LAST_DAYS,DEFAULT_FIRST_NEXT,DEFAULT_LAST_PREVIOUS,LAST_ISSUED_BY,USE_UNGRADED,USE_FOCUS,MAX_FOCUS_PERCENT,REQ_CRS_STAFF_DATE_ENTRY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_CFG_DISC_OFF",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,OFFENSE_CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,OFFENSE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_CFG_HOUSETEAM",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,HOUSE_TEAM",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,HOUSE_TEAM,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_CFG_HRM_AIN",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,SCHD_BY_PRIMARY_HRM,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_CFG_INTERVAL",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SCHD_INTERVAL",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SCHD_INTERVAL,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_CNFLCT_MATRIX",
+    "PKColumns": "DISTRICT,BUILDING,MATRIX_TYPE,SCHD_INTERVAL,COURSE1,COURSE2",
+    "TableColumns": "DISTRICT,BUILDING,MATRIX_TYPE,SCHD_INTERVAL,COURSE1,COURSE2,NUMBER_CONFLICTS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_COURSE",
+    "PKColumns": "DISTRICT,BUILDING,COURSE",
+    "TableColumns": "DISTRICT,BUILDING,COURSE,BUILDING_TYPE,DIST_LEVEL,DESCRIPTION,LONG_DESCRIPTION,DEPARTMENT,HOUSE_TEAM,STUDY_HALL,REGULAR_SCHOOL,SUMMER_SCHOOL,VOTEC,ACTIVE_STATUS,SIMPLE_TALLY,CONFLICT_MATRIX,GENDER_RESTRICTION,ALTERNATE_COURSE,CREDIT,FEE,PRIORITY,SEMESTER_WEIGHT,BLOCK_TYPE,SCAN_COURSE,TAKE_ATTENDANCE,RECEIVE_MARK,COURSE_LEVEL,SUBJ_AREA_CREDIT,REC_NEXT_COURSE,REQUEST_FROM_HAC,SAME_TEACHER,INCLD_PASSING_TIME,COURSE_CREDIT_BASIS,NCES_CODE,INCLD_CURRICULUM_CONNECTOR,MIN_GRADE,MAX_GRADE,CLASSIFY_STUS_MAX,CLASSIFY_NUM_OR_PER,SIF_CREDIT_TYPE,SIF_INSTRUCTIONAL_LEVEL,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_COURSE_BLOCK",
+    "PKColumns": "DISTRICT,BUILDING,BLOCK_COURSE,BLOCKETTE_COURSE",
+    "TableColumns": "DISTRICT,BUILDING,BLOCK_COURSE,BLOCKETTE_COURSE,SAME_SECTION,MANDATORY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_COURSE_GPA",
+    "PKColumns": "DISTRICT,BUILDING,COURSE,GPA_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,COURSE,GPA_TYPE,GPA_LEVEL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_COURSE_GRADE",
+    "PKColumns": "DISTRICT,BUILDING,COURSE,RESTRICT_GRADE",
+    "TableColumns": "DISTRICT,BUILDING,COURSE,RESTRICT_GRADE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_COURSE_HONORS",
+    "PKColumns": "DISTRICT,BUILDING,COURSE,HONOR_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,COURSE,HONOR_TYPE,HONOR_LEVEL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_COURSE_QUALIFY",
+    "PKColumns": "DISTRICT,BUILDING,COURSE,QUALIFICATION",
+    "TableColumns": "DISTRICT,BUILDING,COURSE,QUALIFICATION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_COURSE_SUBJ",
+    "PKColumns": "DISTRICT,BUILDING,COURSE,SUBJECT_AREA",
+    "TableColumns": "DISTRICT,BUILDING,COURSE,SUBJECT_AREA,SUBJ_ORDER,SUB_AREA,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_COURSE_SUBJ_TAG",
+    "PKColumns": "DISTRICT,BUILDING,COURSE,SUBJECT_AREA,TAG",
+    "TableColumns": "DISTRICT,BUILDING,COURSE,SUBJECT_AREA,TAG,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_COURSE_USER",
+    "PKColumns": "DISTRICT,BUILDING,COURSE,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE",
+    "TableColumns": "DISTRICT,BUILDING,COURSE,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_CRS_BLDG_TYPE",
+    "PKColumns": "DISTRICT,BUILDING,COURSE,BLDG_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,COURSE,BLDG_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_CRS_GROUP_DET",
+    "PKColumns": "DISTRICT,BUILDING,COURSE_GROUP,COURSE_BUILDING,COURSE",
+    "TableColumns": "DISTRICT,BUILDING,COURSE_GROUP,COURSE_BUILDING,COURSE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_CRS_GROUP_HDR",
+    "PKColumns": "DISTRICT,BUILDING,COURSE_GROUP",
+    "TableColumns": "DISTRICT,BUILDING,COURSE_GROUP,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_CRS_MARK_TYPE",
+    "PKColumns": "DISTRICT,BUILDING,COURSE,MARK_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,COURSE,MARK_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_CRS_MSB_DET",
+    "PKColumns": "DISTRICT,BUILDING,COURSE,COURSE_SECTION",
+    "TableColumns": "DISTRICT,BUILDING,COURSE,COURSE_SECTION,MEETING_CODE,STAFF_TYPE,STAFF_RESOURCE,ROOM_TYPE,ROOM_RESOURCE,MAXIMUM_SEATS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_CRS_MSB_HDR",
+    "PKColumns": "DISTRICT,BUILDING,COURSE",
+    "TableColumns": "DISTRICT,BUILDING,COURSE,NUMBER_REQUESTS,AVERAGE_CLASS_SIZE,NUMBER_SECTIONS,SECTIONS_SAME,COURSE_LENGTH,DURATION_TYPE,SPAN,SAME_TEACHER,SAME_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_DISTCRS_SECTIONS_OVERRIDE",
+    "PKColumns": "DISTRICT,BUILDING,COURSE,PAGE_SECTION",
+    "TableColumns": "DISTRICT,BUILDING,COURSE,PAGE_SECTION,BLDG_OVERRIDDEN,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_DISTRICT_CFG",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,USE_DIST_CRS_CAT,BLDGS_UPD_CRS_CAT,BLDGS_ADD_CRS_CAT,CLASSIFY_STUS_MAX,CLASSIFY_NUM_OR_PER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_DISTRICT_CFG_UPD",
+    "PKColumns": "DISTRICT,PAGE_SECTION",
+    "TableColumns": "DISTRICT,PAGE_SECTION,CAN_UPDATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,COURSE,COURSE_SECTION",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,COURSE,COURSE_SECTION,SECTION_KEY,DESCRIPTION,STUDY_HALL,MAXIMUM_SEATS,DEPARTMENT,VOTEC,FEE,GENDER_RESTRICTION,BLOCK_TYPE,TRACK,DURATION_TYPE,SUBJ_AREA_CREDIT,AVERAGE_TYPE,STATE_CRS_EQUIV,SAME_TEACHER,LOCK,COURSE_CREDIT_BASIS,NCES_CODE,CATEGORY_TYPE,CLASSIFY_STUS_MAX,CLASSIFY_NUM_OR_PER,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID,UNIQUE_MS_COURSE_ID,UNIQUE_MS_BUILDING_ID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_BLDG_TYPE",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,BLDG_TYPE",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,BLDG_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_BLOCK",
+    "PKColumns": "DISTRICT,BLOCK_SECTION,COURSE",
+    "TableColumns": "DISTRICT,BLOCK_SECTION,COURSE,BLOCKETTE_SECTION,MANDATORY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_CYCLE",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,CYCLE_CODE",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,CYCLE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_GPA",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,GPA_TYPE",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,GPA_TYPE,GPA_LEVEL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_GRADE",
+    "PKColumns": "DISTRICT,SECTION_KEY,RESTRICT_GRADE",
+    "TableColumns": "DISTRICT,SECTION_KEY,RESTRICT_GRADE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_HONORS",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,HONOR_TYPE",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,HONOR_TYPE,HONOR_LEVEL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_HRM_AIN",
+    "PKColumns": "DISTRICT,SECTION_KEY",
+    "TableColumns": "DISTRICT,SECTION_KEY,HRM_SCHD_PRIMARY_HOMEROOM,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_KEY",
+    "PKColumns": "DISTRICT,SECTION_KEY",
+    "TableColumns": "DISTRICT,SECTION_KEY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_MARK_TYPES",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_MP",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,USED_SEATS,CLASSIFICATION_WEIGHT,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_QUALIFY",
+    "PKColumns": "DISTRICT,SECTION_KEY,QUALIFICATION",
+    "TableColumns": "DISTRICT,SECTION_KEY,QUALIFICATION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_SESSION",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,DESCRIPTION,START_PERIOD,END_PERIOD,TAKE_ATTENDANCE,RECEIVE_MARK,CREDIT,PRIMARY_STAFF_ID,ROOM_ID,COURSE_LEVEL,INCLD_PASSING_TIME,USE_FOCUS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID,UNIQUE_MS_SESSION_ID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_STAFF",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STAFF_ID",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STAFF_ID,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_STAFF_DATE",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STAFF_ID,START_DATE,SEQUENCE",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STAFF_ID,START_DATE,SEQUENCE,END_DATE,PRIMARY_SECONDARY,COTEACHER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_STUDY_SEAT",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,CYCLE_CODE",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,CYCLE_CODE,USED_SEATS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_SUBJ",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,SUBJECT_AREA",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,SUBJECT_AREA,SUBJ_ORDER,SUB_AREA,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_SUBJ_TAG",
+    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,SUBJECT_AREA,TAG",
+    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,SUBJECT_AREA,TAG,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MS_USER",
+    "PKColumns": "DISTRICT,SECTION_KEY,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE",
+    "TableColumns": "DISTRICT,SECTION_KEY,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MSB_MEET_DET",
+    "PKColumns": "DISTRICT,MEETING_KEY,SEQUENCE_NUM",
+    "TableColumns": "DISTRICT,MEETING_KEY,SEQUENCE_NUM,JOIN_CONDITION,CYCLES_SELECTED,PERIODS_SELECTED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MSB_MEET_HDR",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,MEETING_CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,MEETING_CODE,MEETING_KEY,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_MSB_MEET_PER",
+    "PKColumns": "DISTRICT,MEETING_KEY,SEQUENCE_NUM,PERIOD",
+    "TableColumns": "DISTRICT,MEETING_KEY,SEQUENCE_NUM,PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_PARAMS",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,OVERRIDE_SEATS,OVERRIDE_HOUSETEAM,IGNORED_PRIORITIES,STUDENT_ALT,COURSE_ALT,STUDENT_COURSE_ALT,SCHD_INTERVAL,PRESERVE_SCHEDULE,BALANCE_CRITERIA,MAXIMUM_TRIES,USE_BALANCING,MAXIMUM_IMBALANCE,MAXIMUM_RESHUFFLE,MAXIMUM_RESCHEDULE,SECONDS_TIMEOUT,MATCH_PERIODS_ONLY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_PARAMS_SORT",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,SORT_ORDER",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,SORT_ORDER,ORDER_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_PERIOD",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CODE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CODE,DESCRIPTION,PERIOD_ORDER,STANDARD_PERIOD,STATE_CODE_EQUIV,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_REC_TAKEN",
+    "PKColumns": "DISTRICT,SECTION_KEY,LOGIN_ID",
+    "TableColumns": "DISTRICT,SECTION_KEY,LOGIN_ID,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_RUN",
+    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,RUN_KEY",
+    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,RUN_KEY,RUN_LABEL,RUN_STATUS,RUN_DATE_TIME,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_RUN_TABLE",
+    "PKColumns": "DISTRICT,TABLE_NAME",
+    "TableColumns": "DISTRICT,TABLE_NAME,DELETE_VIA_TRIGGER,HAS_BUILDING,HAS_SCHOOL_YEAR,CROSS_TABLE,KEY_COLUMN",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_STU_CONF_CYC",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY,COURSE_SESSION,CYCLE_CODE",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY,COURSE_SESSION,CYCLE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_STU_CONF_MP",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY,COURSE_SESSION,MARKING_PERIOD",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY,COURSE_SESSION,MARKING_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_STU_COURSE",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,COURSE_STATUS,MODEL_VAL_TYPE,RETAKE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_STU_CRS_DATES",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY,DATE_ADDED,DATE_DROPPED,RESOLVED_CONFLICT,MR_UNGRADED,MR_FIRST_MP,MR_LAST_MP,MR_LAST_MARK_BY,FROM_SECTION_KEY,FROM_RANGE_KEY,TO_SECTION_KEY,TO_RANGE_KEY,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_STU_RECOMMEND",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,COURSE,STAFF_ID,SECTION_KEY",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,COURSE,STAFF_ID,SECTION_KEY,PRIORITY,ENROLL_COURSE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_STU_REQ",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SCHD_INTERVAL,COURSE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SCHD_INTERVAL,COURSE,COURSE_SECTION,TEACHER_OVERLOAD,REQUEST_TYPE,IS_LOCKED,ALT_TO_REQUEST,ALTERNATE_SEQUENCE,RETAKE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_STU_REQ_MP",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SCHD_INTERVAL,COURSE,MARKING_PERIOD",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SCHD_INTERVAL,COURSE,MARKING_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_STU_STATUS",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SCHD_INTERVAL",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SCHD_INTERVAL,SCHEDULE_STATUS,REQUEST_STATUS,NUMBER_SINGLETONS,NUMBER_DOUBLETONS,NUMBER_MULTISESS,NUMBER_BLOCKS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHD_TIMETABLE",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,BELL_SCHD,TIMESLOT,CYCLE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,BELL_SCHD,TIMESLOT,CYCLE,START_TIME,END_TIME,PERIOD,PARENT_CYCLE_DAY,LUNCH_TIME,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHDTB_AR_ALETYPE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHDTB_AR_DIG_LRN",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHDTB_AR_DIST_PRO",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHDTB_AR_HQT",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHDTB_AR_INST",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHDTB_AR_JOBCODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHDTB_AR_LEARN",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHDTB_AR_LIC_EX",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHDTB_AR_TRANSVEN",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHDTB_AR_VOCLEA",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHDTB_COURSE_NCES_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SCHDTB_CREDIT_BASIS_PESC_CODE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SEC_GLOBAL_ID",
+    "PKColumns": "DISTRICT,LOGIN_ID,LOGIN_TYPE",
+    "TableColumns": "DISTRICT,LOGIN_ID,LOGIN_TYPE,CHANGE_DATE_TIME,CHANGE_UID,GLOBAL_ID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SEC_LOOKUP_INFO",
+    "PKColumns": "DISTRICT,MENU_ITEM,LOOKUP_ID,SEC_TYPE,PACKAGE,SUBPACKAGE,FEATURE",
+    "TableColumns": "DISTRICT,MENU_ITEM,LOOKUP_ID,SEC_TYPE,PACKAGE,SUBPACKAGE,FEATURE,READ_WRITE_REQD,FUNCTIONALITY_DESC,SUBPACKAGE_YEAR_SPEC,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SEC_LOOKUP_MENU_ITEMS",
+    "PKColumns": "DISTRICT,PARENT_MENU,SEQUENCE",
+    "TableColumns": "DISTRICT,PARENT_MENU,SEQUENCE,LOOKUP_ID,SEARCH_TYPE,SORT_TYPE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SEC_LOOKUP_MENU_REL",
+    "PKColumns": "DISTRICT,SOURCE_MENU_ITEM,SOURCE_LOOKUP_ID,DEST_MENU_ITEM,DEST_LOOKUP_ID",
+    "TableColumns": "DISTRICT,SOURCE_MENU_ITEM,SOURCE_LOOKUP_ID,DEST_MENU_ITEM,DEST_LOOKUP_ID,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SEC_LOOKUP_NON_MENU",
+    "PKColumns": "DISTRICT,LOOKUP_ID",
+    "TableColumns": "DISTRICT,LOOKUP_ID,PAGE_TITLE,PAGE_NAME,SEARCH_TYPE,SORT_TYPE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SEC_USER",
+    "PKColumns": "DISTRICT,LOGIN_ID",
+    "TableColumns": "DISTRICT,LOGIN_ID,USER_OR_ROLE,LOGIN_NAME,BUILDING,DEPARTMENT,EMAIL,SCHOOL_YEAR,SUMMER_SCHOOL,USE_MENU_CACHE,MAY_IMPERSONATE,HAS_READ_NEWS,INITIALS,LOCAL_LOGIN_ID,TEACHER_ACCOUNT,CHANGE_DATE_TIME,CHANGE_UID,CLASSLINK_ID,USER_UNIQUE_ID,ROW_IDENTITY",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SEC_USER_BUILDING",
+    "PKColumns": "DISTRICT,LOGIN_ID,BUILDING",
+    "TableColumns": "DISTRICT,LOGIN_ID,BUILDING,CHANGE_DATE_TIME,CHANGE_UID,ROW_IDENTITY",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SEC_USER_MENU_CACHE",
+    "PKColumns": "DISTRICT,LOGIN_ID",
+    "TableColumns": "DISTRICT,LOGIN_ID,MENU,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SEC_USER_RESOURCE",
+    "PKColumns": "DISTRICT,LOGIN_ID,ROLE_ID,PACKAGE,SUBPACKAGE,FEATURE,BUILDING",
+    "TableColumns": "DISTRICT,LOGIN_ID,ROLE_ID,PACKAGE,SUBPACKAGE,FEATURE,BUILDING,ACCESS_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SEC_USER_ROLE",
+    "PKColumns": "DISTRICT,LOGIN_ID,ROLE_ID",
+    "TableColumns": "DISTRICT,LOGIN_ID,ROLE_ID,DEF_BUILDING_OVR,CHANGE_DATE_TIME,CHANGE_UID,ROW_IDENTITY",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SEC_USER_ROLE_BLDG_OVR",
+    "PKColumns": "DISTRICT,LOGIN_ID,ROLE_ID,BUILDING",
+    "TableColumns": "DISTRICT,LOGIN_ID,ROLE_ID,BUILDING,CHANGE_DATE_TIME,CHANGE_UID,ROW_IDENTITY",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SECTB_ACTION_FEATURE",
+    "PKColumns": "DISTRICT,AREA,CONTROLLER,ACTION,FEATURE_ID",
+    "TableColumns": "DISTRICT,AREA,CONTROLLER,ACTION,FEATURE_ID,PACKAGE,SUBPACKAGE,FEATURE,DESCRIPTION,BUILDING_ACCESS_LEVEL,RESERVED,CHANGE_DATE_TIME,CHANGE_UID,TAC_ACCESS",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SECTB_ACTION_RESOURCE",
+    "PKColumns": "DISTRICT,AREA,CONTROLLER,ACTION",
+    "TableColumns": "DISTRICT,AREA,CONTROLLER,ACTION,PACKAGE,SUBPACKAGE,FEATURE,ENV_SUBPACKAGE,DESCRIPTION,BUILDING_ACCESS_LEVEL,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SECTB_PACKAGE",
+    "PKColumns": "DISTRICT,PACKAGE",
+    "TableColumns": "DISTRICT,PACKAGE,DESCRIPTION,IS_ADVANCED_FEATURE,RESERVED,LICENSE_KEY,IS_VALID,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SECTB_PAGE_RESOURCE",
+    "PKColumns": "DISTRICT,MENU_ID,MENU_TYPE",
+    "TableColumns": "DISTRICT,MENU_ID,MENU_TYPE,PACKAGE,SUBPACKAGE,FEATURE,ENV_SUBPACKAGE,DESCRIPTION,BUILDING_ACCESS_LEVEL,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SECTB_RESOURCE",
+    "PKColumns": "DISTRICT,PACKAGE,SUBPACKAGE,FEATURE",
+    "TableColumns": "DISTRICT,PACKAGE,SUBPACKAGE,FEATURE,DESCRIPTION,RESERVED,BLDG_LIST_REQUIRED,ADVANCED_FEATURE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SECTB_SUBPACKAGE",
+    "PKColumns": "DISTRICT,SUBPACKAGE",
+    "TableColumns": "DISTRICT,SUBPACKAGE,DESCRIPTION,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SMS_PROGRAM_RULES",
+    "PKColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER,GROUP_NUMBER,RULE_NUMBER",
+    "TableColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER,FIELD_ATTRIBUTE,GROUP_NUMBER,RULE_NUMBER,RULE_OPERATOR,RULE_VALUE,RULE_TABLE,RULE_COLUMN,RULE_IDENTIFIER,RULE_FIELD_NUMBER,RULE_FIELD_ATTRIBUTE,WHERE_TABLE,WHERE_COLUMN,WHERE_IDENTIFIER,WHERE_FIELD_NUMBER,WHERE_FIELD_ATTRIBUTE,WHERE_OPERATOR,WHERE_VALUE,AND_OR_FLAG,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SMS_PROGRAM_RULES_MESSAGES",
+    "PKColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER,GROUP_NUMBER",
+    "TableColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER,GROUP_NUMBER,ERROR_MESSAGE,SHOW_CUSTOM_MESSAGE,SHOW_BOTH,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SMS_USER_FIELDS",
+    "PKColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER,FIELD_NUMBER",
+    "TableColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER,FIELD_NUMBER,FIELD_LABEL,STATE_CODE_EQUIV,FIELD_ORDER,REQUIRED_FIELD,FIELD_TYPE,DATA_TYPE,NUMBER_TYPE,DATA_LENGTH,FIELD_SCALE,FIELD_PRECISION,DEFAULT_VALUE,DEFAULT_TABLE,DEFAULT_COLUMN,VALIDATION_LIST,VALIDATION_TABLE,CODE_COLUMN,DESCRIPTION_COLUMN,SPI_TABLE,SPI_COLUMN,SPI_SCREEN_NUMBER,SPI_FIELD_NUMBER,SPI_FIELD_TYPE,INCLUDE_PERFPLUS,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SMS_USER_RULES",
+    "PKColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER,FIELD_NUMBER,GROUP_NUMBER,RULE_NUMBER",
+    "TableColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER,FIELD_NUMBER,GROUP_NUMBER,RULE_NUMBER,RULE_OPERATOR,RULE_VALUE,RULE_TABLE,RULE_COLUMN,RULE_SCREEN_NUMBER,RULE_FIELD_NUMBER,WHERE_TABLE,WHERE_COLUMN,WHERE_SCREEN_NUM,WHERE_FIELD_NUMBER,WHERE_OPERATOR,WHERE_VALUE,AND_OR_FLAG,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SMS_USER_RULES_MESSAGES",
+    "PKColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER,FIELD_NUMBER,GROUP_NUMBER",
+    "TableColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER,FIELD_NUMBER,GROUP_NUMBER,ERROR_MESSAGE,SHOW_CUSTOM_MESSAGE,SHOW_BOTH,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SMS_USER_SCREEN",
+    "PKColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER",
+    "TableColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER,LIST_TYPE,COLUMNS,DESCRIPTION,REQUIRED_SCREEN,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,RESERVED,STATE_FLAG,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SMS_USER_TABLE",
+    "PKColumns": "DISTRICT,TABLE_NAME,PACKAGE",
+    "TableColumns": "DISTRICT,TABLE_NAME,PACKAGE,TABLE_DESCR,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_API_VAL_COLUMN",
+    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME",
+    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,COLUMN_ORDER,JSON_PROPERTY_NAME,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_API_VAL_SCOPE",
+    "PKColumns": "DISTRICT,TABLE_NAME,SCOPE",
+    "TableColumns": "DISTRICT,TABLE_NAME,SCOPE,SQL_WHERE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_API_VAL_TABLE",
+    "PKColumns": "DISTRICT,TABLE_NAME",
+    "TableColumns": "DISTRICT,TABLE_NAME,JSON_PROPERTY_NAME,SQL_WHERE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_APPUSERDEF",
+    "PKColumns": "",
+    "TableColumns": "PARENT_MENU,PAGE,SCREEN_TYPE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_AUDIT_DET1",
+    "PKColumns": "KEY_GUID,REC_INDEX",
+    "TableColumns": "KEY_GUID,REC_INDEX,DISTRICT,TABLE_NAME,USER_ID,TWS_USER_ID,MOD_DATE,UPDATE_MODE,DATA_FIELD_01,DATA_VALUE_01,DATA_FIELD_02,DATA_VALUE_02,DATA_FIELD_03,DATA_VALUE_03,DATA_FIELD_04,DATA_VALUE_04,DATA_FIELD_05,DATA_VALUE_05,DATA_FIELD_06,DATA_VALUE_06,DATA_FIELD_07,DATA_VALUE_07,DATA_FIELD_08,DATA_VALUE_08,DATA_FIELD_09,DATA_VALUE_09,DATA_FIELD_10,DATA_VALUE_10,DATA_FIELD_11,DATA_VALUE_11,DATA_FIELD_12,DATA_VALUE_12,DATA_FIELD_13,DATA_VALUE_13,DATA_FIELD_14,DATA_VALUE_14,DATA_FIELD_15,DATA_VALUE_15,DATA_FIELD_16,DATA_VALUE_16,DATA_FIELD_17,DATA_VALUE_17,DATA_FIELD_18,DATA_VALUE_18,DATA_FIELD_19,DATA_VALUE_19,DATA_FIELD_20,DATA_VALUE_20,DATA_FIELD_21,DATA_VALUE_21,DATA_FIELD_22,DATA_VALUE_22,DATA_FIELD_23,DATA_VALUE_23,DATA_FIELD_24,DATA_VALUE_24,DATA_FIELD_25,DATA_VALUE_25",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_AUDIT_DET2",
+    "PKColumns": "KEY_GUID,REC_INDEX",
+    "TableColumns": "KEY_GUID,REC_INDEX,DATA_FIELD_26,DATA_VALUE_26,DATA_FIELD_27,DATA_VALUE_27,DATA_FIELD_28,DATA_VALUE_28,DATA_FIELD_29,DATA_VALUE_29,DATA_FIELD_30,DATA_VALUE_30,DATA_FIELD_31,DATA_VALUE_31,DATA_FIELD_32,DATA_VALUE_32,DATA_FIELD_33,DATA_VALUE_33,DATA_FIELD_34,DATA_VALUE_34,DATA_FIELD_35,DATA_VALUE_35,DATA_FIELD_36,DATA_VALUE_36,DATA_FIELD_37,DATA_VALUE_37,DATA_FIELD_38,DATA_VALUE_38,DATA_FIELD_39,DATA_VALUE_39,DATA_FIELD_40,DATA_VALUE_40,DATA_FIELD_41,DATA_VALUE_41,DATA_FIELD_42,DATA_VALUE_42,DATA_FIELD_43,DATA_VALUE_43,DATA_FIELD_44,DATA_VALUE_44,DATA_FIELD_45,DATA_VALUE_45,DATA_FIELD_46,DATA_VALUE_46,DATA_FIELD_47,DATA_VALUE_47,DATA_FIELD_48,DATA_VALUE_48,DATA_FIELD_49,DATA_VALUE_49,DATA_FIELD_50,DATA_VALUE_50",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_AUDIT_HISTORY",
+    "PKColumns": "CHANGE_ID",
+    "TableColumns": "CHANGE_ID,SERVER_NAME,TABLE_NAME,CHANGE_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_AUDIT_HISTORY_FIELDS",
+    "PKColumns": "CHANGE_ID,COLUMN_NAME",
+    "TableColumns": "CHANGE_ID,COLUMN_NAME,INITIAL_VALUE,NEW_VALUE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_AUDIT_HISTORY_KEYS",
+    "PKColumns": "CHANGE_ID,KEY_FIELD",
+    "TableColumns": "CHANGE_ID,KEY_FIELD,KEY_VALUE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_AUDIT_SESS",
+    "PKColumns": "KEY_GUID",
+    "TableColumns": "KEY_GUID,LOGON_USER,SERVER_NAME,REMOTE_ADDR,USER_AGENT,PATH_INFO,HTTP_REFERER,QUERY_STRING",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_BACKUP_TABLES",
+    "PKColumns": "PACKAGE,TABLE_NAME",
+    "TableColumns": "PACKAGE,TABLE_NAME,RESTORE_ORDER,JOIN_CONDITION",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_BLDG_PACKAGE",
+    "PKColumns": "DISTRICT,BUILDING,PACKAGE",
+    "TableColumns": "DISTRICT,BUILDING,PACKAGE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_BUILDING_LIST",
+    "PKColumns": "DISTRICT,OPTION_TYPE",
+    "TableColumns": "DISTRICT,OPTION_TYPE,LIST_PAGE_TITLE,TABLE_NAME,NAVIGATE_TO,USE_SCHOOL_YEAR,USE_SUMMER_SCHOOL",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "Spi_checklist_menu_items",
+    "PKColumns": "",
+    "TableColumns": "DISTRICT,PAGE_ID,DESCRIPTION,URL,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CODE_IN_USE",
+    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,FOREIGN_KEY_TABLE_NAME,FOREIGN_KEY_COLUMN_NAME",
+    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,FOREIGN_KEY_TABLE_NAME,FOREIGN_KEY_COLUMN_NAME,USE_ENV_DISTRICT,USE_ENV_SCHOOL_YEAR,USE_ENV_SUMMER_SCHOOL,CRITERIA,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CODE_IN_USE_FILTER",
+    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,FOREIGN_KEY_TABLE_NAME,FOREIGN_KEY_COLUMN_NAME,FILTER_COLUMN_NAME",
+    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,FOREIGN_KEY_TABLE_NAME,FOREIGN_KEY_COLUMN_NAME,FILTER_COLUMN_NAME,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_COLUMN_CONTROL",
+    "PKColumns": "COLUMNCONTROLID",
+    "TableColumns": "COLUMNCONTROLID,TABLENAME,COLUMNNAME,CONTROLTYPEID,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_COLUMN_INFO",
+    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME",
+    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,UI_CONTROL_TYPE,VAL_LIST,VAL_LIST_DISP,VAL_TBL_NAME,VAL_COL_CODE,VAL_COL_DESC,VAL_SQL_WHERE,VAL_ORDER_BY_CODE,VAL_DISP_FORMAT,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,COLUMN_WIDTH,CHANGE_DATE_TIME,CHANGE_UID,SOUNDS_LIKE",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_COLUMN_NAMES",
+    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,CULTURE_CODE",
+    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,CULTURE_CODE,COLUMN_DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_COLUMN_VALIDATION",
+    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME",
+    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,VAL_LIST,VAL_LIST_DISP,VAL_TBL_NAME,VAL_COL_CODE,VAL_COL_DESC,VAL_SQL_WHERE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CONFIG_EXTENSION",
+    "PKColumns": "CONFIG_ID",
+    "TableColumns": "CONFIG_ID,TABLE_NAME,SCHOOL_YEAR_REQUIRED,SUMMER_SCHOOL_REQUIRED,BUILDING_REQUIRED,CONFIG_TYPE_REQUIRED",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CONFIG_EXTENSION_DETAIL",
+    "PKColumns": "DETAIL_ID",
+    "TableColumns": "DETAIL_ID,ENV_ID,CONFIG_ID,PRODUCT,DATA,DATA_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CONFIG_EXTENSION_ENVIRONMENT",
+    "PKColumns": "ENV_ID",
+    "TableColumns": "ENV_ID,DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CONFIG_TYPE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CONVERT_CONTACT",
+    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID",
+    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,FIRST_NAME,MIDDLE_NAME,LAST_NAME,APARTMENT,LOT,STREET,CITY,STATE,ZIPCODE,PHONE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CONVERT_ERROR_LOG",
+    "PKColumns": "DISTRICT,RUN_ID,RUN_TIME,RUN_ORDER",
+    "TableColumns": "DISTRICT,RUN_ID,RUN_TIME,RUN_ORDER,PACKAGE_ID,PROC_NAME,TABLE_NAME,ERROR_ID,LINE_NUMBER,SQL_STATEMENT,ERROR_DESCRIPTION,SEVERITY,KEY1_COLNAME,KEY1_VALUE,KEY2_COLNAME,KEY2_VALUE,KEY3_COLNAME,KEY3_VALUE,KEY4_COLNAME,KEY4_VALUE,KEY5_COLNAME,KEY5_VALUE,KEY6_COLNAME,KEY6_VALUE,KEY7_COLNAME,KEY7_VALUE,KEY8_COLNAME,KEY8_VALUE,KEY9_COLNAME,KEY9_VALUE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CONVERT_MAP",
+    "PKColumns": "DISTRICT,TABLE_NAME,FIELD_NAME",
+    "TableColumns": "DISTRICT,TABLE_NAME,FIELD_NAME,INDEX1_DESC,INDEX2_DESC,INDEX3_DESC,INDEX4_DESC,INDEX5_DESC,INDEX6_DESC,VAL_TABLE,VAL_FIELD,CATEGORY,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CONVERT_STAFF",
+    "PKColumns": "",
+    "TableColumns": "DISTRICT,BUILDING,OS_TEA_NUMBER,STAFF_ID,FIRST_NAME,LAST_NAME,SSN",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CONVERT_TYPE",
+    "PKColumns": "DISTRICT,CATEGORY",
+    "TableColumns": "DISTRICT,CATEGORY,INDEX1_DESC,INDEX2_DESC,INDEX3_DESC,INDEX4_DESC,INDEX5_DESC,INDEX6_DESC,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_COPY_CALC",
+    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME",
+    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,PROCESS_ACTION,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_COPY_DET",
+    "PKColumns": "DISTRICT,COPY_ID,TABLE_NAME",
+    "TableColumns": "DISTRICT,COPY_ID,TABLE_NAME,ORDER_WITHIN_ID,WHERE_BUILDING,WHERE_SCHOOL_YEAR,WHERE_SUMMER,WHERE_ALL_BUILDINGS,SKIP_IF_YEAR_DIFFERS,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_COPY_HDR",
+    "PKColumns": "DISTRICT,COPY_ID",
+    "TableColumns": "DISTRICT,COPY_ID,COPY_ID_ORDER,SEC_PACKAGE,TITLE,PACKAGE_ORDER,ROW_POSITION,COLUMN_POSITION,SCHOOL_YEAR_DIFFER,SUMMER_DIFFER,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_COPY_JOIN",
+    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,HDR_TABLE_NAME,HDR_COLUMN_NAME",
+    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,HDR_TABLE_NAME,HDR_COLUMN_NAME,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_COPY_LINK",
+    "PKColumns": "DISTRICT,COPY_ID,LINK_COPY_ID",
+    "TableColumns": "DISTRICT,COPY_ID,LINK_COPY_ID,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_COPY_MS_DET",
+    "PKColumns": "DISTRICT,TABLE_NAME",
+    "TableColumns": "DISTRICT,TABLE_NAME,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CUSTOM_CODE",
+    "PKColumns": "DISTRICT,CUSTOM_CODE,PACKAGE",
+    "TableColumns": "DISTRICT,CUSTOM_CODE,PACKAGE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CUSTOM_DATA",
+    "PKColumns": "DISTRICT,CUSTOM_CODE,DATA_CODE",
+    "TableColumns": "DISTRICT,CUSTOM_CODE,DATA_CODE,DATA_VALUE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CUSTOM_LAUNCH",
+    "PKColumns": "LAUNCHER_ID",
+    "TableColumns": "LAUNCHER_ID,BIN_NAME,LAUNCHER_TYPE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CUSTOM_MODS",
+    "PKColumns": "DISTRICT,CUSTOM_CODE,BASE_MODULE",
+    "TableColumns": "DISTRICT,CUSTOM_CODE,BASE_MODULE,CUSTOM_MODULE,DESCRIPTION",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CUSTOM_SCRIPT",
+    "PKColumns": "MODULE_NAME",
+    "TableColumns": "MODULE_NAME,PROGRAM",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_CUSTOM_SCRIPT_backup",
+    "PKColumns": "",
+    "TableColumns": "MODULE_NAME,PROGRAM",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_DATA_CACHE",
+    "PKColumns": "DISTRICT,CACHE_TYPE,CACHE_KEY,OWNER_ID",
+    "TableColumns": "DISTRICT,CACHE_TYPE,CACHE_KEY,OWNER_ID,CACHE_DATA,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_DIST_BUILDING_CHECKLIST",
+    "PKColumns": "DISTRICT,SETUP_TYPE,PANEL_HEADING_CODE,MENU_ID,MENU_TYPE,OPTION_ORDER",
+    "TableColumns": "DISTRICT,SETUP_TYPE,PANEL_HEADING_CODE,PACKAGE,MENU_ID,MENU_TYPE,MENU_TITLE_OVERRIDE,OPTION_ORDER,VAL_TABLE_NAME,EVALUATE_SCHOOL_YEAR,EVALUATE_SUMMER_SCHOOL,QUERYSTRING,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_DIST_PACKAGE",
+    "PKColumns": "DISTRICT,CONFIG_DIST,PACKAGE",
+    "TableColumns": "DISTRICT,CONFIG_DIST,PACKAGE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_DISTRICT_INIT",
+    "PKColumns": "VAL_TAB,APP_CODE",
+    "TableColumns": "VAL_TAB,APP_CODE,DELETE_BEFORE_COPY",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_DYNAMIC_CONTAINERTYPE",
+    "PKColumns": "CONTAINERTYPEID",
+    "TableColumns": "CONTAINERTYPEID,CONTAINERTYPE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_DYNAMIC_LAYOUT",
+    "PKColumns": "LAYOUTID",
+    "TableColumns": "LAYOUTID,PAGEID,USERID,PARENTLAYOUTID,CONTAINERTYPEID,ORDERNUMBER,TITLE,WIDTH,WIDGETID,INSTANCEID,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_DYNAMIC_PAGE",
+    "PKColumns": "PAGEID",
+    "TableColumns": "PAGEID,PAGENAME,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_DYNAMIC_PAGE_WIDGET",
+    "PKColumns": "PAGEWIDGETID",
+    "TableColumns": "PAGEWIDGETID,PAGEID,WIDGETID,ISEDITABLE,ISREQUIRED,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_DYNAMIC_SETTING",
+    "PKColumns": "SETTINGID",
+    "TableColumns": "SETTINGID,SETTINGNAME,SETTINGTYPEID,DATATYPEID,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_DYNAMIC_WIDGET",
+    "PKColumns": "WIDGETID",
+    "TableColumns": "WIDGETID,WIDGETTYPEID,TITLE,DESCRIPTION,ISRESIZABLE,AREA,CONTROLLER,ACTION,PARTIALVIEW,COLUMNCONTROLID,PACKAGE,SUBPACKAGE,FEATURE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_DYNAMIC_WIDGET_SETTING",
+    "PKColumns": "WIDGETSETTINGID,INSTANCEID",
+    "TableColumns": "WIDGETSETTINGID,INSTANCEID,WIDGETID,SETTINGID,PAGEID,USERID,DATAKEY,VALUEINT,VALUEBOOL,VALUESTRING,VALUEDATETIME,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_DYNAMIC_WIDGET_TYPE",
+    "PKColumns": "WIDGETTYPEID",
+    "TableColumns": "WIDGETTYPEID,WIDGETTYPE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_EVENT",
+    "PKColumns": "EVENT_ID",
+    "TableColumns": "DISTRICT,LOGIN_ID,EVENT_DATE_TIME,EVENT_TYPE,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,CHANGE_DATE_TIME,CHANGE_UID,EVENT_ID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_FEATURE_FLAG",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ENABLED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_FEEDBACK_RECIP",
+    "PKColumns": "DISTRICT,RECIPIENT",
+    "TableColumns": "DISTRICT,RECIPIENT,RECIPIENT_TYPE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_FIELD_HELP",
+    "PKColumns": "DISTRICT,AREA,CONTROLLER,ACTION,FIELD,STATE",
+    "TableColumns": "DISTRICT,AREA,CONTROLLER,ACTION,FIELD,IS_GRID_HEADER,IS_IN_DIALOG,GRID_ID,DIALOG_ID,DESCRIPTION,DISPLAY_NAME,STATE,RESERVED,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_FIRSTWAVE",
+    "PKColumns": "FIRSTWAVE_ID",
+    "TableColumns": "FIRSTWAVE_ID,SITE_CODE,DISTRICT_NAME",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_HOME_SECTIONS",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,REQUIRED_SECTION,HAS_SETTINGS,REFRESH_TYPE,CAN_DELETE,DESIRED_COL_WIDTH,XSL_DISPLAY_FILE,XSL_SETTINGS_FILE,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,CAN_ADDNEW,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_HOME_USER_CFG",
+    "PKColumns": "DISTRICT,LOGIN_ID,SECTION_CODE,SETTING_CODE",
+    "TableColumns": "DISTRICT,LOGIN_ID,SECTION_CODE,SETTING_CODE,SETTING_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_HOME_USER_SEC",
+    "PKColumns": "DISTRICT,LOGIN_ID,SECTION_CODE",
+    "TableColumns": "DISTRICT,LOGIN_ID,SECTION_CODE,COLUMN_NO,ROW_NO,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_IMM_TSK_RESULT",
+    "PKColumns": "DISTRICT,PARAM_KEY",
+    "TableColumns": "DISTRICT,PARAM_KEY,RESULT,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_INTEGRATION_DET",
+    "PKColumns": "DISTRICT,PRODUCT,OPTION_NAME",
+    "TableColumns": "DISTRICT,PRODUCT,OPTION_NAME,OPTION_VALUE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_INTEGRATION_HDR",
+    "PKColumns": "DISTRICT,PRODUCT",
+    "TableColumns": "DISTRICT,PRODUCT,DESCRIPTION,PACKAGE,SUBPACKAGE,FEATURE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_INTEGRATION_SESSION_DET",
+    "PKColumns": "SESSION_GUID,VARIABLE_NAME",
+    "TableColumns": "SESSION_GUID,VARIABLE_NAME,VARIABLE_VALUE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_INTEGRATION_SESSION_HDR",
+    "PKColumns": "SESSION_GUID",
+    "TableColumns": "SESSION_GUID,TSTAMP",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_JOIN_COND",
+    "PKColumns": "REFTABLE,REFCOL,LINKTABLE,SEQUENCE",
+    "TableColumns": "REFTABLE,REFCOL,LINKTABLE,SEQUENCE,JOINTABLE,JOINCOLUMN,JOINTYPE,VALUE_TYPE,JOINVALUE,BASETABLE,BASECOLUMN",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_JOIN_SELECT",
+    "PKColumns": "REFTABLE,REFCOL,LINKTABLE",
+    "TableColumns": "REFTABLE,REFCOL,LINKTABLE,SELECTCLAUSE,AS_COLUMN",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_NEWS",
+    "PKColumns": "DISTRICT,NEWS_ID",
+    "TableColumns": "DISTRICT,NEWS_ID,NEWS_DATE,NEWS_HEADLINE,NEWS_TEXT,EXPIRATION_DATE,REQUIRED_READING,FOR_OFFICE_EMPLOYEES,FOR_TEACHERS,FOR_PARENTS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_NEWS_BLDG",
+    "PKColumns": "DISTRICT,NEWS_ID,BUILDING",
+    "TableColumns": "DISTRICT,NEWS_ID,BUILDING,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_OBJECT_PERM",
+    "PKColumns": "DISTRICT,PERMISSION,OBJECT,SQL_USER",
+    "TableColumns": "DISTRICT,PERMISSION,OBJECT,SQL_USER",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_OPTION_EXCLD",
+    "PKColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME",
+    "TableColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_OPTION_LIST_FIELD",
+    "PKColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME",
+    "TableColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME,DISPLAY_ORDER,IS_HIDDEN,FORMATTER,NAVIGATION_PARAM,COLUMN_LABEL,IS_SEC_BUILDING_COL,COLUMN_WIDTH,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_OPTION_NAME",
+    "PKColumns": "DISTRICT,SEARCH_TYPE",
+    "TableColumns": "DISTRICT,SEARCH_TYPE,OPTION_NAME,NAVIGATE_TO,BTN_NEW_NAVIGATE,USER_DEF_SCR_TYPE,USE_PROGRAMS,TARGET_TABLE,DELETE_TABLE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_OPTION_SIMPLE_SEARCH",
+    "PKColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME,ENVIRONMENT",
+    "TableColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME,ENVIRONMENT,DISPLAY_ORDER,OPERATOR,OVERRIDE_LABEL,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_OPTION_TABLE",
+    "PKColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME",
+    "TableColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,SEQUENCE_NUM,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_OPTION_UPDATE",
+    "PKColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME",
+    "TableColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME,UI_CONTROL_TYPE,IS_REQUIRED,ENTRY_FILTER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_POWERPACK_CONFIGURATION",
+    "PKColumns": "DISTRICT,ROW_NUMBER",
+    "TableColumns": "DISTRICT,ROW_NUMBER,CUSTOM_CODE,CUSTOM_NAME,CUSTOM_DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_PRIVATE_FIELD",
+    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME",
+    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,PACKAGE,SUBPACKAGE,FEATURE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_RESOURCE",
+    "PKColumns": "DISTRICT,APPLICATION_ID,RESOURCE_ID,CULTURE_CODE,RESOURCE_KEY",
+    "TableColumns": "DISTRICT,APPLICATION_ID,RESOURCE_ID,CULTURE_CODE,RESOURCE_KEY,RESOURCE_VALUE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_SEARCH_FAV",
+    "PKColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,SEARCH_NUMBER",
+    "TableColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,SEARCH_NUMBER,SEARCH_NAME,DESCRIPTION,LAST_SEARCH,GROUPING_MASK,CATEGORY,PUBLISH,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_SEARCH_FAV_SUBSCRIBE",
+    "PKColumns": "DISTRICT,LOGIN_ID,PUB_LOGIN_ID,PUB_SEARCH_TYPE,PUB_SEARCH_NUMBER",
+    "TableColumns": "DISTRICT,LOGIN_ID,PUB_LOGIN_ID,PUB_SEARCH_TYPE,PUB_SEARCH_NUMBER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_SECONDARY_KEY_USED",
+    "PKColumns": "DISTRICT,TABLE_NAME",
+    "TableColumns": "DISTRICT,TABLE_NAME,LAST_USED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_TABLE_JOIN",
+    "PKColumns": "DISTRICT,SOURCE_TABLE,TARGET_TABLE,SEQUENCE_NUMBER",
+    "TableColumns": "DISTRICT,SOURCE_TABLE,TARGET_TABLE,SEQUENCE_NUMBER,JOIN_TABLE_1,JOIN_COLUMN_1,JOIN_TABLE_2,JOIN_COLUMN_2,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_TABLE_NAMES",
+    "PKColumns": "DISTRICT,TABLE_NAME",
+    "TableColumns": "DISTRICT,TABLE_NAME,TABLE_DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_TASK",
+    "PKColumns": "DISTRICT,PARAM_KEY",
+    "TableColumns": "DISTRICT,PARAM_KEY,TASK_KEY,TASK_TYPE,RELATED_PAGE,CLASSNAME,TASK_DESCRIPTION,TASK_FILE,SCHEDULED_TIME,TASK_STATUS,TASK_OWNER,TASK_SERVER,NEXT_RUN_TIME,LAST_RUN_TIME,SCHEDULE_TYPE,SCHD_INTERVAL,SCHD_DOW,QUEUE_POSITION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_TASK_ERR_DESC",
+    "PKColumns": "PARAM_KEY,DESCRIPTION_INDEX",
+    "TableColumns": "PARAM_KEY,DESCRIPTION_INDEX,ERROR_DESCRIPTION",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_TASK_ERROR",
+    "PKColumns": "PARAM_KEY",
+    "TableColumns": "PARAM_KEY,DISTRICT,ERROR_SOURCE,ERROR_NUMBER,ERROR_LINE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_TASK_LB_STATS",
+    "PKColumns": "DISTRICT,SERVER_NAME",
+    "TableColumns": "DISTRICT,SERVER_NAME,TASK_DB_CONNECTION_STRING,DEBUG_TASK_SERVICES,TRACE_LB_SERVICE,INCLUDE_WEB_SERVERS,EXCLUDE_WEB_SERVERS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_TASK_PARAMS",
+    "PKColumns": "PARAM_KEY,PARAM_IDX",
+    "TableColumns": "PARAM_KEY,PARAM_IDX,IS_ENV_PARAM,PARAM_NAME,PARAM_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_TASK_PROG",
+    "PKColumns": "PARAM_KEY",
+    "TableColumns": "PARAM_KEY,DISTRICT,LOGIN_ID,PROC_DESC,START_TIME,TOTAL_RECS,RECS_PROCESSED,END_TIME,DESCRIPTION,ERROR_OCCURRED",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_TIME_OFFSET",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,OFFSET,DISTRICT_TIMEZONE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_USER_GRID",
+    "PKColumns": "DISTRICT,LOGIN_ID,PAGE_CODE,GRID_ID",
+    "TableColumns": "DISTRICT,LOGIN_ID,PAGE_CODE,GRID_ID,GRID_COLUMN_NAMES,GRID_COLUMN_MODELS,GRID_STATE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_USER_OPTION",
+    "PKColumns": "DISTRICT,LOGIN_ID,PAGE_CODE,OPTION_CODE",
+    "TableColumns": "DISTRICT,LOGIN_ID,PAGE_CODE,OPTION_CODE,OPTION_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_USER_PROMPT",
+    "PKColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,PROMPT_NAME",
+    "TableColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,PROMPT_NAME,PROMPT_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_USER_SEARCH",
+    "PKColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,SEARCH_NUMBER,SEQUENCE_NUM",
+    "TableColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,SEARCH_NUMBER,SEQUENCE_NUM,AND_OR_FLAG,TABLE_NAME,SCREEN_TYPE,SCREEN_NUMBER,PROGRAM_ID,COLUMN_NAME,FIELD_NUMBER,OPERATOR,SEARCH_VALUE1,SEARCH_VALUE2,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_USER_SEARCH_LIST_FIELD",
+    "PKColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,SEARCH_NUMBER,SEQUENCE_NUM",
+    "TableColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,SEARCH_NUMBER,SEQUENCE_NUM,TABLE_NAME,SCREEN_TYPE,SCREEN_NUMBER,PROGRAM_ID,COLUMN_NAME,FIELD_NUMBER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_USER_SORT",
+    "PKColumns": "DISTRICT,LOGIN_ID,SORT_TYPE,SORT_NUMBER,SEQUENCE_NUM",
+    "TableColumns": "DISTRICT,LOGIN_ID,SORT_TYPE,SORT_NUMBER,SEQUENCE_NUM,TABLE_NAME,SCREEN_TYPE,SCREEN_NUMBER,PROGRAM_ID,COLUMN_NAME,FIELD_NUMBER,SORT_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_VAL_TABS",
+    "PKColumns": "PACKAGE,REFTAB,REFCOL,SEQUENCE",
+    "TableColumns": "PACKAGE,REFTAB,REFCOL,SEQUENCE,VALTAB,VALCOL,VALDESC,PARAM,VALUE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_VALIDATION_TABLES",
+    "PKColumns": "DISTRICT,PACKAGE,TABLE_NAME,USER_DEFINED,RESERVED",
+    "TableColumns": "DISTRICT,PACKAGE,TABLE_NAME,TABLE_DESCR,USER_DEFINED,CUSTOM_CODE,RESERVED,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID,FEATURE_FLAG",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_VERSION",
+    "PKColumns": "",
+    "TableColumns": "VERSION,DB_VERSION,IS_STUPLUS_CONV,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_WATCH_LIST",
+    "PKColumns": "DISTRICT,LOGIN_ID,WATCH_NUMBER",
+    "TableColumns": "DISTRICT,LOGIN_ID,WATCH_NUMBER,WATCH_NAME,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_WATCH_LIST_STUDENT",
+    "PKColumns": "DISTRICT,LOGIN_ID,WATCH_NUMBER,STUDENT_ID",
+    "TableColumns": "DISTRICT,LOGIN_ID,WATCH_NUMBER,STUDENT_ID,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SPI_Z_SCALE",
+    "PKColumns": "DISTRICT,Z_INDEX,PERCENTILE",
+    "TableColumns": "DISTRICT,Z_INDEX,PERCENTILE",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
+    "name": "SPITB_SEARCH_FAV_CATEGORY",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SSP_CFG",
+    "PKColumns": "DISTRICT,BUILDING",
+    "TableColumns": "DISTRICT,BUILDING,TEA_STU_SUMM,SUB_STU_SUMM,TEA_SENS_PLAN,SUB_SENS_PLAN,TEA_SENS_INT,SUB_SENS_INT,TEA_SENS_INT_COMM,SUB_SENS_INT_COMM,TEA_INT_MNT,SUB_INT_MNT,TEA_GOAL_VIEW,SUB_GOAL_VIEW,TEA_GOAL_MNT,SUB_GOAL_MNT,TEA_GOAL_ACCESS,SUB_GOAL_ACCESS,TEA_INT_ACCESS,SUB_INT_ACCESS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "SSP_CFG_AUX",
+    "PKColumns": "DISTRICT,BUILDING",
+    "TableColumns": "DISTRICT,BUILDING,TEA_PLAN_ENTRY,SUB_PLAN_ENTRY,TEA_PLAN_UPD,SUB_PLAN_UPD,TEA_PLAN_UPD_UNASGN,SUB_PLAN_UPD_UNASGN,TEA_PLAN_DEL,SUB_PLAN_DEL,TEA_PLAN_DEL_UNASGN,SUB_PLAN_DEL_UNASGN,TEA_PLAN_VIEW_UNASGN,SUB_PLAN_VIEW_UNASGN,TEA_INT_ENTRY,SUB_INT_ENTRY,TEA_INT_UPD,SUB_INT_UPD,TEA_INT_UPD_UNASGN,SUB_INT_UPD_UNASGN,TEA_INT_DEL,SUB_INT_DEL,TEA_INT_DEL_UNASGN,SUB_INT_DEL_UNASGN,TEA_INT_VIEW_UNASGN,SUB_INT_VIEW_UNASGN,TEA_INT_PROG_ENT_UNASGN,SUB_INT_PROG_ENT_UNASGN,TEA_INT_PROG_DEL,SUB_INT_PROG_DEL,TEA_INT_PROG_DEL_UNASGN,SUB_INT_PROG_DEL_UNASGN,TEA_GOAL_ENTRY,SUB_GOAL_ENTRY,TEA_GOAL_UPD,SUB_GOAL_UPD,TEA_GOAL_UPD_UNASGN,SUB_GOAL_UPD_UNASGN,TEA_GOAL_DEL,SUB_GOAL_DEL,TEA_GOAL_DEL_UNASGN,SUB_GOAL_DEL_UNASGN,TEA_GOAL_VIEW_UNASGN,SUB_GOAL_VIEW_UNASGN,TEA_GOAL_OBJ_ENT_UNASGN,SUB_GOAL_OBJ_ENT_UNASGN,TEA_GOAL_OBJ_DEL,SUB_GOAL_OBJ_DEL,TEA_GOAL_OBJ_DEL_UNASGN,SUB_GOAL_OBJ_DEL_UNASGN,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "STATE_DISTDEF_SCREENS",
+    "PKColumns": "DISTRICT,SCREEN_USED_FOR,SCREEN_TYPE,SCREEN_NUMBER",
+    "TableColumns": "DISTRICT,SCREEN_USED_FOR,SCREEN_TYPE,SCREEN_NUMBER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "STATE_OCR_DIST_CFG",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,FEDERAL_CODE_EQUIV,ENROLL_DATE,IDEA_DATE,SEMESTER2_DATE,YEAR_START_DATE,YEAR_END_DATE,RACE_CATEGORY,GED_PREP,TOT_PUB_SCHOOLS,TOT_PUB_MEMBERSHIP,TOT_PUB_SERVED,TOT_PUB_WAITING,DESEGRAGATION_PLAN,KG_FULL,KG_FULL_FREE,KG_FULL_PARTORFULL,KG_PART,KG_PART_FREE,KG_PART_PARTORFULL,KG_NONE,KG_REQ_BY_STATUTE,PREK_FULL,PREK_FULL_FREE,PREK_FULL_PARTORFULL,PREK_PART,PREK_PART_FREE,PREK_PART_PARTORFULL,PREK_NONE,PREK_FOR_ALL,PREK_FOR_IDEA,PREK_FOR_TITLE1,PREK_FOR_LOWINCOME,PREK_FOR_OTHER,PREK_AGE_2,PREK_AGE_3,PREK_AGE_4,PREK_AGE_5,PREK_AGE_NONE,PREK_AGE_2_STU_COUNT,PREK_AGE_3_STU_COUNT,PREK_AGE_4_STU_COUNT,PREK_AGE_5_STU_COUNT,EARLY_CHILD_0_2,EARLY_CHILD_0_2_NON_IDEA,CIV_RIGHTS_COORD_GNDR_ID,CIV_RIGHTS_COORD_GNDR_PHONE,CIV_RIGHTS_COORD_GNDR_EXT,CIV_RIGHTS_COORD_RACE_ID,CIV_RIGHTS_COORD_RACE_PHONE,CIV_RIGHTS_COORD_RACE_EXT,CIV_RIGHTS_COORD_DIS_ID,CIV_RIGHTS_COORD_DIS_PHONE,CIV_RIGHTS_COORD_DIS_EXT,HAR_POL_NONE,HAR_POL_SEX,HAR_POL_DIS,HAR_POL_RACE,HAR_POL_ANY,HAR_POL_WEBLINK,CERTIFIED,CERT_NAME,CERT_TITLE,CERT_PHONE,CERT_DATE,CERT_AUTH,CERT_EMAIL,ATT_VIEW_TYPE,ENROLL_DIST_EDU_CRS,RETENTION_POLICY,NUM_STU_NON_LEA,STU_DISC_TRANSFER,CHANGE_DATE_TIME,CHANGE_UID,REPORT_NONBINARY_COUNTS,DETERMINE_STUDENT_GENDER,EARLY_CHILD,EARLY_CHILD_NON_IDEA,HAR_POL_SEX_WEBLINK,HAR_POL_GENDER,HAR_POL_GENDER_WEBLINK,HAR_POL_RELIGION,HAR_POL_RELIGION_WEBLINK",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "STATE_OCR_QUESTION",
+    "PKColumns": "DISTRICT,SCHOOL_YEAR,OCR_PART,FORM_TYPE,QUESTION_ID,RECORD_TYPE",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,OCR_PART,FORM_TYPE,QUESTION_ID,RECORD_TYPE,QUESTION_ORDER,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "STATE_TASK_LOG_CFG",
+    "PKColumns": "DISTRICT,TASK_CODE",
+    "TableColumns": "DISTRICT,TASK_CODE,TASK_NAME,KEYFIELD01,KEYFIELD02,KEYFIELD03,KEYFIELD04,KEYFIELD05,KEYFIELD06,KEYFIELD07,KEYFIELD08,KEYFIELD09,KEYFIELD10,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "STATETB_AP_SUBJECT",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "STATETB_OCR_COM_TYPE",
+    "PKColumns": "DISTRICT,COMMENT_TYPE",
+    "TableColumns": "DISTRICT,COMMENT_TYPE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "STATETB_OCR_COUNT_TYPE",
+    "PKColumns": "SECTION,ORDER_NUMBER,SEQUENCE,COUNT_TYPE",
+    "TableColumns": "DISTRICT,SECTION,ORDER_NUMBER,SEQUENCE,COUNT_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "STATETB_OCR_DISC_TYPE",
+    "PKColumns": "DISTRICT,DISC_CODE_ID",
+    "TableColumns": "DISTRICT,DISC_CODE_ID,DESCRIPTION,INCIDENT_OR_ACTION,DISC_CODE_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "STATETB_OCR_EXP_TYPE",
+    "PKColumns": "DISTRICT,EXPENDITURE_ID",
+    "TableColumns": "DISTRICT,EXPENDITURE_ID,EXPENDITURE_ORDER,DESCRIPTION,EXPENDITURE_TYPE,ED_PREFERRED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "STATETB_RELIGION",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,STATE_CODE_EQUIV,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_CFG",
+    "PKColumns": "DISTRICT,BUILDING",
+    "TableColumns": "DISTRICT,BUILDING,TEA_OVR_GB_AVG,SUB_OVR_GB_AVG,SHOW_ALL_TAB,DEFAULT_TAB_TYPE,DEFAULT_TAB,TEA_ISSUES,SUB_ISSUES,TEA_CONDUCT_REFER,SUB_CONDUCT_REFER,SET_ROLES_ON_REFER,SET_TYPE_ON_REFER,DEFAULT_ISSUE_TYPE,TEA_DISABLE_STD,TEA_DISABLE_RUBRIC,TEA_PUBLIC_RUBRIC,TEA_PERFORMANCEPLUS,SUB_PERFORMANCEPLUS,FREE_TEXT_OPTION,TEA_STU_ACCESS,SUB_STU_ACCESS,TEA_MEDALERTS,SUB_MEDALERTS,DISC_REFER,SSP_REFER,TEA_EFP_BP,SUB_EFP_BP,AUTO_PUBLISH_SCORES,TEACHER_EXTRA_CREDIT_CREATION,POINTS,POINTS_OVERRIDE,WEIGHT,WEIGHT_OVERRIDE,PUBLISH,PUBLISH_OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID,TEA_UPD_PM_ASMT_SCORE,ALLOW_TURNED_IN",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_CFG_ABS_SCRN",
+    "PKColumns": "DISTRICT,BUILDING",
+    "TableColumns": "DISTRICT,BUILDING,TEA_SCREEN_ACCESS,TEA_PREV_MP_ACCESS,SUB_SCREEN_ACCESS,SUB_PREV_MP_ACCESS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_CFG_ATTACH",
+    "PKColumns": "DISTRICT,BUILDING",
+    "TableColumns": "DISTRICT,BUILDING,TEA_STU_ATTACH,TEA_STU_ATTACH_CAT_ALL,SUB_STU_ATTACH,SUB_STU_ATTACH_CAT_ALL,TEA_OTHER_ATTACH,TEA_OTHER_ATTACH_CAT_ALL,SUB_OTHER_ATTACH,SUB_OTHER_ATTACH_CAT_ALL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_CFG_HAC",
+    "PKColumns": "DISTRICT,BUILDING",
+    "TableColumns": "DISTRICT,BUILDING,USE_TEA_NEWS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_DISTRICT_CFG",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,ALLOW_EMAIL_ATTACH,MAX_ATTACH_SIZE,ATT_FILE_TYPES,FROM_ADDR_TYPE,FROM_ADDRESS,FROM_NAME,ALLOW_REPLY,USE_DEFAULT_MSG,DO_NOT_REPLY_MSG,CRN_FROM_TAC,PRIVACY_STATEMENT,SHOW_USERVOICE,ALLOW_TEACHER_STUDENT_ACCESS,ALLOW_SUBSTITUTE_STUDENT_ACCESS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_ISSUE",
+    "PKColumns": "DISTRICT,ISSUE_ID",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,STAFF_ID,ISSUE_ID,ISSUE_CODE,ISSUE_DATE,ISSUE_TIME,LOCATION,ISSUE_STATUS,ISSUE_SOURCE,ISSUE_SOURCE_DETAIL,COURSE_SESSION,ISSUE_RESOLVED,COMMENTS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_ISSUE_ACTION",
+    "PKColumns": "DISTRICT,ISSUE_ID,ENTERED_DATE,ENTERED_SEQUENCE",
+    "TableColumns": "DISTRICT,ISSUE_ID,ENTERED_DATE,ENTERED_SEQUENCE,ACTION_CODE,START_DATE,END_DATE,START_TIME,END_TIME,ACTION_COMPLETED,PARENTS_CONTACTED,COMMENTS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_ISSUE_KEY",
+    "PKColumns": "DISTRICT",
+    "TableColumns": "DISTRICT,ISSUE_ID,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_ISSUE_REFER",
+    "PKColumns": "DISTRICT,ISSUE_ID,REFER_DATE,REFER_SEQUENCE",
+    "TableColumns": "DISTRICT,ISSUE_ID,REFER_DATE,REFER_SEQUENCE,REFER_STATUS,REFER_STAFF_ID,DISC_INCIDENT_ID,COMMENTS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_ISSUE_RELATED",
+    "PKColumns": "DISTRICT,ISSUE_ID,RELATED_ISSUE_ID",
+    "TableColumns": "DISTRICT,ISSUE_ID,RELATED_ISSUE_ID,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_ISSUE_STUDENT",
+    "PKColumns": "DISTRICT,ISSUE_ID,STUDENT_ID",
+    "TableColumns": "DISTRICT,ISSUE_ID,STUDENT_ID,STUDENT_ROLE,ADMIN_ROLE,COMMENTS,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_LINK",
+    "PKColumns": "DISTRICT,BUILDING,TAC_PAGE,SORT_ORDER",
+    "TableColumns": "DISTRICT,BUILDING,TAC_PAGE,SORT_ORDER,LINK_URL,LINK_DESCRIPTION,LINK_COLOR,NEW_UNTIL,POP_UP,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_LUNCH_COUNTS",
+    "PKColumns": "DISTRICT,BUILDING,LUNCH_TYPE,STAFF_ID,LUNCH_DATE",
+    "TableColumns": "DISTRICT,BUILDING,LUNCH_TYPE,STAFF_ID,TEACHER,LUNCH_DATE,LUNCH_COUNT,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_LUNCH_TYPES",
+    "PKColumns": "DISTRICT,BUILDING,LUNCH_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,LUNCH_TYPE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_MENU_ITEMS",
+    "PKColumns": "DISTRICT,PARENT_MENU_ID,SEQUENCE",
+    "TableColumns": "DISTRICT,PARENT_MENU_ID,SEQUENCE,MENU_ID,TITLE,CONTROLLER,ACTION,AREA,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_MS_SCHD",
+    "PKColumns": "DISTRICT,BUILDING,PARAM_KEY,MS_TYPE",
+    "TableColumns": "DISTRICT,BUILDING,PARAM_KEY,MS_TYPE,START_TIME,SUNDAY,MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,MS_PARAMETERS,EMAIL_TEACHERS,CHANGE_DATE_TIME,CHANGE_UID,GRACE_PERIOD",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TAC_MSG_CRS_DATES",
+    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY",
+    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY,DATE_ADDED,DATE_DROPPED,RESOLVED_CONFLICT,CHANGE_DATE_TIME",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TACTB_ISSUE",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,USE_IN_CLASS,USE_IN_REFER,DISC_REFER,SSP_REFER,SSP_REFER_TAG,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TACTB_ISSUE_ACTION",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "TACTB_ISSUE_LOCATION",
+    "PKColumns": "DISTRICT,CODE",
+    "TableColumns": "DISTRICT,CODE,DESCRIPTION,DISC_CODE,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
+    "name": "tmp_medtb_vis_exam_ark",
+    "PKColumns": "",
+    "TableColumns": "DISTRICT,FOLLOWUP_CODE,CONFIRMED_NORMAL,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableHasChangeDT": "y"
+  },
+  {
+    "db": "eSch",
     "name": "API_CALLER_CFG_OPTIONS",
     "PKColumns": "CALLER_ID,OPTION_NAME",
     "TableColumns": "CALLER_ID,OPTION_NAME,OPTION_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -12285,13 +17790,6 @@ $dbDefinitions = @'
     "name": "API_CALLER_SECURE_DET",
     "PKColumns": "CALLER_ID,RULE_ID,JSON_LABEL",
     "TableColumns": "CALLER_ID,RULE_ID,JSON_LABEL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "API_CALLER_SUBSCRIBE",
-    "PKColumns": "CALLER_ID,RULE_ID,SCOPE",
-    "TableColumns": "CALLER_ID,RULE_ID,ADDITIONAL_SQL_JOINS,ADDITIONAL_SQL_WHERE,LAST_SINCE_DATETIME,DELTA_MINUTES,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID,SCOPE",
     "TableHasChangeDT": "y"
   },
   {
@@ -12328,34 +17826,6 @@ $dbDefinitions = @'
     "PKColumns": "LOG_GUID",
     "TableColumns": "LOG_GUID,CALLER_ID,RULE_ID,MESSAGE_ACTION,MESSAGE_STATUS,REQUEST_QUERYSTRING,MESSAGE_DATA,MESSAGE_HEADER,ERROR_MESSAGE,ADDITIONAL_INFO,TOTAL_RECORDS,RECORDS_THIS_PAGE,FILTER_LIMIT,FILTER_OFFSET,CHANGE_DATE_TIME",
     "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "API_PROGRAMS",
-    "PKColumns": "DISTRICT,CALLER_ID,PROGRAM_ID,HTTP_METHOD",
-    "TableColumns": "DISTRICT,CALLER_ID,PROGRAM_ID,HTTP_METHOD,DO_NOT_TRACK_BEFORE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "API_RULE_DET",
-    "PKColumns": "RULE_ID,JSON_LABEL",
-    "TableColumns": "RULE_ID,JSON_LABEL,DESCRIPTION,DATA_ORDER,DB_COLUMN,IS_KEY,SUBQUERY_RULE_ID,FORMAT_TYPE,FORMAT_MASK,LITERAL_VALUE,IS_SECURED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "API_RULE_HDR",
-    "PKColumns": "RULE_ID,USE_SUMMER_SCHOOL",
-    "TableColumns": "RULE_ID,DISTRICT,API_VERSION,USE_SUMMER_SCHOOL,RULE_CONTROLLER,RULE_NAME,DESCRIPTION,SQL_VIEW,SQL_ORDER_BY,IS_SUBQUERY,USER_SCREEN_TYPE,SUNGARD_RESERVED,ACTIVE,ACCESS_TYPE,HTTP_METHOD,CUSTOM_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "API_RULE_SUBQUERY_JOIN",
-    "PKColumns": "PARENT_RULE_ID,PARENT_JSON_LABEL,SUBQUERY_RULE_ID,LINK_SUBQUERY_DB_COLUMN",
-    "TableColumns": "PARENT_RULE_ID,PARENT_JSON_LABEL,SUBQUERY_RULE_ID,LINK_SUBQUERY_DB_COLUMN,LINK_PARENT_JSON_LABEL",
-    "TableHasChangeDT": ""
   },
   {
     "db": "eSch",
@@ -12520,63 +17990,7 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "ARTB_21CCLC",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_DIST_LEARN",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_DIST_LRNPROV",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "ARTB_DISTRICTS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_EC_ANTIC_SVC",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_EC_DISAB",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_EC_RELATE_SVC",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_INSTITUTIONS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_LEPMONITORED",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
@@ -12590,247 +18004,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "ARTB_OUT_DIST",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_RESIDENT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_RPT_PERIODS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,END_DATE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SA_ANTIC_SVC",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SA_DISAB",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SA_RELATE_SVC",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SCHOOL_GRADE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_CERT_STAT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_DEV_NEEDS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_EDD_3RD",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_EDD_REASON",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_EDU_ENVIRN",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "ARTB_SE_EDU_NEEDS",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_EDU_PLACE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_EVAL_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_EVL_EXCEED",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_FUNC_IMP",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_FUNC_SCORE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_GRADE_LVL",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_INT_SERV",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_PROG_TYPE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_REASON_NOT_ACCESSED",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_REFERRAL",
-    "PKColumns": "DISTRICT,REFERRAL_ID",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,STUDENT_ID,REFERRAL_ID,BUILDING,RESIDENT_LEA,PRIVATE_SCHOOL,PRIVATE_SCHOOL_NAME,ELL,TRANS_PART_C,PART_C_B_CONCURRENT,REFERRAL_DATE,PARENT_EVAL_DATE,EVAL_DATE,EVAL_REASON,EVAL_OT_REASON,ELIGIBILITY_DET_DATE,EDD_30_DAY_CODE,EDD_OT_REASON,EDD_3RD_DOB_CODE,EDD3_OT_REASON,TEMP_IEP_3RD_BDAY,SPED_PLACEMENT,EARLY_INTERV_SERV,PARENT_PLACE_DATE,RFC_REASON,CMP_OTHER,REF_COMPLETE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_RFC_REASON",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "artb_se_staf_disab",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,SENSITIVE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_TITLE_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_SE_TRANS_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ARTB_TUITION",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_AUDIT_TRAIL",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_DATE,STUDENT_ID,ATTENDANCE_PERIOD,SEQUENCE_NUM,ENTRY_ORDER_NUM,SOURCE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_DATE,STUDENT_ID,ATTENDANCE_PERIOD,SEQUENCE_NUM,ENTRY_ORDER_NUM,SOURCE,ATTENDANCE_CODE,DISMISS_TIME,ARRIVE_TIME,MINUTES_ABSENT,BOTTOMLINE,ENTRY_DATE_TIME,ENTRY_USER,ATT_COMMENT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_BOTTOMLINE",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,STUDENT_ID,ATTENDANCE_DATE,ATTENDANCE_PERIOD,SEQUENCE_NUM",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,STUDENT_ID,ATTENDANCE_DATE,ATTENDANCE_PERIOD,SEQUENCE_NUM,SOURCE,ATTENDANCE_CODE,DISMISS_TIME,ARRIVE_TIME,MINUTES_ABSENT,ATT_COMMENT,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_CFG",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,PERIOD_TYPE,USE_TIMETABLE,BOTTOM_LINE_TYPE,POSITIVE_ATND,AUDIT_TYPE,DEFAULT_ABS_CODE,DEFAULT_TAR_CODE,DEFAULT_PRE_CODE,USE_LANG_TEMPLATE,DATA_SOURCE_FILE,PROGRAM_SCREEN,REG_USER_SCREEN,NOTIFY_DWNLD_PATH,EMAIL_OPTION,RETURN_EMAIL,RET_EMAIL_MISSUB,TWS_TAKE_ATT,TWS_ALT_ABS,TWS_NUM_VIEW_DAYS,TWS_NUM_MNT_DAYS,TWS_ATT_STU_SUMM,DEF_TAC_ABS_CODE,DEF_TAC_TAR_CODE,DEF_TAC_PRES_CODE,ATT_LOCK_DATE,CODE_LIST_TEACH_SUBST,SIF_VIEW,CHANGE_DATE_TIME,CHANGE_UID,ATT_CHECK_IN",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_CFG_CODES",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_CFG_MISS_SUB",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,LOGIN_ID",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,LOGIN_ID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_CFG_PERIODS",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_PERIOD",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_CODE",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,ATTENDANCE_CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,ATTENDANCE_CODE,DESCRIPTION,COLOR,USE_DISMISS_TIME,USE_ARRIVE_TIME,DISTRICT_GROUP,STATE_GROUP,SIF_TYPE,SIF_STATUS,SIF_PRECEDENCE,INCLUDE_PERFPLUS,ALT_ATTENDANCE_CODE,STATE_CODE_EQUIV,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -12842,44 +18018,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "ATT_CONFIG_PERCENT",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,ATND_INTERVAL",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,ATND_INTERVAL,DISPLAY_ORDER,TITLE,DECIMAL_PRECISION,DISPLAY_DETAIL,MINUTES_AS_HOURS,COMBINE_BUILDING,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_COURSE_SEATING",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,GRID_MODE,GRID_COLS,GRID_ROWS,WIDTH,HEIGHT,BACKGROUND,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "ATT_EMERGENCY",
     "PKColumns": "DISTRICT,BUILDING,STUDENT_ID",
     "TableColumns": "DISTRICT,BUILDING,STUDENT_ID,STAFF_ID,ROOM,ABSENT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_EMERGENCY_CFG",
-    "PKColumns": "DISTRICT,BUILDING",
-    "TableColumns": "DISTRICT,BUILDING,EMERGENCY_ATT,STUDENT_CELL_TYPE,CONTACT_TYPE1,PHONE1_TYPE1,PHONE1_TYPE2,CONTACT_TYPE2,PHONE2_TYPE1,PHONE2_TYPE2,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_HRM_SEATING",
-    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,HOMEROOM_TYPE,HOMEROOM",
-    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,HOMEROOM_TYPE,HOMEROOM,GRID_MODE,GRID_COLS,GRID_ROWS,WIDTH,HEIGHT,BACKGROUND,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_INTERVAL",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,ATND_INTERVAL",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,ATND_INTERVAL,DESCRIPTION,ATT_INTERVAL_ORDER,INTERVAL_TYPE,BEGIN_SPAN,END_SPAN,SUM_BY_ATT_CODE,SUM_BY_DISTR_GRP,SUM_BY_STATE_GRP,STATE_CODE_EQUIV,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -12891,37 +18032,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "ATT_NOTIFY_CRIT",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_CRITERIA",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_CRITERIA,DESCRIPTION,NOTIFICATION_ORDER,NOTIFY_GROUP,EMAIL_STAFF,REPORT_CYCLE_TYPE,INTERVAL_TYPE,SUNDAY,MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,EVALUATION_TYPE,EVALUATION_SOURCE,EVAL_VIEW_TYPE,DETAIL_DATE_RANGE,DATE_ORDER,SEND_LETTER,MIN_ABS_TYPE,MAX_ABS_TYPE,MIN_OVERALL_ABS,MAX_OVERALL_ABS,OVERALL_ABS_BY,MIN_ABSENCE,MAX_ABSENCE,ABSENCE_PATTERN,MIN_DAY,MAX_DAY,DAY_PATTERN,MIN_PERCENT_DAY,MAX_PERCENT_DAY,CALC_SELECTION,USE_ELIGIBILITY,ELIG_INCLUDE_PRIOR,ELIGIBILITY_CODE,ELIG_DURATION,ELIG_DURATION_DAYS,MAX_LETTER,USE_DISCIPLINE,IS_STUDENT,PERSON_ID,INCIDENT_CODE,ACTION_CODE,INCLUDE_FINE,USE_AT_RISK,AT_RISK_REASON,AT_RISK_DURATION,AT_RISK_DAYS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_NOTIFY_CRIT_CD",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_CRITERIA,EVALUATION_CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_CRITERIA,EVALUATION_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_NOTIFY_CRIT_PD",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_CRITERIA,ATTENDANCE_PERIOD",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_CRITERIA,ATTENDANCE_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "ATT_NOTIFY_ELIG_CD",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_CRITERIA,SEQUENCE_ORDER,CURRENT_ELIG_STAT",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_CRITERIA,SEQUENCE_ORDER,CURRENT_ELIG_STAT,ELIGIBILITY_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_NOTIFY_GROUP",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_GROUP",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,NOTIFY_GROUP,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -12933,58 +18046,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "ATT_NOTIFY_STU_DET",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE,ATTENDANCE_DATE,ATTENDANCE_PERIOD,SEQUENCE_NUM",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE,ATTENDANCE_DATE,ATTENDANCE_PERIOD,SEQUENCE_NUM,EVALUATION_CODE,INVALID_NOTIFY,ATTENDANCE_COUNT,ABSENCE_TYPE,ABSENCE_VALUE,SECTION_KEY,INCIDENT_ID,ACTION_NUMBER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_NOTIFY_STU_HDR",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE,EVALUATION_CODE,PUBLISHED,INVALID_NOTIFY,CHANGE_DATE_TIME,CHANGE_UID,PUBLISHED_NOTIFICATION",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_PERIOD",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_PERIOD",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_PERIOD,DESCRIPTION,ATT_PERIOD_ORDER,PERIOD_VALUE,START_TIME,END_TIME,INC_IN_ATT_VIEW,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_STU_AT_RISK",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE,AT_RISK_REASON,EFFECTIVE_DATE,EXPIRATION_DATE,PLAN_NUM,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "ATT_STU_CHECK_IN",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,STUDENT_ID,ATTENDANCE_DATE,ATTENDANCE_KEY,CHECKIN_DATE",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,STUDENT_ID,ATTENDANCE_DATE,ATTENDANCE_KEY,SOURCE,CHECKIN_DATE,VIRTUAL_MEET_ID,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_STU_COURSE_SEAT",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STUDENT_ID",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STUDENT_ID,HAS_SEAT,SEAT_NUMBER,POSITION_X,POSITION_Y,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_STU_DAY_TOT_LAST",
-    "PKColumns": "DISTRICT,VIEW_TYPE,STUDENT_ID,BUILDING,LAST_CALC_DATE",
-    "TableColumns": "DISTRICT,VIEW_TYPE,STUDENT_ID,BUILDING,LAST_CALC_DATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_STU_DAY_TOTALS",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,ATTENDANCE_DATE,VIEW_TYPE,CRITERIA",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,ATTENDANCE_DATE,VIEW_TYPE,CRITERIA,ATTENDANCE_CODE,ATT_CODE_VALUE,TOTAL_DAY_TIME,STUDENT_SCHD_TIME,STU_UNSCHD_TIME,PRESENT_TIME,ABSENT_TIME,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID,LOCATION_TYPE,MAX_DAY_TIME",
     "TableHasChangeDT": "y"
   },
   {
@@ -12996,13 +18060,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "ATT_STU_ELIGIBLE",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE,ELIGIBILITY_CODE,EFFECTIVE_DATE,EXPIRATION_DATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "ATT_STU_EMAIL_MAP",
     "PKColumns": "DISTRICT,STUDENT_ID,EMAIL",
     "TableColumns": "DISTRICT,STUDENT_ID,EMAIL,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
@@ -13010,86 +18067,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "ATT_STU_HRM_SEAT",
-    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,HOMEROOM_TYPE,HOMEROOM,STUDENT_ID",
-    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,HOMEROOM_TYPE,HOMEROOM,STUDENT_ID,HAS_SEAT,SEAT_NUMBER,POSITION_X,POSITION_Y,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_STU_INT_CRIT",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,VIEW_TYPE,CRITERIA,ATND_INTERVAL",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,VIEW_TYPE,CRITERIA,ATND_INTERVAL,TOTAL_DAY_TIME,STUDENT_SCHD_TIME,STU_UNSCHD_TIME,PRESENT_TIME,ABSENT_TIME,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_STU_INT_GROUP",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,VIEW_TYPE,ATND_INTERVAL,INTERVAL_TYPE,INTERVAL_CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,VIEW_TYPE,ATND_INTERVAL,INTERVAL_TYPE,INTERVAL_CODE,ATT_CODE_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_STU_INT_MEMB",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,ATND_INTERVAL",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_ID,ATND_INTERVAL,TOTAL_MEMBERSHIP,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_TWS_TAKEN",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_DATE,PERIOD_KEY,ATTENDANCE_PERIOD",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,ATTENDANCE_DATE,PERIOD_KEY,ATTENDANCE_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_VIEW_ABS",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA,ATTENDANCE_CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA,ATTENDANCE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_VIEW_CYC",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA,CYCLE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA,CYCLE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_VIEW_DET",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA,CALENDAR,MIN_OCCURRENCE,MAX_OCCURRENCE,CONSECUTIVE_ABS,SAME_ABS,ATT_CODE_CONVERT,ATT_CODE_VALUE,PERCENT_ABSENT,USE_SCHD_PERIODS,USE_ALL_PERIODS,CHANGE_DATE_TIME,CHANGE_UID,LOCATION_TYPE",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_VIEW_HDR",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,DESCRIPTION,CRITERIA_TYPE,LAST_DAY_CALCED,ATT_TOTALS_UNITS,DAY_UNITS,INCLUDE_PERFPLUS,INCLD_PASSING_TIME,MAX_PASSING_TIME,SEPARATE_BUILDINGS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_VIEW_INT",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,ATT_INTERVAL",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,ATT_INTERVAL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "ATT_VIEW_MSE_BLDG",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,MSE_BUILDING",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,MSE_BUILDING,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATT_VIEW_PER",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA,ATTENDANCE_PERIOD",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,VIEW_TYPE,CRITERIA,ATTENDANCE_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -13144,13 +18124,6 @@ $dbDefinitions = @'
   {
     "db": "eSch",
     "name": "ATTTB_SIF_TYPE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ATTTB_STATE_GRP",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
@@ -13416,13 +18389,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "CRN_CFG",
-    "PKColumns": "DISTRICT",
-    "TableColumns": "DISTRICT,CRN_SERVER,GATEWAY_SERVER,GATEWAY_URL,AVAILABLE,CRN_VERSION,CRN_DESCRIPTION,ADD_PARAMS,USE_SSL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "DISC_ACT_USER",
     "PKColumns": "INCIDENT_ID,ACTION_NUMBER,SCREEN_TYPE,OFF_VIC_WIT_ID,SCREEN_NUMBER,FIELD_NUMBER",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,ACTION_NUMBER,SCREEN_TYPE,OFF_VIC_WIT_ID,SCREEN_NUMBER,FIELD_NUMBER,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -13433,13 +18399,6 @@ $dbDefinitions = @'
     "name": "DISC_ATT_NOTIFY",
     "PKColumns": "DISTRICT,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE,INCIDENT_ID",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,STUDENT_ID,NOTIFY_CRITERIA,REPORT_CYCLE_DATE,TRIGGER_DATE,INCIDENT_ID,INVALID_NOTIFY,PUBLISHED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_CFG",
-    "PKColumns": "DISTRICT,BUILDING",
-    "TableColumns": "DISTRICT,BUILDING,FORM_LTR_FILENAME,USE_MULTI_LANGUAGE,PROGRAM_SCREEN,REG_USER_SCREEN,NOTIFY_DWNLD_PATH,EMAIL_OPTION,RETURN_EMAIL,MAGISTRATE_NUMBER,REFERRAL_RPT_HEADER,REFERRAL_RPT_FOOTER,ENABLE_ATTENDANCE,CHANGE_DATE_TIME,CHANGE_UID,EDIT_REFERRALS",
     "TableHasChangeDT": "y"
   },
   {
@@ -13465,27 +18424,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "DISC_DISTRICT_ACT",
-    "PKColumns": "DISTRICT,TOTAL_CODE,ACTION_CODE",
-    "TableColumns": "DISTRICT,TOTAL_CODE,ACTION_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_DISTRICT_CFG",
-    "PKColumns": "DISTRICT",
-    "TableColumns": "DISTRICT,PRIVATE_NOTES,TRACK_OCCURRENCES,MULTIPLE_OFFENSES,CURRENT_YEAR_SUM,OFFENSE_ACT_TOTALS,OFF_ACT_PREV_LST,OFF_ACT_PREV_DET,OFF_ACT_TOTAL_CNT,INCIDENT_LOCKING,ENFORCE_ACT_LEVELS,RESPONSIBLE_ADMIN,RESP_ADMIN_REQ,AUTOCALC_END_DATE,DEFAULT_SCHEDULED_DURATION,USE_LONG_DESCRIPTION,DEFAULT_INCIDENT_DATE,LIMIT_OFFENDER_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_DISTRICT_CFG_DETAIL",
-    "PKColumns": "DISTRICT,PAGE,PAGE_SECTION",
-    "TableColumns": "DISTRICT,PAGE,PAGE_SECTION,QUICKVIEW,DISPLAY_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "DISC_DISTRICT_CFG_SUMMARY",
     "PKColumns": "DISTRICT,SECTION,DISPLAY_ORDER",
     "TableColumns": "DISTRICT,SECTION,DISPLAY_ORDER,SCREEN_NUMBER,FIELD,LABEL,CHANGE_DATE_TIME,CHANGE_UID",
@@ -13507,58 +18445,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "DISC_DISTRICT_TOT",
-    "PKColumns": "DISTRICT,TOTAL_CODE",
-    "TableColumns": "DISTRICT,TOTAL_CODE,TOTAL_LABEL,TOTAL_SUFFIX,WARNING_THRESHOLD,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_INCIDENT",
-    "PKColumns": "DISTRICT,INCIDENT_ID",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,INCIDENT_CODE,INCIDENT_SUBCODE,INCIDENT_DATE,INCIDENT_TIME,INCIDENT_TIME_FRAME,LOCATION,IS_STUDENT,PERSON_ID,REPORTED_TO,GANG_RELATED,POLICE_NOTIFIED,POLICE_NOTIFY_DATE,POLICE_DEPARTMENT,COMPLAINT_NUMBER,OFFICER_NAME,BADGE_NUMBER,COMMENTS,LONG_COMMENT,INCIDENT_GUID,INCIDENT_LOCKED,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_INCIDENT_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,LEVEL_MIN,LEVEL_MAX,STATE_CODE_EQUIV,SEVERITY_ORDER,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_LINK_ISSUE",
-    "PKColumns": "DISTRICT,INCIDENT_ID,ISSUE_ID",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,ISSUE_ID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_LTR_CRIT",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CRITERION",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CRITERION,DESCRIPTION,OFFENSE_COUNT_MIN,OFFENSE_COUNT_MAX,ACTION_COUNT_MIN,ACTION_COUNT_MAX,LETTER_COUNT_TYPE,MAXIMUM_LETTERS,RESET_COUNT,LINES_OF_DETAIL,INCIDENTS_TO_PRINT,USE_ELIGIBILITY,ELIG_INCLUDE_PRIOR,ELIGIBILITY_CODE,ELIG_DURATION,ELIG_DURATION_DAYS,USE_AT_RISK,AT_RISK_REASON,AT_RISK_DURATION,AT_RISK_DAYS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_LTR_CRIT_ACT",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CRITERION,ACTION_CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CRITERION,ACTION_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "DISC_LTR_CRIT_ELIG",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CRITERION,SEQUENCE_ORDER,CURRENT_ELIG_STATUS",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CRITERION,SEQUENCE_ORDER,CURRENT_ELIG_STATUS,ELIGIBILITY_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_LTR_CRIT_OFF",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CRITERION,OFFENSE_CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CRITERION,OFFENSE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -13591,44 +18480,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "DISC_NON_STUDENT",
-    "PKColumns": "DISTRICT,NON_STUDENT_ID",
-    "TableColumns": "DISTRICT,NON_STUDENT_ID,FIRST_NAME,MIDDLE_NAME,LAST_NAME,GENERATION,APARTMENT,COMPLEX,STREET_NUMBER,STREET_NAME,CITY,STATE,ZIP,PHONE,PHONE_EXTENSION,BIRTHDATE,GRADE,GENDER,ETHNIC_CODE,HISPANIC,FED_RACE_ETHNIC,CLASSIFICATION,STAFF_MEMBER,BUILDING,PERSON_DIST_CODE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_NOTES",
-    "PKColumns": "DISTRICT,INCIDENT_ID,NOTE_TYPE,OFF_VIC_WIT_ID,PAGE_NUMBER",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,NOTE_TYPE,OFF_VIC_WIT_ID,PAGE_NUMBER,NOTE_TEXT,PRIVATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_OCCURRENCE",
-    "PKColumns": "DISTRICT,INCIDENT_ID,OFFENDER,ACTION_NUMBER,OCCURRENCE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,OFFENDER,ACTION_NUMBER,OCCURRENCE,SCHD_START_DATE,ACTUAL_START_DATE,SCHD_START_TIME,SCHD_END_TIME,ACTUAL_START_TIME,ACTUAL_END_TIME,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_OFF_ACTION",
-    "PKColumns": "DISTRICT,INCIDENT_ID,OFFENDER,ACTION_NUMBER",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,OFFENDER,ACTION_NUMBER,ACTION_CODE,SCHD_DURATION,ACTUAL_DURATION,REASON_CODE,DISPOSITION_CODE,START_DATE,END_DATE,TOTAL_OCCURRENCES,RESP_BUILDING,ASSIGN_BUILDING,DATE_DETERMINED,ACTION_OUTCOME,YEAREND_CARRY_OVER,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "DISC_OFF_CHARGE",
     "PKColumns": "DISTRICT,INCIDENT_ID,OFFENDER,CHARGE_CODE",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,OFFENDER,CHARGE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_OFF_CODE",
-    "PKColumns": "DISTRICT,INCIDENT_ID,OFFENDER,OFFENSE_CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,OFFENDER,OFFENSE_CODE,OFFENSE_COMMENT,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -13647,13 +18501,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "DISC_OFF_FINE",
-    "PKColumns": "DISTRICT,INCIDENT_ID,OFFENDER,ACTION_NUMBER",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,OFFENDER,ACTION_NUMBER,PERSON_ID,IS_STUDENT,FINE_CODE,ISSUED_DATE,FINE_AMOUNT,PAID_DATE,COST,CITATION_NUMBER,STU_CITATION_NUM,MAGISTRATE_NUMBER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "DISC_OFF_SUBCODE",
     "PKColumns": "DISTRICT,INCIDENT_ID,OFFENDER,OFFENSE_SUBCODE",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,OFFENDER,OFFENSE_SUBCODE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -13664,13 +18511,6 @@ $dbDefinitions = @'
     "name": "DISC_OFF_WEAPON",
     "PKColumns": "DISTRICT,INCIDENT_ID,OFFENDER,WEAPON_CODE",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,OFFENDER,WEAPON_CODE,WEAPON_COUNT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_OFFENDER",
-    "PKColumns": "DISTRICT,INCIDENT_ID,OFFENDER",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,OFFENDER,IS_STUDENT,PERSON_ID,GUARDIAN_NOTIFIED,NOTIFY_DATE,HOW_NOTIFIED,REFERRED_TO,POLICE_ACTION,CHARGES_FILED_BY,CHARGES_FILED_WITH,RESP_ADMIN,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -13710,30 +18550,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "DISC_VICTIM",
-    "PKColumns": "DISTRICT,INCIDENT_ID,VICTIM",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,VICTIM,VICTIM_CODE,VICTIM_SUBCODE,IS_STUDENT,PERSON_ID,HOSPITAL_CODE,DOCTOR,GUARDIAN_NOTIFIED,NOTIFY_DATE,HOW_NOTIFIED,REFERRED_TO,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "DISC_VICTIM_ACTION",
     "PKColumns": "DISTRICT,INCIDENT_ID,VICTIM,ACTION_NUMBER",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,VICTIM,ACTION_NUMBER,ACTION_CODE,SCHD_DURATION,ACTUAL_DURATION,REASON_CODE,DISPOSITION_CODE,START_DATE,END_DATE,RESP_BUILDING,DATE_DETERMINED,ACTION_OUTCOME,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_VICTIM_INJURY",
-    "PKColumns": "DISTRICT,INCIDENT_ID,VICTIM,INJURY_CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,VICTIM,INJURY_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISC_WITNESS",
-    "PKColumns": "DISTRICT,INCIDENT_ID,WITNESS",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,INCIDENT_ID,WITNESS,WITNESS_CODE,WITNESS_SUBCODE,IS_STUDENT,PERSON_ID,GUARDIAN_NOTIFIED,NOTIFY_DATE,HOW_NOTIFIED,REFERRED_TO,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -13780,21 +18599,7 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "DISCTB_INC_SUBCODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "DISCTB_INJURY",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISCTB_LOCATION",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
@@ -13808,20 +18613,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "DISCTB_NOTIFIED",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISCTB_OFF_ACTION",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,LEVEL_NUMBER,ATTENDANCE_CODE,CARRYOVER,STATE_CODE_EQUIV,ACTIVE,SEVERITY_LEVEL,SIF_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "DISCTB_OFF_SUBCODE",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -13829,42 +18620,7 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "DISCTB_POLICE_ACT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,STATE_CODE_EQUIV,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "DISCTB_REASON",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISCTB_REFERRAL",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID,STATE_CODE_EQUIV",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISCTB_TIMEFRAME",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISCTB_VIC_ACTION",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISCTB_VIC_CODE",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
@@ -13885,51 +18641,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "DISCTB_VIC_SUBCODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "DISCTB_WEAPON",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,SEVERITY_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISCTB_WIT_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "DISCTB_WIT_SUBCODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ESP_MENU_FAVORITES",
-    "PKColumns": "DISTRICT,LOGIN_ID,FAVORITE_ID",
-    "TableColumns": "DISTRICT,LOGIN_ID,FAVORITE_ID,FAVORITE_TYPE,FOLDER_ID,FAVORITE_ORDER,DESCRIPTION,AREA,CONTROLLER,ACTION,PAGEURL,QUERY_STRING,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ESP_MENU_ITEMS",
-    "PKColumns": "DISTRICT,MENU_ID,MENU_TYPE",
-    "TableColumns": "DISTRICT,MENU_ID,MENU_TYPE,PARENT_ID,PARENT_TYPE,TITLE,DESCRIPTION,ICONURL,SEQUENCE,DISPLAY_COLUMN,AREA,CONTROLLER,ACTION,PAGEURL,TARGET,QUERY_STRING,TAC_ACCESS,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "ESP_PRSG_SCRIPT_HASH",
-    "PKColumns": "SCRIPT_FOLDER,SCRIPT_NAME",
-    "TableColumns": "SCRIPT_FOLDER,SCRIPT_NAME,SCRIPT_HASH,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -13957,7 +18671,7 @@ $dbDefinitions = @'
     "db": "eSch",
     "name": "FEE_GROUP_CRIT",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,FEE_GROUP_CODE,SEQUENCE_NUM",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,FEE_GROUP_CODE,SEQUENCE_NUM,AND_OR_FLAG,TABLE_NAME,SCREEN_TYPE,SCREEN_NUMBER,COLUMN_NAME,FIELD_NUMBER,OPERATOR,SEARCH_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,FEE_GROUP_CODE,SEQUENCE_NUM,AND_OR_FLAG,TABLE_NAME,SCREEN_TYPE,SCREEN_NUMBER,COLUMN_NAME,FIELD_NUMBER,OPERATOR,SEARCH_VALUE,CHANGE_DATE_TIME,CHANGE_UID,PROGRAM_ID",
     "TableHasChangeDT": "y"
   },
   {
@@ -14144,37 +18858,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "HAC_Building_Cfg",
-    "PKColumns": "DISTRICT,BUILDING,CONFIG_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,CONFIG_TYPE,ENABLE_HAC,BUILDING_LOGO,LOGO_HEADER_COLOR,LOGO_TEXT_COLOR,FIRST_PAGE,SHOW_PERSONAL,UPD_EMAIL,UPD_PHONE,SHOW_EMERGENCY,UPD_EMERGENCY,SHOW_CONTACT,SHOW_FERPA,UPD_FERPA,FERPA_EXPLANATION,SHOW_TRANSPORT,SHOW_SCHEDULE,SHOW_SCHD_GRID,SHOW_DROPPED_CRS,SHOW_REQUESTS,SHOW_ATTENDANCE,SHOW_DISCIPLINE,CURRENT_YEAR_DISC_ONLY,SHOW_ASSIGN,AVG_MARK_TYPE,INC_UNPUB_AVG,SHOW_CLASS_AVG,SHOW_ATTACHMENTS,DEF_CLASSWORK_VIEW,SHOW_IPR,SHOW_RC,SHOW_STU_COMP,SHOW_CRS_COMP,SHOW_LTDB,SHOW_EMAIL,SHOW_TRANSCRIPT,SHOW_CAREER_PLANNER,REQUEST_BY,REQUEST_YEAR,REQUEST_INTERVAL,PREREQ_CHK_REQ,SHOW_SUCCESS_PLAN,SHOW_SENS_PLAN,SHOW_SENS_INT,SHOW_SENS_INT_COMM,UPD_SSP_PARENT_GOAL,UPD_SSP_STUDENT_GOAL,SHOW_HONOR_ROLL_CREDIT,SHOW_HONOR_ROLL_GPA,SHOW_HONOR_MESSAGE,SHOW_REQUEST_ENTRY,MIN_CREDIT_REQ,MAX_CREDIT_REQ,SHOW_RC_ATTENDANCE,RC_HOLD_MESSAGE,SHOW_EO,SHOW_PERFORMANCEPLUS,SHOW_AVG_INHDR,HDR_AVG_MARKTYPE,SHOW_LAST_UPDDT,HDR_SHORT_DESC,AVG_TOOLTIP_DESC,HIDE_PERCENTAGE,HIDE_OVERALL_AVG,HIDE_COMP_SCORE,SHOW_SDE,SHOW_FEES,ENABLE_ONLINE_PAYMENT,SHOW_CALENDAR,AVG_ON_HOME_PAGE,HELP_URL,SHOW_IEP,SHOW_GIFTED,SHOW_504PLAN,SHOW_IEP_INVITATION,SHOW_EVAL_RPT,SHOW_IEP_PROGRESS,IEP_LIVING_WITH_ONLY,SHOW_WEEK_VIEW,SHOW_WEEK_VIEW_DISC,SHOW_WEEK_VIEW_FEES,SHOW_WEEK_VIEW_ATT,SHOW_WEEK_VIEW_CRS,SHOW_WEEK_VIEW_COMP,SHOW_REQUEST_ALTERNATE,AVERAGE_DISPLAY_TYPE,SHOW_RC_PRINT,SHOW_GENDER,SHOW_STUDENT_ID,SHOW_HOMEROOM,SHOW_HOMEROOM_TEACHER,SHOW_COUNSELOR,SHOW_HOUSE_TEAM,SHOW_LOCKER_NO,SHOW_LOCKER_COMBO,CHANGE_DATE_TIME,CHANGE_UID,SHOW_LEARNING_LOCATION,SHOW_MEETING_LINK,SHOW_MANUAL_CHECKIN,SHOW_FILE_UPLOAD,SHOW_STUDENT_SSID,VIEW_ADDITIONAL_EMAIL,UPD_ADDITIONAL_EMAIL",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "HAC_BUILDING_CFG_ATTACHMENT",
     "PKColumns": "DISTRICT,BUILDING,CONFIG_TYPE,UPLOAD_TYPE",
     "TableColumns": "DISTRICT,BUILDING,CONFIG_TYPE,UPLOAD_TYPE,ALLOWABLE_FILE_TYPES,USER_INSTRUCTION,CATEGORY,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID,SORT_ORDER",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "HAC_BUILDING_CFG_AUX",
-    "PKColumns": "DISTRICT,BUILDING,CONFIG_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,CONFIG_TYPE,DISPLAY_REG_YEAR,DISPLAY_REG_YEAR_SPECIFY,DISPLAY_SUM_YEAR,DISPLAY_SUM_YEAR_SPECIFY,RESTRICT_CALENDAR,CLASSWORK_VIEW,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "HAC_BUILDING_CFG_CONTACTS",
-    "PKColumns": "DISTRICT,BUILDING,CONFIG_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,CONFIG_TYPE,SHOW_GUARDIANS,SHOW_EMERGENCY,SHOW_OTHER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "HAC_BUILDING_CFG_DISC",
-    "PKColumns": "DISTRICT,BUILDING,CONFIG_TYPE,INCIDENT_CODE",
-    "TableColumns": "DISTRICT,BUILDING,CONFIG_TYPE,INCIDENT_CODE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -14186,13 +18872,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "HAC_BUILDING_CFG_INTER",
-    "PKColumns": "DISTRICT,BUILDING,CONFIG_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,CONFIG_TYPE,SHOW_INTERVENTION_MARK,SHOW_INTERVENTION_COMMENT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "HAC_BUILDING_CFG_RRK",
     "PKColumns": "DISTRICT,BUILDING,LOGIN_TYPE,SORT_ORDER",
     "TableColumns": "DISTRICT,BUILDING,LOGIN_TYPE,SORT_ORDER,SCREEN_NUMBER,FIELD_NUMBER,FIELD_LABEL,FIELD_ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -14200,44 +18879,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "HAC_CHALLENGE_QUES",
-    "PKColumns": "DISTRICT,CONTACT_ID,SEQ_NBR",
-    "TableColumns": "DISTRICT,CONTACT_ID,SEQ_NBR,QUESTION,ANSWER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "HAC_DIST_CFG_LDAP",
     "PKColumns": "DISTRICT,LDAP_ID",
     "TableColumns": "DISTRICT,LDAP_ID,DISTINGUISHED_NAME,DOMAIN_NAME,SUB_SEARCH,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "HAC_DIST_CFG_ONLINE_PAYMT",
-    "PKColumns": "DISTRICT",
-    "TableColumns": "DISTRICT,USE_FRONTSTREAM,FRONTSTREAM_URL,PAYMENT_TYPE_CODE,FRONTSTREAM_STATUS_URL,FRONTSTREAM_MERCHANT_TOKEN,POLL_TASK_OWNER,POLL_DAYS,POLL_START_TIME,POLL_END_TIME,POLL_FREQ_MIN,KEEP_LOG_DAYS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "HAC_DIST_CFG_PWD",
-    "PKColumns": "DISTRICT",
-    "TableColumns": "DISTRICT,USE_ENCRYPTION,HAC_ENCRYPTION_TYPE,PWD_MIN_LIMIT_ENABLED,PWD_MIN_LIMIT,PWD_MAX_LIMIT_ENABLED,PWD_MAX_LIMIT,PWD_COMP_RULE,PWD_CHNG_REQ,PWD_CHNG_REQ_ENABLED,PWD_LK_ACC,PWD_LK_ACC_MODE,PWD_LOCK_TOL_AUTO_TIMES,PWD_LOCK_TOL_AUTO_DUR,PWD_LOCK_TOL_AUTO_TIMES_HOLD,PWD_LOCK_TOL_AUTO_TIMES_LIMIT,PWD_LOCK_TOL_AUTO_TIMES_LIM_DUR,PWD_LOCK_TOL_MAN_ATTEMPT,PWD_LOCK_TOL_MAN_TIMES,PWD_LOCK_TOL_MAN_DUR,CHALLENGE_NO_QUESTIONS,CHALLENGE_ANSWER_QUESTIONS,PWD_UNSUCCESS_MSG,CONFIRMATION_MESSAGE,EMAIL_MESSAGE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "HAC_District_Cfg",
-    "PKColumns": "DISTRICT,CONFIG_TYPE",
-    "TableColumns": "DISTRICT,CONFIG_TYPE,ENABLE_HAC,ENABLE_HAC_TRANSLATION,HAC_TRANS_LANGUAGE,DISTRICT_LOGO,ALLOW_REG,REGISTER_STMT,CHANGE_PASSWORDS,PRIVACY_STMT,TERMS_OF_USE_STMT,LOGIN_VAL,SHOW_USERVOICE,LOGO_HEADER_COLOR,LOGO_TEXT_COLOR,HELP_URL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "HAC_FAILED_LOGIN_ATTEMPTS",
-    "PKColumns": "DISTRICT,CONTACT_ID,FAILURE_DATE_TIME",
-    "TableColumns": "DISTRICT,CONTACT_ID,FAILURE_DATE_TIME,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -14256,20 +18900,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "HAC_MENU_LINKED_PAGES",
-    "PKColumns": "DISTRICT,PARENT_CODE,CODE",
-    "TableColumns": "DISTRICT,PARENT_CODE,CODE,DESCRIPTION,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "HAC_MENULIST",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "HAC_OLD_USER",
     "PKColumns": "DISTRICT,STUDENT_ID,OLD_PASSWORD",
     "TableColumns": "DISTRICT,STUDENT_ID,OLD_PASSWORD,CONTACT_ID,CHANGE_DATE_TIME,CHANGE_UID",
@@ -14280,13 +18910,6 @@ $dbDefinitions = @'
     "name": "HAC_ONLINE_PAYMENT",
     "PKColumns": "DISTRICT,PAYMENT_ID",
     "TableColumns": "DISTRICT,PAYMENT_ID,LOGIN_ID,STUDENT_ID,BUILDING,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "HAC_TRANSLATION",
-    "PKColumns": "DISTRICT,LANG,PAGE,CONTROL_ID",
-    "TableColumns": "DISTRICT,LANG,PAGE,CONTROL_ID,ROW_NUM,TEXT_TRANSLATION,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -14364,34 +18987,6 @@ $dbDefinitions = @'
     "name": "LTDB_IMPORT_TRN",
     "PKColumns": "district,interface_id,test_key,field_id,translation_id",
     "TableColumns": "district,interface_id,description,test_code,test_level,test_form,test_key,field_id,translation_id,old_value,new_value,change_date_time,change_uid",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "LTDB_INTERFACE_DEF",
-    "PKColumns": "DISTRICT,INTERFACE_ID",
-    "TableColumns": "DISTRICT,INTERFACE_ID,DESCRIPTION,UPLOAD_DOWNLOAD,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "LTDB_INTERFACE_DET",
-    "PKColumns": "DISTRICT,INTERFACE_ID,HEADER_ID,FIELD_ID",
-    "TableColumns": "DISTRICT,INTERFACE_ID,HEADER_ID,FIELD_ID,FIELD_ORDER,TABLE_NAME,TABLE_ALIAS,COLUMN_NAME,SCREEN_TYPE,SCREEN_NUMBER,FORMAT_STRING,START_POSITION,END_POSITION,FIELD_LENGTH,VALIDATION_TABLE,CODE_COLUMN,VALIDATION_LIST,ERROR_MESSAGE,EXTERNAL_TABLE,EXTERNAL_COL_IN,EXTERNAL_COL_OUT,LITERAL,COLUMN_OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "LTDB_INTERFACE_HDR",
-    "PKColumns": "DISTRICT,INTERFACE_ID,HEADER_ID",
-    "TableColumns": "DISTRICT,INTERFACE_ID,HEADER_ID,HEADER_ORDER,DESCRIPTION,FILENAME,LAST_RUN_DATE,DELIMIT_CHAR,USE_CHANGE_FLAG,TABLE_AFFECTED,ADDITIONAL_SQL,COLUMN_HEADERS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "LTDB_INTERFACE_STU",
-    "PKColumns": "DISTRICT,INTERFACE_ID,STUDENT_ID",
-    "TableColumns": "DISTRICT,INTERFACE_ID,STUDENT_ID,DATE_ADDED,DATE_DELETED,DATE_CHANGED,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -14536,34 +19131,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "LTDBTB_SUBTEST_PESC_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "LTDBTB_TEST_PESC_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "LTI_CLIENT",
-    "PKColumns": "DISTRICT,CLIENT_CODE",
-    "TableColumns": "DISTRICT,CLIENT_CODE,CHANGE_DATE_TIME,CHANGE_UID,DESCRIPTION,ACTIVE",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "LTI_CLIENT_TOOL",
-    "PKColumns": "DISTRICT,CLIENT_CODE,TOOL_ID",
-    "TableColumns": "DISTRICT,CLIENT_CODE,TOOL_ID,CHANGE_DATE_TIME,CHANGE_UID,ACTIVE",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "LTI_NONCE_LOG",
     "PKColumns": "ID",
     "TableColumns": "ID,CONSUMER_KEY,NONCE,CHANGE_DATE_TIME",
@@ -14571,149 +19138,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "LTI_TOOL",
-    "PKColumns": "DISTRICT,TOOL_ID",
-    "TableColumns": "DISTRICT,TOOL_ID,CHANGE_DATE_TIME,CHANGE_UID,DESCRIPTION,API_SCOPE,APP_URL",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MD_ATTENDANCE_DOWN",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUBMISSION_NUMBER,Building,Student_ID",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUBMISSION_NUMBER,Building,State_Report_ID,Student_ID,Last_Name,First_Name,Middle_Initial,Generation_Suffix,Date_Birth,Grade,Gender,New_Ethnicity,New_Race,SSN,Title_1,Free_Reduced_Lunch,Migrant,Foreign_Exchange_Student,Special_Education,Special_Ed_End_Date,Special_Ed_Certificate,ELL,ELL_Begin_Date,ELL_End_Date,Submission_Date,Entry_Status,Entry_Code,Entry_Date,Days_Attending,Days_Absent,Days_Not_Belonging,Withdrawal_Status,Withdrawal_Code,Withdrawal_Date,Promotion_Code,TAS,Homeless,Homeless_Primary_Nighttime_Residence,Homeless_Served_Mckinney,Homeless_Served_Other,Homeless_Unaccompanied_Youth_Status,Immigrant,PREK_FULL_STATUS,STATE_AID_ELIG,EH_STUDENT,EH_NUM_COURSES,PT_STUDENT,PT_NUM_COURSES,OPT_OUT,OVERRIDE_DOWNLOAD,RECORD_EDITED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MD_LEVEL_MARKS",
-    "PKColumns": "DISTRICT,BUILDING,MARK",
-    "TableColumns": "DISTRICT,BUILDING,MARK,PERCENT_MINIMUM,PERCENT_MAXIMUM,COMPLETION_STATUS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MD_PROCESS_SECTION",
-    "PKColumns": "RUN_ID,SECTION_KEY",
-    "TableColumns": "RUN_ID,SECTION_KEY",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "MD_PROCESS_STUDENT",
-    "PKColumns": "RUN_ID,STUDENT_ID",
-    "TableColumns": "RUN_ID,STUDENT_ID",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "MD_RUN",
-    "PKColumns": "RUN_ID",
-    "TableColumns": "RUN_ID,TASK_ID,LOGIN_ID,SCHOOL_YEAR,START_DATE,END_DATE,RUN_TYPE,SUBMISSION_NUMBER,BUILDINGS,CUSTOM_TASK_NAME,DEBUG,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MD_SCGT_BLDG_ATT_VIEW_TYPE",
-    "PKColumns": "DISTRICT,BUILDING,VIEW_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,VIEW_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MD_SCGT_BLDG_CFG",
-    "PKColumns": "DISTRICT,BUILDING",
-    "TableColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MD_SCGT_BLDG_MARK_TYPE",
-    "PKColumns": "DISTRICT,BUILDING,MARK_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,MARK_TYPE,MARK_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MD_SCGT_DOWN",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,SCHOOL_YEAR,SUBMISSION_NUMBER,STUDENT_ID,SUBMISSION_DATE",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,SCHOOL_YEAR,SUBMISSION_NUMBER,STUDENT_ID,SCHOOL_NUMBER,SUBMISSION_DATE,COURSE_CODE,COURSE_TITLE,SECTION_NUMBER,SECTION_TITLE,CLASS_PERIOD,COURSE_BEGIN_DATE,COURSE_END_DATE,MSDE_SUBJECT_CODE,CATALOGUE_COURSE_CREDITS,STATEWIDE_IDENTIFIER,LOCAL_STUDENT_ID,STUDENT_SSN,STUDENT_LAST_NAME,STUDENT_FIRST_NAME,STUDENT_MIDDLE_NAME,STUDENT_GENERATIONAL_SUFFIX,STUDENT_BIRTH_DATE,STUDENT_GRADE,STUDENT_GENDER,STUDENT_HISPANIC,STUDENT_RACE,TITLE1,TAS,FARMS,SPEC_ED_504,LIMITED_ENGLISH_PROFICIENCY,COURSE_CREDITS_EARNED,COMPLETION_STATUS,COURSE_DAYS_ABSENT,COURSE_SEMESTER_TERM,COURSE_GRADE_ALPHA,COURSE_GRADE_PERCENT_MINIMUM,COURSE_GRADE_PERCENT_MAXIMUM,GRADE_POINT_EQUIVALENT,INSTRUCTION_OUTSIDE_SCHOOL,AP_HONORS,INTERNATIONAL_BACCALAUREATE,HSA_PRE_REQ,READING_MATH_CLASS,MULTIPLE_TEACHER_COURSE,TEACHER_STATE_ID,TEACHER_LOCAL_ID,TEACHER_LAST_NAME,TEACHER_FIRST_NAME,TEACHER_MIDDLE_NAME,TEACHER_GENERATIONAL_SUFFIX,TEACHER_MAIDEN_LAST_NAME,TEACHER_BIRTH_DATE,TEACHER_GENDER,TEACHER_RACE,TEACHER_HISPANIC,TEACHER_SSN,SECONDARY_TEACHER_STATE_ID,SECONDARY_TEACHER_LOCAL_ID,SECONDARY_TEACHER_LAST_NAME,SECONDARY_TEACHER_FIRST_NAME,SECONDARY_TEACHER_MIDDLE_NAME,SECONDARY_TEACHER_GENERATION,SECONDARY_TEACHER_MAIDEN_NAME,SECONDARY_TEACHER_BIRTHDATE,SECONDARY_TEACHER_GENDER,SECONDARY_TEACHER_SSN,TERTIARY_TEACHER_STATE_ID,TERTIARY_TEACHER_LOCAL_ID,TERTIARY_TEACHER_LAST_NAME,TERTIARY_TEACHER_FIRST_NAME,TERTIARY_TEACHER_MIDDLE_NAME,TERTIARY_TEACHER_GENERATION,TERTIARY_TEACHER_MAIDEN_NAME,TERTIARY_TEACHER_BIRTHDATE,TERTIARY_TEACHER_GENDER,TERTIARY_TEACHER_SSN,OVERRIDE_DOWNLOAD,RECORD_EDITED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MDTB_CLASS_OF_RECORD",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MDTB_COURSE_COMPLETION_STATUS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MDTB_CRS_PLACEMENT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MDTB_HSA_SUBJECT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_CFG",
-    "PKColumns": "DISTRICT,BUILDING",
-    "TableColumns": "DISTRICT,BUILDING,AUTO_CREATE,CALL_MAINT,RESET_COUNT,PRT_LTR_MER_FILE,OTHER_LANGUAGE,USER_SCREEN,MED_SCREEN,USE_MONTH_YEAR,USE_WARNING_STATUS,PRIOR_DAYS_UPDATE,ALLOW_NOTES_UPDATE,EXAM_PRI_DAYS_UPD,USE_LAST,NOTIFY_DWNLD_PATH,EMAIL_OPTION,RETURN_EMAIL,USE_HOME_ROOM,USE_OUTCOME,VALID_NURSE_INIT,INIT_OTH_NURSE_LOG,USE_VALIDATE_SAVE,DEFAULT_TO_SAVE,USE_IMMUN_ALERTS,IMM_GRACE_PERIOD,GRACE_ENTRY_DATE,CLEAR_EXP_DATE,IMM_PARENT_ALERTS,IMM_INT_EMAILS,SUBJECT_LINE,FROM_EMAIL,HEADER_TEXT,FOOTER_TEXT,DEFAULT_MARGIN_ERR,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MED_CFG_LANG",
     "PKColumns": "DISTRICT,BUILDING,LANGUAGE_CODE",
     "TableColumns": "DISTRICT,BUILDING,LANGUAGE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_CUSTOM_EXAM_COLUMN",
-    "PKColumns": "COLUMN_ID",
-    "TableColumns": "COLUMN_ID,EXAM_TYPE_ID,COLUMN_NAME,COLUMN_ORDER,IS_BASE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "MED_CUSTOM_EXAM_ELEMENT",
-    "PKColumns": "FIELD_ID",
-    "TableColumns": "FIELD_ID,DISTRICT,EXAM_ID,COLUMN_ID,COLUMN_VALUE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "MED_CUSTOM_EXAM_KEY",
-    "PKColumns": "EXAM_ID",
-    "TableColumns": "EXAM_ID,DISTRICT,STUDENT_ID,EXAM_TYPE_ID,TEST_DATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_CUSTOM_EXAM_TYPE",
-    "PKColumns": "EXAM_TYPE_ID",
-    "TableColumns": "EXAM_TYPE_ID,EXAM_SYMBOL,DESCRIPTION",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "MED_DENTAL",
-    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
-    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,GRADE,LOCATION,STATUS,INITIALS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -14732,128 +19159,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MED_GENERAL",
-    "PKColumns": "DISTRICT,STUDENT_ID",
-    "TableColumns": "DISTRICT,STUDENT_ID,IMMUNE_STATUS,IMMUNE_EXEMPT,CALC_DATE,OVERRIDE,GROUP_CODE,GRACE_PERIOD_DATE,COMMENT,IMM_ALERT,ALERT_END_DATE,ALERT_OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_GRACE_SCHD",
-    "PKColumns": "DISTRICT,SERIES_SCHD,YEAR_IN_DISTRICT,UP_TO_DAY",
-    "TableColumns": "DISTRICT,SERIES_SCHD,YEAR_IN_DISTRICT,UP_TO_DAY,MIN_DOSES,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_GROWTH",
-    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
-    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,GRADE,LOCATION,HEIGHT,PERCENT_HEIGHT,WEIGHT,PERCENT_WEIGHT,BMI,PERCENT_BMI,AN_READING,BLOOD_PRESSURE_DIA,BLOOD_PRESSURE_SYS_AN,BLOOD_PRESSURE_DIA_AN,BLOOD_PRESSURE_SYS,INITIALS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_GROWTH_ARK",
-    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
-    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,REASON_NOT_ACCESSED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_GROWTH_BMI_ARK",
-    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
-    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,BMI,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_HEARING",
-    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
-    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,GRADE,LOCATION,RIGHT_EAR,LEFT_EAR,INITIALS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MED_HEARING_COLS",
     "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
     "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,SCREENING_TYPE,KNOWN_CASE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_HEARING_DET",
-    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE,DECIBEL,FREQUENCY",
-    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,DECIBEL,FREQUENCY,RIGHT_EAR,LEFT_EAR,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_IMM_CRIT",
-    "PKColumns": "DISTRICT,CRITERIA_NUMBER",
-    "TableColumns": "DISTRICT,CRITERIA_NUMBER,DESCRIPTION,MAX_LETTERS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_IMM_CRIT_GRP",
-    "PKColumns": "DISTRICT,CRITERIA_NUMBER,SEQUENCE_NUM",
-    "TableColumns": "DISTRICT,CRITERIA_NUMBER,SEQUENCE_NUM,GROUP_TYPE,GROUP_MIN,GROUP_MAX,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "med_imm_crit_grp_SD091114",
-    "PKColumns": "",
-    "TableColumns": "DISTRICT,CRITERIA_NUMBER,SEQUENCE_NUM,GROUP_TYPE,GROUP_MIN,GROUP_MAX,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "med_imm_crit_SD091114",
-    "PKColumns": "",
-    "TableColumns": "DISTRICT,CRITERIA_NUMBER,DESCRIPTION,MAX_LETTERS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_IMM_CRIT_SHOTS",
-    "PKColumns": "DISTRICT,CRITERIA_NUMBER,SERIES_CODE,SERIES_CODE_ORDER",
-    "TableColumns": "DISTRICT,CRITERIA_NUMBER,SERIES_CODE,SERIES_CODE_ORDER,SERIES_SCHEDULE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "med_imm_crit_shots_SD091114",
-    "PKColumns": "",
-    "TableColumns": "DISTRICT,CRITERIA_NUMBER,SERIES_CODE,SERIES_CODE_ORDER,SERIES_SCHEDULE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_ISSUED",
-    "PKColumns": "DISTRICT,STUDENT_ID,ISSUED,MED_CODE,DOSE_NUMBER",
-    "TableColumns": "DISTRICT,STUDENT_ID,ISSUED,MED_CODE,DOSE_NUMBER,EVENT_TYPE,COMMENT,INITIALS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_NOTES",
-    "PKColumns": "DISTRICT,STUDENT_ID,EVENT_TYPE,EVENT_DATE",
-    "TableColumns": "DISTRICT,STUDENT_ID,EVENT_TYPE,EVENT_DATE,NOTE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_OFFICE",
-    "PKColumns": "DISTRICT,STUDENT_ID,OFFICE_DATE_IN",
-    "TableColumns": "DISTRICT,STUDENT_ID,OFFICE_DATE_IN,OFFICE_DATE_OUT,ROOM_ID,COMMENT,INITIALS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_OFFICE_DET",
-    "PKColumns": "DISTRICT,STUDENT_ID,OFFICE_DATE_IN,SEQUENCE_NUM",
-    "TableColumns": "DISTRICT,STUDENT_ID,OFFICE_DATE_IN,SEQUENCE_NUM,VISIT_REASON,TREATMENT_CODE,OUTCOME,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -14879,65 +19187,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MED_REFERRAL",
-    "PKColumns": "DISTRICT,STUDENT_ID,TEST_TYPE,TEST_DATE,SEQUENCE_NUMBER",
-    "TableColumns": "DISTRICT,STUDENT_ID,TEST_TYPE,TEST_DATE,SEQUENCE_NUMBER,REFERRAL_CODE,REFERRAL_DATE,FOLLOW_UP_CODE,FOLLOW_UP_DATE,DOCTOR_NAME,COMMENT,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_REQUIRED",
-    "PKColumns": "DISTRICT,STUDENT_ID,MED_CODE,START_DATE,DOSE_NUMBER",
-    "TableColumns": "DISTRICT,STUDENT_ID,MED_CODE,START_DATE,END_DATE,DOSE_NUMBER,DOSE_TIME,PHYSICIAN_NAME,DOSE_COMMENT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_SCOLIOSIS",
-    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
-    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,GRADE,LOCATION,STATUS,INITIALS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_SCREENING",
-    "PKColumns": "DISTRICT,STUDENT_ID,EXAM_CODE,TEST_DATE",
-    "TableColumns": "DISTRICT,STUDENT_ID,EXAM_CODE,TEST_DATE,GRADE,LOCATION,STATUS,INITIALS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_SERIES",
-    "PKColumns": "DISTRICT,STUDENT_ID,SERIES_CODE",
-    "TableColumns": "DISTRICT,STUDENT_ID,SERIES_CODE,SERIES_EXEMPTION,TOTAL_DOSES,SERIES_STATUS,CALC_DATE,OVERRIDE,COMMENT,NUMBER_LETTERS,HAD_DISEASE,DISEASE_DATE,CHANGE_DATE_TIME,CHANGE_UID,NUMBER_NOTIFICATIONS",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_SERIES_DET",
-    "PKColumns": "DISTRICT,STUDENT_ID,SERIES_CODE,SERIES_DATE",
-    "TableColumns": "DISTRICT,STUDENT_ID,SERIES_CODE,SERIES_DATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MED_SERIES_SCHD_BOOSTER",
     "PKColumns": "DISTRICT,SERIES_SCHEDULE,BOOSTER_NUMBER,SHOT_TYPE",
     "TableColumns": "DISTRICT,SERIES_SCHEDULE,BOOSTER_NUMBER,SHOT_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_SERIES_SCHD_HDR",
-    "PKColumns": "DISTRICT,SERIES_SCHEDULE",
-    "TableColumns": "DISTRICT,SERIES_SCHEDULE,EXPIRES_AFTER,EXPIRES_UNITS,EXPIRES_CODE,NUM_REQUIRED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "med_series_schd_hdr_SD091114",
-    "PKColumns": "",
-    "TableColumns": "DISTRICT,SERIES_SCHEDULE,EXPIRES_AFTER,EXPIRES_UNITS,EXPIRES_CODE,NUM_REQUIRED,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -14949,65 +19201,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MED_SERIES_SCHED",
-    "PKColumns": "DISTRICT,SERIES_SCHEDULE,DOSE_NUMBER",
-    "TableColumns": "DISTRICT,SERIES_SCHEDULE,DOSE_NUMBER,DESCRIPTION,SERIES_CODE,EVENT_DOSE,TIME_EVENTS,TIME_EVENTS_UNITS,OVERDUE_MS,OVERDUE_MS_UNITS,TIME_BIRTH,UNITS_TIME_BIRTH,OVERDUE_RS,OVERDUE_RS_UNITS,NOT_BEFORE,NOT_BEFORE_UNITS,EXCEPTIONS,EXCEPTIONS_DOSE,GIVEN_AFTER,GIVEN_AFTER_UNITS,EXPIRES_AFTER,EXPIRES_UNITS,EXPIRES_CODE,NOT_UNTIL_DOSE,NOT_UNTIL_TIME,NOT_UNTIL_UNITS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "med_series_sched_SD091114",
-    "PKColumns": "",
-    "TableColumns": "DISTRICT,SERIES_SCHEDULE,DOSE_NUMBER,DESCRIPTION,SERIES_CODE,EVENT_DOSE,TIME_EVENTS,TIME_EVENTS_UNITS,OVERDUE_MS,OVERDUE_MS_UNITS,TIME_BIRTH,UNITS_TIME_BIRTH,OVERDUE_RS,OVERDUE_RS_UNITS,NOT_BEFORE,NOT_BEFORE_UNITS,EXCEPTIONS,EXCEPTIONS_DOSE,GIVEN_AFTER,GIVEN_AFTER_UNITS,EXPIRES_AFTER,EXPIRES_UNITS,EXPIRES_CODE,NOT_UNTIL_DOSE,NOT_UNTIL_TIME,NOT_UNTIL_UNITS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_SHOT",
-    "PKColumns": "DISTRICT,STUDENT_ID,SHOT_CODE",
-    "TableColumns": "DISTRICT,STUDENT_ID,SHOT_CODE,EXEMPT,COMMENT,OVERRIDE,HAD_DISEASE,DISEASE_DATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_SHOT_DET",
-    "PKColumns": "DISTRICT,STUDENT_ID,SHOT_CODE,SHOT_DATE",
-    "TableColumns": "DISTRICT,STUDENT_ID,SHOT_CODE,SHOT_DATE,SHOT_ORDER,SOURCE_DOC,SIGNED_DOC,WARNING_STATUS,OVERRIDE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_STU_LETTER",
-    "PKColumns": "DISTRICT,STUDENT_ID,CRIT_NUMBER,CALC_DATE,SERIES_CODE",
-    "TableColumns": "DISTRICT,STUDENT_ID,CRIT_NUMBER,CALC_DATE,SERIES_CODE,DATE_PRINTED,NOTIFICATION_DATE,SERIES_REASON,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_USER",
-    "PKColumns": "DISTRICT,STUDENT_ID,SCREEN_NUMBER,FIELD_NUMBER",
-    "TableColumns": "DISTRICT,STUDENT_ID,SCREEN_NUMBER,FIELD_NUMBER,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_VISION",
-    "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
-    "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,GRADE,LOCATION,LENS,RIGHT_EYE,LEFT_EYE,MUSCLE,MUSCLE_LEFT,COLOR_BLIND,PLUS_LENS,BINOC,INITIALS,TEST_TYPE,STEREOPSIS,NEAR_FAR_TYPE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MED_VISION_COLS",
     "PKColumns": "DISTRICT,STUDENT_ID,TEST_DATE",
     "TableColumns": "DISTRICT,STUDENT_ID,TEST_DATE,SCREENING_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MED_VITALS",
-    "PKColumns": "ROW_IDENTITY",
-    "TableColumns": "ROW_IDENTITY,MED_OFFICE_ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID,TIME_VITALS_TAKEN,BLOOD_PRESSURE_SYS,BLOOD_PRESSURE_DIA,PULSE,TEMPERATURE,TEMPERATURE_METHOD,RESPIRATION,PULSE_OXIMETER",
     "TableHasChangeDT": "y"
   },
   {
@@ -15019,41 +19215,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MEDTB_ALT_DOSE",
-    "PKColumns": "DISTRICT,SERIES_CODE,ALT_NUMBER",
-    "TableColumns": "DISTRICT,SERIES_CODE,ALT_NUMBER,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_ALT_DOSE_DET",
-    "PKColumns": "DISTRICT,SERIES_CODE,ALT_NUMBER,SEQ_NUMBER",
-    "TableColumns": "DISTRICT,SERIES_CODE,ALT_NUMBER,SEQ_NUMBER,ALT_DOSE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_BMI_STATUS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,MIN_BMI,MAX_BMI,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_CDC_LMS",
-    "PKColumns": "DISTRICT,GENDER,AGE,CHART_TYPE",
-    "TableColumns": "DISTRICT,GENDER,AGE,CHART_TYPE,L,M,S",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_DECIBEL",
-    "PKColumns": "DISTRICT,DECIBEL_LEVEL",
-    "TableColumns": "DISTRICT,DECIBEL_LEVEL,SEQUENCE_NUMBER,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MEDTB_EVENT",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
@@ -15061,163 +19222,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MEDTB_EXAM",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE_NORMAL,ACTIVE_ATHLETIC,SEQ_NUMBER,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_EXEMPT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_FOLLOWUP",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,DENTAL,GROWTH,HEARING,IMMUN,OFFICE,OTHER,PHYSICAL,SCOLIOSIS,VISION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_FREQUENCY",
-    "PKColumns": "DISTRICT,FREQUENCY_LEVEL",
-    "TableColumns": "DISTRICT,FREQUENCY_LEVEL,SEQUENCE_NUMBER,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_LENS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_LOCATION",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_MEDICINE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,PRN,MEDICAID_CODE,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_OUTCOME",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_PERCENTS",
-    "PKColumns": "DISTRICT,AGE,GENDER,PERCENTILE",
-    "TableColumns": "DISTRICT,AGE,GENDER,PERCENTILE,HEIGHT,WEIGHT,BMI,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_PERCENTS_ARK",
-    "PKColumns": "DISTRICT,AGE,GENDER,PERCENTILE",
-    "TableColumns": "DISTRICT,AGE,GENDER,PERCENTILE,HEIGHT,WEIGHT,BMI,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_REFER",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,DENTAL,GROWTH,HEARING,IMMUN,OFFICE,OTHER,PHYSICAL,SCOLIOSIS,VISION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_SCREENING",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_SHOT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,SHOT_ORDER,AUTO_GENERATE,LIVE_VIRUS,SHOT_REQUIREMENT,SERIES_FLAG,LICENSING_DATE,STATE_CODE_EQUIV,PESC_CODE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_SOURCE_DOC",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_STATUS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_TEMP_METHOD",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "CHANGE_DATE_TIME,CHANGE_UID,DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_TREATMENT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,MEDICAID_CODE,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_VACCINATION_PESC_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "medtb_vis_exam_ark",
-    "PKColumns": "DISTRICT,FOLLOWUP_CODE",
-    "TableColumns": "DISTRICT,FOLLOWUP_CODE,DESCRIPTION,CONFIRMED_NORMAL,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MEDTB_VISION_EXAM_TYPE",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MEDTB_VISIT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MENU_ITEMS",
-    "PKColumns": "DISTRICT,PARENT_MENU,SEQUENCE",
-    "TableColumns": "DISTRICT,PARENT_MENU,SEQUENCE,MENU_ID,DESCRIPTION,TARGET,PAGE,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_ABSENCE_TYPES",
-    "PKColumns": "DISTRICT,BUILDING,ABSENCE_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,ABSENCE_TYPE,ABSENCE_ORDER,ABSENCE_WHEN,DESCRIPTION,SUM_TO_YEARLY,YEARLY_TYPE,ACTIVE,TWS_ACCESS,MULTI_PERIOD_RULE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -15232,27 +19239,6 @@ $dbDefinitions = @'
     "name": "MR_ALT_LANG_CFG",
     "PKColumns": "DISTRICT,LANGUAGE,LABEL",
     "TableColumns": "DISTRICT,LANGUAGE,LABEL,ALTERNATE_LABEL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_AVERAGE_CALC",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,AVERAGE_ID,AVERAGE_SEQUENCE,CALC_TYPE,MARK_TYPE,MARK_TYPE_MP",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,AVERAGE_ID,AVERAGE_SEQUENCE,CALC_TYPE,MARK_TYPE,MARK_TYPE_MP,PERCENT_WEIGHT,EXEMPT_STATUS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_AVERAGE_SETUP",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,AVERAGE_ID,AVERAGE_SEQUENCE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,AVERAGE_TYPE,AVERAGE_ID,AVERAGE_SEQUENCE,MARK_TYPE,DURATION,MARK_TYPE_MP,CALC_AT_MP,USE_GRADEBOOK,USE_STATUS_T,USE_STATUS_O,COURSE_ENDED,BLANK_MARKS,AVERAGE_PASS_FAIL,AVERAGE_REGULAR,STATE_CRS_EQUIV,USE_RAW_AVERAGES,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_CFG",
-    "PKColumns": "DISTRICT,BUILDING",
-    "TableColumns": "DISTRICT,BUILDING,CURRENT_RC_RUN,INCLUDE_XFER_IN_RC,DISPLAY_MBS_BLDG,MAINTAIN_ATTEND,PROCESS_IPR,USE_LANG_TEMPLATE,DATA_SOURCE_FILE,PROGRAM_SCREEN,REG_USER_SCREEN,NOTIFY_DWNLD_PATH,EMAIL_OPTION,RETURN_EMAIL,RET_EMAIL_MISSUB,TEA_IPR_MNT,SUB_IPR_MNT,TEA_IPR_STU_SUMM,SUB_IPR_STU_SUMM,TEA_RC_MNT,SUB_RC_MNT,TEA_RC_STU_SUMM,SUB_RC_STU_SUMM,TEA_SC_MNT,SUB_SC_MNT,TEA_SC_STU_SUMM,SUB_SC_STU_SUMM,TEA_GB_DEFINE,TEA_GB_SCORE,SUB_GB_DEFINE,SUB_GB_SCORE,PROCESS_SC,SC_COMMENT_LINES,GB_ENTRY_B4_ENRLMT,TAC_CHANGE_CREDIT,GB_ALLOW_TEA_SCALE,GB_LIMIT_CATEGORIES,GB_LIMIT_DROP_SCORE,GB_LIMIT_MISS_MARKS,GB_ALLOW_OVR_WEIGHT,GB_ALLOW_TRUNC_RND,ASMT_DATE_VAL,VALIDATE_TRANSFER,MP_CRS_CREDIT_OVR,TEA_GB_VIEW,SUB_GB_VIEW,TEA_PRINT_RC,SUB_PRINT_RC,TEA_TRANSCRIPT,SUB_TRANSCRIPT,TEA_GB_SUM_VIEW,SUB_GB_SUM_VIEW,USE_RC_HOLD,STATUS_REASON,OVERALL_BALANCE,OVERALL_BAL_REASON,COURSE_BALANCE,COURSE_BAL_REASON,STUDENT_BALANCE,STUDENT_BAL_REASON,ACTIVITY_BALANCE,ACTIVITY_BAL_REASON,ALLOW_COURSE_FREE_TEXT,MAX_COURSE_FREE_TEXT_CHARACTERS,SECONDARY_TEACHER_ACCESS,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -15278,79 +19264,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_CFG_MISS_SUB",
-    "PKColumns": "DISTRICT,BUILDING,LOGIN_ID",
-    "TableColumns": "DISTRICT,BUILDING,LOGIN_ID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_CLASS_SIZE",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,GPA_TYPE,RUN_TERM_YEAR,BUILDING,GRADE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,GPA_TYPE,RUN_TERM_YEAR,BUILDING,GRADE,CLASS_SIZE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_COMMENT_TYPES",
-    "PKColumns": "DISTRICT,BUILDING,COMMENT_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,COMMENT_TYPE,COMMENT_ORDER,DESCRIPTION,ACTIVE,REQUIRED,USAGE,RC_USAGE,IPR_USAGE,SC_USAGE,TWS_ACCESS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_COMMENT_VALID",
-    "PKColumns": "DISTRICT,BUILDING,COMMENT_TYPE,CODE",
-    "TableColumns": "DISTRICT,BUILDING,COMMENT_TYPE,CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_COMMENTS",
-    "PKColumns": "DISTRICT,BUILDING,CODE",
-    "TableColumns": "DISTRICT,BUILDING,CODE,IPR_USAGE,SC_USAGE,RC_USAGE,FT_USAGE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_COMMENTS_ALT_LANG",
     "PKColumns": "DISTRICT,BUILDING,CODE,LANGUAGE",
     "TableColumns": "DISTRICT,BUILDING,CODE,LANGUAGE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_CRDOVR_REASON",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_CREDIT_SETUP",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,USE_STATUS_T,USE_STATUS_O,COURSE_ENDED,LIMIT_STU_GRADE,LIMIT_CRS_GRADE,ISSUE_PARTIAL,USE_CRS_AVG_RULE,AVG_MARK_TYPE,AVG_PASS_RULE,MIN_FAILING_MARK,CHECK_ABSENCES,ABS_TYPE,ABS_TOTAL,ABS_CRDOVR_REASON,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_CREDIT_SETUP_AB",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ABS_TYPE,ABS_TOTAL",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ABS_TYPE,ABS_TOTAL,PER_MP_TERM_YR,REVOKE_TERM_COURSE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_CREDIT_SETUP_GD",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,GRADE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,GRADE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_CREDIT_SETUP_MK",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,MARK_TYPE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,MARK_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -15365,13 +19281,6 @@ $dbDefinitions = @'
     "name": "MR_CRSEQU_HDR",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STATE_CODE",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STATE_CODE,NEEDS_RECALC,ERROR_REASON,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_CRSEQU_SETUP",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,CRSEQU_FULL_YEAR,CRSEQU_TWO_PART,CRSEQU_THREE_PART,CRSEQU_FOUR_PART,RETAKE_RULE,RETAKE_LEVEL,CALC_GRAD_REQ,CALC_CREDIT,RC_WAREHOUSE,TRN_WAREHOUSE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -15393,20 +19302,6 @@ $dbDefinitions = @'
     "name": "MR_GB_ACCUMULATED_AVG",
     "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,COMPETENCY_GROUP,COMPETENCY_NUMBER,MARKING_PERIOD,STUDENT_ID",
     "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,COMPETENCY_GROUP,COMPETENCY_NUMBER,MARKING_PERIOD,STUDENT_ID,OVERRIDE_AVERAGE,AVG_OR_RC_VALUE,RC_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GB_ALPHA_MARKS",
-    "PKColumns": "DISTRICT,BUILDING,CODE",
-    "TableColumns": "DISTRICT,BUILDING,CODE,DESCRIPTION,EXCLUDE,PERCENT_VALUE,CHANGE_DATE_TIME,CHANGE_UID,SGY_EQUIV,IMS_EQUIV",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GB_ASMT",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,CRS_ASMT_NUMBER,CATEGORY,EXTRA_CREDIT,ASSIGN_DATE,DUE_DATE,DESCRIPTION,DESC_DETAIL,POINTS,WEIGHT,PUBLISH_ASMT,PUBLISH_SCORES,RUBRIC_NUMBER,USE_RUBRIC,CANNOT_DROP,HIGHLIGHT_POINTS,POINTS_THRESHOLD,HIGHLIGHT_PURPLE,UC_STUDENT_WORK_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -15460,20 +19355,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_GB_CAT_SESS_MARK",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,MARKING_PERIOD,CATEGORY",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,MARKING_PERIOD,CATEGORY,CATEGORY_WEIGHT,DROP_LOWEST,EXCLUDE_MISSING,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GB_CAT_SESSION",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,CATEGORY,MARKING_PERIOD",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,CATEGORY,MARKING_PERIOD,CATEGORY_WEIGHT,DROP_LOWEST,EXCLUDE_MISSING,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_GB_CAT_STU_COMP",
     "PKColumns": "DISTRICT,BUILDING,COMPETENCY_GROUP,STAFF_ID,CATEGORY",
     "TableColumns": "DISTRICT,BUILDING,COMPETENCY_GROUP,STAFF_ID,CATEGORY,CHANGE_DATE_TIME,CHANGE_UID",
@@ -15495,37 +19376,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_GB_COMMENT",
-    "PKColumns": "DISTRICT,BUILDING,CODE",
-    "TableColumns": "DISTRICT,BUILDING,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GB_IPR_AVG",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,IPR_DATE,MARKING_PERIOD,STUDENT_ID",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,IPR_DATE,MARKING_PERIOD,STUDENT_ID,OVERRIDE_AVERAGE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GB_LOAD_AVG_ERR",
-    "PKColumns": "RUN_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARK_TYPE,ERROR_SEQ",
-    "TableColumns": "RUN_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARK_TYPE,ERROR_SEQ,ERROR_MESSAGE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
     "name": "MR_GB_MARK_AVG",
     "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,MARKING_PERIOD,STUDENT_ID",
     "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,MARKING_PERIOD,STUDENT_ID,OVERRIDE_AVERAGE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GB_MP_MARK",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,MARKING_PERIOD",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,MARKING_PERIOD,OVERRIDE,ROUND_TRUNC,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -15544,51 +19397,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_GB_RUBRIC_HDR",
-    "PKColumns": "DISTRICT,RUBRIC_NUMBER,DESCRIPTION",
-    "TableColumns": "DISTRICT,RUBRIC_NUMBER,DESCRIPTION,NUMBER_OF_CRITERIA,NUMBER_OF_PERF_LEVEL,RUBRIC_TYPE,RUBRIC_STYLE,RUBRIC_MODE,AUTHOR,DESC_DETAIL,TEMPLATE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_GB_RUBRIC_PERF_LVL",
     "PKColumns": "DISTRICT,RUBRIC_NUMBER,PERF_LVL_NUMBER",
     "TableColumns": "DISTRICT,RUBRIC_NUMBER,PERF_LVL_NUMBER,DESCRIPTION,PERF_LVL_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GB_SCALE",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SCALE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SCALE,DESCRIPTION,LONG_DESCRIPTION,DEFAULT_SCALE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GB_SCALE_DET",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SCALE,MARK",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SCALE,MARK,CUTOFF,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GB_SESSION_PROP",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,USE_TOTAL_POINTS,USE_CAT_WEIGHT,ROUND_TRUNC,DEFAULT_SCALE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GB_STU_ALIAS",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STUDENT_ID",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STUDENT_ID,ALIAS_NAME,DISPLAY_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GB_STU_ASMT_CMT",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,STUDENT_ID",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,STUDENT_ID,COMMENT_CODE,COMMENT_TEXT,PUBLISH,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -15642,41 +19453,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_GB_STU_NOTES",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STUDENT_ID,NOTE_DATE",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STUDENT_ID,NOTE_DATE,STU_NOTES,PUBLISH_NOTE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GB_STU_SCALE",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,STUDENT_ID",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,STUDENT_ID,SCALE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GB_STU_SCORE",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,STUDENT_ID",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,STUDENT_ID,ASMT_SCORE,ASMT_EXCEPTION,ASMT_ALPHA_MARK,EXCLUDE_LOWEST,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GB_STU_SCORE_HIST",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,STUDENT_ID,SCORE_CHANGED_DATE",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,STUDENT_ID,SCORE_CHANGED_DATE,OLD_VALUE,NEW_VALUE,CHANGE_TYPE,PRIVATE_NOTES,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GPA_SETUP",
-    "PKColumns": "DISTRICT,GPA_TYPE",
-    "TableColumns": "DISTRICT,GPA_TYPE,DESCRIPTION,ISSUE_GPA,ATT_CREDIT_TO_USE,USE_PARTIAL,COURSE_NOT_ENDED,BLANK_MARKS,INCLUDE_AS_DEFAULT,ACTIVE,GPA_PRECISION,RANK_INACTIVES,STATE_CRS_EQUIV,ADD_ON_POINTS,DISTRICT_WIDE_RANK,INCLUDE_PERFPLUS,DISPLAY_RANK,DISPLAY_PERCENTILE,DISPLAY_DECILE,DISPLAY_QUARTILE,DISPLAY_QUINTILE,RANK_ON_GPA,PERCENTILE_MODE,PERCENTILE_RANK_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_GPA_SETUP_BLDG",
     "PKColumns": "DISTRICT,GPA_TYPE,BLDG_TYPE",
     "TableColumns": "DISTRICT,GPA_TYPE,BLDG_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -15684,58 +19460,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_GPA_SETUP_EXCL",
-    "PKColumns": "DISTRICT,GPA_TYPE,WITH_CODE",
-    "TableColumns": "DISTRICT,GPA_TYPE,WITH_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GPA_SETUP_GD",
-    "PKColumns": "DISTRICT,GPA_TYPE,GRADE",
-    "TableColumns": "DISTRICT,GPA_TYPE,GRADE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GPA_SETUP_MK_GD",
-    "PKColumns": "DISTRICT,GPA_TYPE,MARK_ORDER,GRADE",
-    "TableColumns": "DISTRICT,GPA_TYPE,MARK_ORDER,GRADE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GPA_SETUP_MRK",
-    "PKColumns": "DISTRICT,GPA_TYPE,MARK_TYPE,MARK_ORDER",
-    "TableColumns": "DISTRICT,GPA_TYPE,MARK_TYPE,MARK_ORDER,GROUP_MARKS,GROUP_ORDER,WEIGHT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GRAD_REQ_DET",
-    "PKColumns": "DISTRICT,REQ_GROUP,STU_GRAD_YEAR,REQUIRE_CODE",
-    "TableColumns": "DISTRICT,REQ_GROUP,STU_GRAD_YEAR,REQUIRE_CODE,REQ_ORDER,CREDIT,MIN_MARK_VALUE,REQ_VALUE,REQ_UNITS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_GRAD_REQ_FOCUS",
     "PKColumns": "DISTRICT,REQ_GROUP,STU_GRAD_YEAR,REQUIRE_CODE,MAJOR_CRITERIA,MINOR_CRITERIA",
     "TableColumns": "DISTRICT,REQ_GROUP,STU_GRAD_YEAR,REQUIRE_CODE,MAJOR_CRITERIA,MINOR_CRITERIA,CREDIT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GRAD_REQ_HDR",
-    "PKColumns": "DISTRICT,REQ_GROUP,STU_GRAD_YEAR",
-    "TableColumns": "DISTRICT,REQ_GROUP,STU_GRAD_YEAR,RETAKE_COURSE_RULE,WAIVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_GRAD_REQ_MRK_TYPE",
-    "PKColumns": "DISTRICT,REQ_GROUP,STU_GRAD_YEAR,MARK_TYPE",
-    "TableColumns": "DISTRICT,REQ_GROUP,STU_GRAD_YEAR,MARK_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -15750,13 +19477,6 @@ $dbDefinitions = @'
     "name": "MR_HONOR_ELIG_CD",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,HONOR_TYPE,SEQUENCE_ORDER,CURRENT_ELIG_STAT",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,HONOR_TYPE,SEQUENCE_ORDER,CURRENT_ELIG_STAT,ELIGIBILITY_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_HONOR_SETUP",
-    "PKColumns": "DISTRICT,BUILDING,HONOR_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,HONOR_TYPE,DESCRIPTION,HONOR_GROUP,PROCESSING_ORDER,PROCESS_GPA,CURRENT_OR_YTD_GPA,MINIMUM_GPA,MAXIMUM_GPA,GPA_PRECISION,MINIMUM_COURSES,INCLUDE_NOT_ENDED,INCLUDE_NON_HR_CRS,MINIMUM_ERN_CREDIT,MINIMUM_ATT_CREDIT,ATT_CREDIT_TO_USE,USE_PARTIAL_CREDIT,INCLUDE_NON_HR_CRD,INCLUDE_BLANK_MARK,DISQUAL_BLANK_MARK,MAX_BLANK_MARK,INCLUDE_AS_DEFAULT,HONOR_MESSAGE,ACTIVE,ELIG_INCLUDE_PRIOR,ELIGIBILITY_CODE,ELIG_DURATION,ELIG_DURATION_DAYS,AT_RISK_REASON,AT_RISK_RESET_NUM,AT_RISK_RESET_TYPE,OPTION_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -15778,27 +19498,6 @@ $dbDefinitions = @'
     "name": "MR_HONOR_SETUP_COM",
     "PKColumns": "DISTRICT,BUILDING,HONOR_TYPE,HONOR_COMMENT",
     "TableColumns": "DISTRICT,BUILDING,HONOR_TYPE,HONOR_COMMENT,NUM_COMMENTS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_HONOR_SETUP_GD",
-    "PKColumns": "DISTRICT,BUILDING,HONOR_TYPE,GRADE",
-    "TableColumns": "DISTRICT,BUILDING,HONOR_TYPE,GRADE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_HONOR_SETUP_MKS",
-    "PKColumns": "DISTRICT,BUILDING,HONOR_TYPE,MARK_TYPE,MARK_ORDER",
-    "TableColumns": "DISTRICT,BUILDING,HONOR_TYPE,MARK_TYPE,MARK_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_HONOR_SETUP_Q_D",
-    "PKColumns": "DISTRICT,BUILDING,HONOR_TYPE,QUALIFY_DISQUALIFY,SEQUENCE_NUM",
-    "TableColumns": "DISTRICT,BUILDING,HONOR_TYPE,QUALIFY_DISQUALIFY,SEQUENCE_NUM,NUMBER_OF_MARKS,MINIMUM_MARK,MAXIMUM_MARK,COURSE_LEVEL,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -15873,48 +19572,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_IPR_PRINT_HDR",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,IPR_DATE,GRADE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,IPR_DATE,GRADE,RUN_DATE,HEADER_TEXT,FOOTER_TEXT,DATA_TITLE_01,DATA_TITLE_02,DATA_TITLE_03,DATA_TITLE_04,DATA_TITLE_05,DATA_TITLE_06,DATA_TITLE_07,DATA_TITLE_08,DATA_TITLE_09,DATA_TITLE_10,DATA_TITLE_11,DATA_TITLE_12,DATA_TITLE_13,DATA_TITLE_14,DATA_TITLE_15,DATA_TITLE_16,DATA_TITLE_17,DATA_TITLE_18,DATA_TITLE_19,DATA_TITLE_20,DATA_TITLE_21,DATA_TITLE_22,DATA_TITLE_23,DATA_TITLE_24,DATA_TITLE_25,DATA_TITLE_26,DATA_TITLE_27,DATA_TITLE_28,DATA_TITLE_29,DATA_TITLE_30,IPR_PRINT_KEY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_IPR_PRT_STU_COM",
-    "PKColumns": "IPR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION",
-    "TableColumns": "IPR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATA_DESCR_01,IPR_DATA_DESCR_02,IPR_DATA_DESCR_03,IPR_DATA_DESCR_04,IPR_DATA_DESCR_05,IPR_DATA_DESCR_06,IPR_DATA_DESCR_07,IPR_DATA_DESCR_08,IPR_DATA_DESCR_09,IPR_DATA_DESCR_10,IPR_DATA_DESCR_11,IPR_DATA_DESCR_12,IPR_DATA_DESCR_13,IPR_DATA_DESCR_14,IPR_DATA_DESCR_15,IPR_DATA_DESCR_16,IPR_DATA_DESCR_17,IPR_DATA_DESCR_18,IPR_DATA_DESCR_19,IPR_DATA_DESCR_20,IPR_DATA_DESCR_21,IPR_DATA_DESCR_22,IPR_DATA_DESCR_23,IPR_DATA_DESCR_24,IPR_DATA_DESCR_25,IPR_DATA_DESCR_26,IPR_DATA_DESCR_27,IPR_DATA_DESCR_28,IPR_DATA_DESCR_29,IPR_DATA_DESCR_30,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_IPR_PRT_STU_DET",
-    "PKColumns": "IPR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION",
-    "TableColumns": "IPR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_BUILDING,COURSE,COURSE_SECTION,COURSE_SESSION,DESCRIPTION,CRS_PERIOD,PRIMARY_STAFF_ID,STAFF_NAME,ROOM_ID,IPR_DATA_VALUE_01,IPR_DATA_VALUE_02,IPR_DATA_VALUE_03,IPR_DATA_VALUE_04,IPR_DATA_VALUE_05,IPR_DATA_VALUE_06,IPR_DATA_VALUE_07,IPR_DATA_VALUE_08,IPR_DATA_VALUE_09,IPR_DATA_VALUE_10,IPR_DATA_VALUE_11,IPR_DATA_VALUE_12,IPR_DATA_VALUE_13,IPR_DATA_VALUE_14,IPR_DATA_VALUE_15,IPR_DATA_VALUE_16,IPR_DATA_VALUE_17,IPR_DATA_VALUE_18,IPR_DATA_VALUE_19,IPR_DATA_VALUE_20,IPR_DATA_VALUE_21,IPR_DATA_VALUE_22,IPR_DATA_VALUE_23,IPR_DATA_VALUE_24,IPR_DATA_VALUE_25,IPR_DATA_VALUE_26,IPR_DATA_VALUE_27,IPR_DATA_VALUE_28,IPR_DATA_VALUE_29,IPR_DATA_VALUE_30,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_IPR_PRT_STU_HDR",
-    "PKColumns": "IPR_PRINT_KEY,STUDENT_ID",
-    "TableColumns": "IPR_PRINT_KEY,STUDENT_ID,STUDENT_NAME,BUILDING,GRADE,TRACK,COUNSELOR,HOUSE_TEAM,HOMEROOM_PRIMARY,DAILY_ATT_DESCR_01,DAILY_ATT_DESCR_02,DAILY_ATT_DESCR_03,DAILY_ATT_DESCR_04,DAILY_ATT_DESCR_05,DAILY_ATT_DESCR_06,DAILY_ATT_DESCR_07,DAILY_ATT_DESCR_08,DAILY_ATT_DESCR_09,DAILY_ATT_DESCR_10,DAILY_ATT_CURR_01,DAILY_ATT_CURR_02,DAILY_ATT_CURR_03,DAILY_ATT_CURR_04,DAILY_ATT_CURR_05,DAILY_ATT_CURR_06,DAILY_ATT_CURR_07,DAILY_ATT_CURR_08,DAILY_ATT_CURR_09,DAILY_ATT_CURR_10,DAILY_ATT_YTD_01,DAILY_ATT_YTD_02,DAILY_ATT_YTD_03,DAILY_ATT_YTD_04,DAILY_ATT_YTD_05,DAILY_ATT_YTD_06,DAILY_ATT_YTD_07,DAILY_ATT_YTD_08,DAILY_ATT_YTD_09,DAILY_ATT_YTD_10,REPORT_TEMPLATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_IPR_PRT_STU_MSG",
-    "PKColumns": "IPR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION",
-    "TableColumns": "IPR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_MESSAGE_01,IPR_MESSAGE_02,IPR_MESSAGE_03,IPR_MESSAGE_04,IPR_MESSAGE_05,IPR_MESSAGE_06,IPR_MESSAGE_07,IPR_MESSAGE_08,IPR_MESSAGE_09,IPR_MESSAGE_10,IPR_MESSAGE_11,IPR_MESSAGE_12,IPR_MESSAGE_13,IPR_MESSAGE_14,IPR_MESSAGE_15,IPR_MESSAGE_16,IPR_MESSAGE_17,IPR_MESSAGE_18,IPR_MESSAGE_19,IPR_MESSAGE_20,IPR_MESSAGE_21,IPR_MESSAGE_22,IPR_MESSAGE_23,IPR_MESSAGE_24,IPR_MESSAGE_25,IPR_MESSAGE_26,IPR_MESSAGE_27,IPR_MESSAGE_28,IPR_MESSAGE_29,IPR_MESSAGE_30,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_IPR_RUN",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,TRACK,RUN_DATE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,TRACK,RUN_DATE,ELIGIBILITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_IPR_STU_ABS",
     "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE,ABSENCE_TYPE",
     "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE,ABSENCE_TYPE,ABSENCE_VALUE,OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -15929,13 +19586,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_IPR_STU_COM",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE,COMMENT_TYPE",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE,COMMENT_TYPE,COMMENT_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_IPR_STU_ELIGIBLE",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,STUDENT_ID,IPR_DATE,ELIG_TYPE",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,STUDENT_ID,IPR_DATE,DISQUAL_REASON,ELIG_TYPE,ELIGIBILITY_CODE,EFFECTIVE_DATE,EXPIRATION_DATE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -15943,93 +19593,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_IPR_STU_HDR",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE,INDIVIDUAL_IPR,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_IPR_STU_MARKS",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE,MARK_TYPE",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE,MARK_TYPE,MARK_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_IPR_STU_MESSAGE",
     "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE,MESSAGE_ORDER",
     "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,IPR_DATE,MESSAGE_ORDER,MESSAGE_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_IPR_TAKEN",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,RUN_DATE",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,RUN_DATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_IPR_VIEW_ATT",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE,VIEW_ORDER",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE,ATT_VIEW_TYPE,VIEW_ORDER,ATT_TITLE,ATT_VIEW_INTERVAL,ATT_VIEW_SUM_BY,ATT_VIEW_CODE_GRP,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_IPR_VIEW_ATT_IT",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE,VIEW_ORDER,ATT_VIEW_INTERVAL",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE,VIEW_ORDER,ATT_VIEW_INTERVAL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_IPR_VIEW_DET",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE,VIEW_SEQUENCE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE,VIEW_SEQUENCE,VIEW_ORDER,SLOT_TYPE,SLOT_CODE,TITLE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_IPR_VIEW_HDR",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,GRADE,REPORT_TEMPLATE,PRINT_DROPPED_CRS,PRINT_LEGEND,PRINT_MBS,HEADER_TEXT,FOOTER_TEXT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_LEVEL_DET",
-    "PKColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,MARK",
-    "TableColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,MARK,NUMERIC_VALUE,POINT_VALUE,PASSING_MARK,RC_PRINT_VALUE,TRN_PRINT_VALUE,IPR_PRINT_VALUE,ADDON_POINTS,WEIGHT_BY_CRED,AVERAGE_USAGE,STATE_CODE_EQUIV,COLOR_LEVEL,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_LEVEL_GPA",
-    "PKColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,MARK,GPA_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,MARK,GPA_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_LEVEL_HDR",
-    "PKColumns": "DISTRICT,BUILDING,LEVEL_NUMBER",
-    "TableColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,DESCRIPTION,ACTIVE,PESC_CODE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_LEVEL_HONOR",
-    "PKColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,MARK,HONOR_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,LEVEL_NUMBER,MARK,HONOR_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_LEVEL_MARKS",
-    "PKColumns": "DISTRICT,BUILDING,MARK",
-    "TableColumns": "DISTRICT,BUILDING,MARK,DISPLAY_ORDER,ACTIVE,STATE_CODE_EQUIV,COURSE_COMPLETED,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -16048,30 +19614,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_MARK_ISSUED_AT",
-    "PKColumns": "DISTRICT,BUILDING,MARK_TYPE,MARKING_PERIOD",
-    "TableColumns": "DISTRICT,BUILDING,MARK_TYPE,MARKING_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_MARK_SUBS",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,LOW_RANGE",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,LOW_RANGE,HIGH_RANGE,REPLACE_MARK,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_MARK_TYPES",
-    "PKColumns": "DISTRICT,BUILDING,MARK_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,MARK_TYPE,MARK_ORDER,MARK_WHEN,DESCRIPTION,INCLUDE_AS_DEFAULT,REQUIRED,ACTIVE,TWS_ACCESS,RECEIVE_GB_RESULT,INCLUDE_PERFPLUS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID,STATE_CODE_EQUIV",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_MARK_TYPES_LMS_MAP",
-    "PKColumns": "DISTRICT,BUILDING,MARK_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,MARK_TYPE,MARK_TYPE_EQUIV,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -16083,34 +19628,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_PRINT_GD_SCALE",
-    "PKColumns": "MR_PRINT_KEY,STUDENT_ID,GRADING_SCALE_TYPE",
-    "TableColumns": "MR_PRINT_KEY,STUDENT_ID,PRINT_ORDER,GRADING_SCALE_TYPE,GRADING_SCALE_DESC,MARK_01,MARK_02,MARK_03,MARK_04,MARK_05,MARK_06,MARK_07,MARK_08,MARK_09,MARK_10,MARK_11,MARK_12,MARK_13,MARK_14,MARK_15,MARK_16,MARK_17,MARK_18,MARK_19,MARK_20,MARK_21,MARK_22,MARK_23,MARK_24,MARK_25,MARK_26,MARK_27,MARK_28,MARK_29,MARK_30,MARK_DESCR_01,MARK_DESCR_02,MARK_DESCR_03,MARK_DESCR_04,MARK_DESCR_05,MARK_DESCR_06,MARK_DESCR_07,MARK_DESCR_08,MARK_DESCR_09,MARK_DESCR_10,MARK_DESCR_11,MARK_DESCR_12,MARK_DESCR_13,MARK_DESCR_14,MARK_DESCR_15,MARK_DESCR_16,MARK_DESCR_17,MARK_DESCR_18,MARK_DESCR_19,MARK_DESCR_20,MARK_DESCR_21,MARK_DESCR_22,MARK_DESCR_23,MARK_DESCR_24,MARK_DESCR_25,MARK_DESCR_26,MARK_DESCR_27,MARK_DESCR_28,MARK_DESCR_29,MARK_DESCR_30,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_PRINT_HDR",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,RC_RUN,GRADE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,RC_RUN,GRADE,AS_OF_DATE,RUN_DATE,HEADER_TEXT,FOOTER_TEXT,MR_DATA_TITLE_01,MR_DATA_TITLE_02,MR_DATA_TITLE_03,MR_DATA_TITLE_04,MR_DATA_TITLE_05,MR_DATA_TITLE_06,MR_DATA_TITLE_07,MR_DATA_TITLE_08,MR_DATA_TITLE_09,MR_DATA_TITLE_10,MR_DATA_TITLE_11,MR_DATA_TITLE_12,MR_DATA_TITLE_13,MR_DATA_TITLE_14,MR_DATA_TITLE_15,MR_DATA_TITLE_16,MR_DATA_TITLE_17,MR_DATA_TITLE_18,MR_DATA_TITLE_19,MR_DATA_TITLE_20,MR_DATA_TITLE_21,MR_DATA_TITLE_22,MR_DATA_TITLE_23,MR_DATA_TITLE_24,MR_DATA_TITLE_25,MR_DATA_TITLE_26,MR_DATA_TITLE_27,MR_DATA_TITLE_28,MR_DATA_TITLE_29,MR_DATA_TITLE_30,MR_SC_TITLE_01,MR_SC_TITLE_02,MR_SC_TITLE_03,MR_SC_TITLE_04,MR_SC_TITLE_05,MR_SC_TITLE_06,MR_SC_TITLE_07,MR_SC_TITLE_08,MR_SC_TITLE_09,MR_SC_TITLE_10,MR_SC_TITLE_11,MR_SC_TITLE_12,MR_SC_TITLE_13,MR_SC_TITLE_14,MR_SC_TITLE_15,MR_SC_TITLE_16,MR_SC_TITLE_17,MR_SC_TITLE_18,MR_SC_TITLE_19,MR_SC_TITLE_20,MR_SC_TITLE_21,MR_SC_TITLE_22,MR_SC_TITLE_23,MR_SC_TITLE_24,MR_SC_TITLE_25,MR_SC_TITLE_26,MR_SC_TITLE_27,MR_SC_TITLE_28,MR_SC_TITLE_29,MR_SC_TITLE_30,PROGRAM_TITLE_01,PROGRAM_TITLE_02,PROGRAM_TITLE_03,PROGRAM_TITLE_04,PROGRAM_TITLE_05,PROGRAM_TITLE_06,PROGRAM_TITLE_07,PROGRAM_TITLE_08,PROGRAM_TITLE_09,PROGRAM_TITLE_10,PROGRAM_TITLE_11,PROGRAM_TITLE_12,MR_PRINT_KEY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_PRINT_KEY",
-    "PKColumns": "DISTRICT,KEY_TYPE",
-    "TableColumns": "DISTRICT,KEY_TYPE,PRINT_KEY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_PRINT_STU_COMM",
-    "PKColumns": "MR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION",
-    "TableColumns": "MR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MR_DATA_DESCR_01,MR_DATA_DESCR_02,MR_DATA_DESCR_03,MR_DATA_DESCR_04,MR_DATA_DESCR_05,MR_DATA_DESCR_06,MR_DATA_DESCR_07,MR_DATA_DESCR_08,MR_DATA_DESCR_09,MR_DATA_DESCR_10,MR_DATA_DESCR_11,MR_DATA_DESCR_12,MR_DATA_DESCR_13,MR_DATA_DESCR_14,MR_DATA_DESCR_15,MR_DATA_DESCR_16,MR_DATA_DESCR_17,MR_DATA_DESCR_18,MR_DATA_DESCR_19,MR_DATA_DESCR_20,MR_DATA_DESCR_21,MR_DATA_DESCR_22,MR_DATA_DESCR_23,MR_DATA_DESCR_24,MR_DATA_DESCR_25,MR_DATA_DESCR_26,MR_DATA_DESCR_27,MR_DATA_DESCR_28,MR_DATA_DESCR_29,MR_DATA_DESCR_30,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_PRINT_STU_CRSCP",
     "PKColumns": "MR_PRINT_KEY,STUDENT_ID,COURSE_BUILDING,COURSE,COMPETENCY_GROUP,COMPETENCY_NUMBER",
     "TableColumns": "MR_PRINT_KEY,STUDENT_ID,COURSE_BUILDING,COURSE,COMPETENCY_GROUP,COMPETENCY_NUMBER,SEQUENCE_NUMBER,DESCRIPTION,FORMAT_LEVEL,HEADING_ONLY,SC_DATA_VALUE_01,SC_DATA_VALUE_02,SC_DATA_VALUE_03,SC_DATA_VALUE_04,SC_DATA_VALUE_05,SC_DATA_VALUE_06,SC_DATA_VALUE_07,SC_DATA_VALUE_08,SC_DATA_VALUE_09,SC_DATA_VALUE_10,SC_DATA_VALUE_11,SC_DATA_VALUE_12,SC_DATA_VALUE_13,SC_DATA_VALUE_14,SC_DATA_VALUE_15,SC_DATA_VALUE_16,SC_DATA_VALUE_17,SC_DATA_VALUE_18,SC_DATA_VALUE_19,SC_DATA_VALUE_20,SC_DATA_VALUE_21,SC_DATA_VALUE_22,SC_DATA_VALUE_23,SC_DATA_VALUE_24,SC_DATA_VALUE_25,SC_DATA_VALUE_26,SC_DATA_VALUE_27,SC_DATA_VALUE_28,SC_DATA_VALUE_29,SC_DATA_VALUE_30,SC_COMM_DESCR_01,SC_COMM_DESCR_02,SC_COMM_DESCR_03,SC_COMM_DESCR_04,SC_COMM_DESCR_05,SC_COMM_DESCR_06,SC_COMM_DESCR_07,SC_COMM_DESCR_08,SC_COMM_DESCR_09,SC_COMM_DESCR_10,SC_COMM_DESCR_11,SC_COMM_DESCR_12,SC_COMM_DESCR_13,SC_COMM_DESCR_14,SC_COMM_DESCR_15,SC_COMM_DESCR_16,SC_COMM_DESCR_17,SC_COMM_DESCR_18,SC_COMM_DESCR_19,SC_COMM_DESCR_20,SC_COMM_DESCR_21,SC_COMM_DESCR_22,SC_COMM_DESCR_23,SC_COMM_DESCR_24,SC_COMM_DESCR_25,SC_COMM_DESCR_26,SC_COMM_DESCR_27,SC_COMM_DESCR_28,SC_COMM_DESCR_29,SC_COMM_DESCR_30,CHANGE_DATE_TIME,CHANGE_UID",
@@ -16118,30 +19635,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_PRINT_STU_CRSTXT",
-    "PKColumns": "MR_PRINT_KEY,STUDENT_ID,MARKING_PERIOD",
-    "TableColumns": "MR_PRINT_KEY,STUDENT_ID,MARKING_PERIOD,SECTION_KEY_01,SECTION_KEY_02,SECTION_KEY_03,SECTION_KEY_04,SECTION_KEY_05,SECTION_KEY_06,SECTION_KEY_07,SECTION_KEY_08,SECTION_KEY_09,SECTION_KEY_10,SECTION_KEY_11,SECTION_KEY_12,SECTION_KEY_13,SECTION_KEY_14,SECTION_KEY_15,STAFF_ID_01,STAFF_ID_02,STAFF_ID_03,STAFF_ID_04,STAFF_ID_05,STAFF_ID_06,STAFF_ID_07,STAFF_ID_08,STAFF_ID_09,STAFF_ID_10,STAFF_ID_11,STAFF_ID_12,STAFF_ID_13,STAFF_ID_14,STAFF_ID_15,STAFF_NAME_01,STAFF_NAME_02,STAFF_NAME_03,STAFF_NAME_04,STAFF_NAME_05,STAFF_NAME_06,STAFF_NAME_07,STAFF_NAME_08,STAFF_NAME_09,STAFF_NAME_10,STAFF_NAME_11,STAFF_NAME_12,STAFF_NAME_13,STAFF_NAME_14,STAFF_NAME_15,COURSE_COMMENT_01,COURSE_COMMENT_02,COURSE_COMMENT_03,COURSE_COMMENT_04,COURSE_COMMENT_05,COURSE_COMMENT_06,COURSE_COMMENT_07,COURSE_COMMENT_08,COURSE_COMMENT_09,COURSE_COMMENT_10,COURSE_COMMENT_11,COURSE_COMMENT_12,COURSE_COMMENT_13,COURSE_COMMENT_14,COURSE_COMMENT_15,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_PRINT_STU_DET",
-    "PKColumns": "MR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION",
-    "TableColumns": "MR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_BUILDING,COURSE,COURSE_SECTION,COURSE_SESSION,DESCRIPTION,CRS_PERIOD,PRIMARY_STAFF_ID,STAFF_NAME,ROOM_ID,ATTEMPTED_CREDIT,ATT_OVERRIDE,ATT_OVR_REASON,EARNED_CREDIT,EARN_OVERRIDE,EARN_OVR_REASON,MR_DATA_VALUE_01,MR_DATA_VALUE_02,MR_DATA_VALUE_03,MR_DATA_VALUE_04,MR_DATA_VALUE_05,MR_DATA_VALUE_06,MR_DATA_VALUE_07,MR_DATA_VALUE_08,MR_DATA_VALUE_09,MR_DATA_VALUE_10,MR_DATA_VALUE_11,MR_DATA_VALUE_12,MR_DATA_VALUE_13,MR_DATA_VALUE_14,MR_DATA_VALUE_15,MR_DATA_VALUE_16,MR_DATA_VALUE_17,MR_DATA_VALUE_18,MR_DATA_VALUE_19,MR_DATA_VALUE_20,MR_DATA_VALUE_21,MR_DATA_VALUE_22,MR_DATA_VALUE_23,MR_DATA_VALUE_24,MR_DATA_VALUE_25,MR_DATA_VALUE_26,MR_DATA_VALUE_27,MR_DATA_VALUE_28,MR_DATA_VALUE_29,MR_DATA_VALUE_30,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_PRINT_STU_GPA",
     "PKColumns": "MR_PRINT_KEY,STUDENT_ID,GPA_ORDER",
     "TableColumns": "MR_PRINT_KEY,STUDENT_ID,GPA_ORDER,GPA_TYPE,GPA_TITLE,GPA_TERM01,GPA_TERM02,GPA_TERM03,GPA_TERM04,GPA_TERM05,GPA_TERM06,GPA_TERM07,GPA_TERM08,GPA_TERM09,GPA_TERM10,GPA_CURR01,GPA_CURR02,GPA_CURR03,GPA_CURR04,GPA_CURR05,GPA_CURR06,GPA_CURR07,GPA_CURR08,GPA_CURR09,GPA_CURR10,GPA_CUM01,GPA_CUM02,GPA_CUM03,GPA_CUM04,GPA_CUM05,GPA_CUM06,GPA_CUM07,GPA_CUM08,GPA_CUM09,GPA_CUM10,RANK_NUM_CURR01,RANK_NUM_CURR02,RANK_NUM_CURR03,RANK_NUM_CURR04,RANK_NUM_CURR05,RANK_NUM_CURR06,RANK_NUM_CURR07,RANK_NUM_CURR08,RANK_NUM_CURR09,RANK_NUM_CURR10,RANK_NUM_CUM01,RANK_NUM_CUM02,RANK_NUM_CUM03,RANK_NUM_CUM04,RANK_NUM_CUM05,RANK_NUM_CUM06,RANK_NUM_CUM07,RANK_NUM_CUM08,RANK_NUM_CUM09,RANK_NUM_CUM10,RANK_OUT_OF01,RANK_OUT_OF02,RANK_OUT_OF03,RANK_OUT_OF04,RANK_OUT_OF05,RANK_OUT_OF06,RANK_OUT_OF07,RANK_OUT_OF08,RANK_OUT_OF09,RANK_OUT_OF10,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_PRINT_STU_HDR",
-    "PKColumns": "MR_PRINT_KEY,STUDENT_ID",
-    "TableColumns": "MR_PRINT_KEY,STUDENT_ID,STUDENT_NAME,BUILDING,GRADE,TRACK,COUNSELOR,HOUSE_TEAM,HOMEROOM_PRIMARY,RANK_NUM_CURR,RANK_NUM_CUM,RANK_OUT_OF,DAILY_ATT_DESCR_01,DAILY_ATT_DESCR_02,DAILY_ATT_DESCR_03,DAILY_ATT_DESCR_04,DAILY_ATT_DESCR_05,DAILY_ATT_DESCR_06,DAILY_ATT_DESCR_07,DAILY_ATT_DESCR_08,DAILY_ATT_DESCR_09,DAILY_ATT_DESCR_10,DAILY_ATT_CURR_01,DAILY_ATT_CURR_02,DAILY_ATT_CURR_03,DAILY_ATT_CURR_04,DAILY_ATT_CURR_05,DAILY_ATT_CURR_06,DAILY_ATT_CURR_07,DAILY_ATT_CURR_08,DAILY_ATT_CURR_09,DAILY_ATT_CURR_10,DAILY_ATT_YTD_01,DAILY_ATT_YTD_02,DAILY_ATT_YTD_03,DAILY_ATT_YTD_04,DAILY_ATT_YTD_05,DAILY_ATT_YTD_06,DAILY_ATT_YTD_07,DAILY_ATT_YTD_08,DAILY_ATT_YTD_09,DAILY_ATT_YTD_10,CREDIT_HONOR,CREDIT_SEM,CREDIT_CUM,CREDIT_ATT_CUR,CREDIT_ATT_SEM,CREDIT_ATT_CUM,GPA_HONOR,GPA_SEM,GPA_CUM,HONOR_TYPE_01,HONOR_TYPE_02,HONOR_TYPE_03,HONOR_TYPE_04,HONOR_TYPE_05,HONOR_TYPE_06,HONOR_TYPE_07,HONOR_TYPE_08,HONOR_TYPE_09,HONOR_TYPE_10,HONOR_MSG_01,HONOR_MSG_02,HONOR_MSG_03,HONOR_MSG_04,HONOR_MSG_05,HONOR_MSG_06,HONOR_MSG_07,HONOR_MSG_08,HONOR_MSG_09,HONOR_MSG_10,HONOR_GPA_01,HONOR_GPA_02,HONOR_GPA_03,HONOR_GPA_04,HONOR_GPA_05,HONOR_GPA_06,HONOR_GPA_07,HONOR_GPA_08,HONOR_GPA_09,HONOR_GPA_10,HONOR_CREDIT_01,HONOR_CREDIT_02,HONOR_CREDIT_03,HONOR_CREDIT_04,HONOR_CREDIT_05,HONOR_CREDIT_06,HONOR_CREDIT_07,HONOR_CREDIT_08,HONOR_CREDIT_09,HONOR_CREDIT_10,HONOR_QUALIFIED_01,HONOR_QUALIFIED_02,HONOR_QUALIFIED_03,HONOR_QUALIFIED_04,HONOR_QUALIFIED_05,HONOR_QUALIFIED_06,HONOR_QUALIFIED_07,HONOR_QUALIFIED_08,HONOR_QUALIFIED_09,HONOR_QUALIFIED_10,REPORT_TEMPLATE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -16188,13 +19684,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_PRINT_STU_SEC_TEACHER",
-    "PKColumns": "MR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION",
-    "TableColumns": "MR_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,SEC_STAFF_ID_01,SEC_STAFF_NAME_01,SEC_STAFF_ID_02,SEC_STAFF_NAME_02,SEC_STAFF_ID_03,SEC_STAFF_NAME_03,SEC_STAFF_ID_04,SEC_STAFF_NAME_04,SEC_STAFF_ID_05,SEC_STAFF_NAME_05,SEC_STAFF_ID_06,SEC_STAFF_NAME_06,SEC_STAFF_ID_07,SEC_STAFF_NAME_07,SEC_STAFF_ID_08,SEC_STAFF_NAME_08,SEC_STAFF_ID_09,SEC_STAFF_NAME_09,SEC_STAFF_ID_10,SEC_STAFF_NAME_10,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_PRINT_STU_STUCP",
     "PKColumns": "MR_PRINT_KEY,STUDENT_ID,COMP_BUILDING,COMPETENCY_GROUP,COMPETENCY_NUMBER",
     "TableColumns": "MR_PRINT_KEY,STUDENT_ID,COMP_BUILDING,COMPETENCY_GROUP,GROUP_DESCRIPTION,GROUP_SEQUENCE,COMPETENCY_NUMBER,COMP_SEQUENCE,DESCRIPTION,STAFF_ID,STAFF_NAME,FORMAT_LEVEL,HEADING_ONLY,SC_DATA_VALUE_01,SC_DATA_VALUE_02,SC_DATA_VALUE_03,SC_DATA_VALUE_04,SC_DATA_VALUE_05,SC_DATA_VALUE_06,SC_DATA_VALUE_07,SC_DATA_VALUE_08,SC_DATA_VALUE_09,SC_DATA_VALUE_10,SC_DATA_VALUE_11,SC_DATA_VALUE_12,SC_DATA_VALUE_13,SC_DATA_VALUE_14,SC_DATA_VALUE_15,SC_DATA_VALUE_16,SC_DATA_VALUE_17,SC_DATA_VALUE_18,SC_DATA_VALUE_19,SC_DATA_VALUE_20,SC_DATA_VALUE_21,SC_DATA_VALUE_22,SC_DATA_VALUE_23,SC_DATA_VALUE_24,SC_DATA_VALUE_25,SC_DATA_VALUE_26,SC_DATA_VALUE_27,SC_DATA_VALUE_28,SC_DATA_VALUE_29,SC_DATA_VALUE_30,SC_COMM_DESCR_01,SC_COMM_DESCR_02,SC_COMM_DESCR_03,SC_COMM_DESCR_04,SC_COMM_DESCR_05,SC_COMM_DESCR_06,SC_COMM_DESCR_07,SC_COMM_DESCR_08,SC_COMM_DESCR_09,SC_COMM_DESCR_10,SC_COMM_DESCR_11,SC_COMM_DESCR_12,SC_COMM_DESCR_13,SC_COMM_DESCR_14,SC_COMM_DESCR_15,SC_COMM_DESCR_16,SC_COMM_DESCR_17,SC_COMM_DESCR_18,SC_COMM_DESCR_19,SC_COMM_DESCR_20,SC_COMM_DESCR_21,SC_COMM_DESCR_22,SC_COMM_DESCR_23,SC_COMM_DESCR_24,SC_COMM_DESCR_25,SC_COMM_DESCR_26,SC_COMM_DESCR_27,SC_COMM_DESCR_28,SC_COMM_DESCR_29,SC_COMM_DESCR_30,CHANGE_DATE_TIME,CHANGE_UID",
@@ -16223,37 +19712,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_RC_TAKEN",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_RC_VIEW_ALT_LANG",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,LANGUAGE,LABEL_TYPE,VIEW_ORDER",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,LANGUAGE,LABEL_TYPE,VIEW_ORDER,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_RC_VIEW_ATT",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_ORDER",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,ATT_VIEW_TYPE,VIEW_ORDER,ATT_TITLE,ATT_VIEW_INTERVAL,ATT_VIEW_SUM_BY,ATT_VIEW_CODE_GRP,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_RC_VIEW_ATT_INT",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_ORDER,ATT_VIEW_INTERVAL",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_ORDER,ATT_VIEW_INTERVAL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_RC_VIEW_DET",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_SEQUENCE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_SEQUENCE,VIEW_ORDER,TITLE,SLOT_TYPE,SLOT_CODE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -16265,37 +19726,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_RC_VIEW_GRD_SC",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_ORDER",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_ORDER,LABEL,GRADING_SCALE_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_RC_VIEW_HDR",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,REPORT_TEMPLATE,RANK_GPA_TYPE,PRINT_CLASS_RANK,PRINT_HONOR_MSG,PRINT_DROPPED_CRS,PRINT_LEGEND,PRINT_MBS,HEADER_TEXT,FOOTER_TEXT,CREDIT_TO_PRINT,USE_RC_HOLD,HOLD_HEADER_TEXT,HOLD_FOOTER_TEXT,CURRENT_GPA,SEMESTER_GPA,CUMULATIVE_GPA,CURRENT_CREDIT,SEMESTER_CREDIT,CUMULATIVE_CREDIT,ALT_CURRENT_LBL,ALT_SEMESTER_LBL,ALT_CUMULATIVE_LBL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_RC_VIEW_HONOR",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,HONOR_SEQUENCE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,HONOR_SEQUENCE,HONOR_GPA_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_RC_VIEW_LTDB",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_ORDER",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_ORDER,LABEL,TEST_CODE,TEST_LEVEL,TEST_FORM,SUBTEST,SCORE_CODE,PRINT_TYPE,PRINT_NUMBER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_RC_VIEW_MPS",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_SEQUENCE,MARKING_PERIOD",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_SEQUENCE,MARKING_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -16314,13 +19747,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_RC_VIEW_SP_COLS",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,COLUMN_NUMBER",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,COLUMN_NUMBER,TITLE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_RC_VIEW_SP_MP",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,PROGRAM_ID,FIELD_NUMBER,COLUMN_NUMBER,SEARCH_MP",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,PROGRAM_ID,FIELD_NUMBER,COLUMN_NUMBER,SEARCH_MP,CHANGE_DATE_TIME,CHANGE_UID",
@@ -16331,13 +19757,6 @@ $dbDefinitions = @'
     "name": "MR_RC_VIEW_STUCMP",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_SEQUENCE",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,VIEW_TYPE,RC_RUN,GRADE,VIEW_SEQUENCE,VIEW_ORDER,TITLE,SLOT_TYPE,SLOT_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_REQ_AREAS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,AREA_TYPE,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -16419,27 +19838,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_SC_GD_SCALE_DET",
-    "PKColumns": "DISTRICT,BUILDING,GRADING_SCALE_TYPE,DISPLAY_ORDER",
-    "TableColumns": "DISTRICT,BUILDING,GRADING_SCALE_TYPE,DISPLAY_ORDER,MARK,DESCRIPTION,POINT_VALUE,PASSING_MARK,ACTIVE,AVERAGE,COLOR_LEVEL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_SC_GD_SCALE_HDR",
-    "PKColumns": "DISTRICT,BUILDING,GRADING_SCALE_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,GRADING_SCALE_TYPE,DESCRIPTION,DEFAULT_MARK,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_SC_ST_STANDARD",
-    "PKColumns": "DISTRICT,STATE,DOCUMENT_NAME,SUBJECT,SCHOOL_YEAR,GRADE,GUID",
-    "TableColumns": "DISTRICT,STATE,DOCUMENT_NAME,SUBJECT,SCHOOL_YEAR,GRADE,GUID,STATE_STANDARD_NUM,LEVEL_NUMBER,NUM_OF_CHILDREN,LABEL,TITLE,DESCRIPTION,PARENT_GUID,LOW_GRADE,HIGH_GRADE,AB_GUID,PP_GUID,PP_PARENT_GUID,PP_ID,PP_PARENT_ID,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_SC_STU_COMMENT",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,STUDENT_ID,COMPETENCY_GROUP,COMPETENCY_NUMBER,MARKING_PERIOD,COMMENT_TYPE",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,STUDENT_ID,COMPETENCY_GROUP,COMPETENCY_NUMBER,MARKING_PERIOD,BUILDING,COMMENT_TYPE,CODE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -16517,30 +19915,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_STU_ABSENCES",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,ABSENCE_TYPE",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,ABSENCE_TYPE,ABSENCE_VALUE,OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_STU_BLDG_TYPE",
     "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,BLDG_TYPE",
     "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,BLDG_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_STU_COMMENTS",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SEQUENCE_NUM",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SEQUENCE_NUM,TRN_COMMENT,EXCLUDE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_STU_CRS_DATES",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,START_DATE",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,START_DATE,END_DATE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -16573,27 +19950,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_STU_GPA",
-    "PKColumns": "DISTRICT,STUDENT_ID,GPA_TYPE,SCHOOL_YEAR,RUN_TERM_YEAR",
-    "TableColumns": "DISTRICT,STUDENT_ID,GPA_TYPE,SCHOOL_YEAR,RUN_TERM_YEAR,BUILDING,GRADE,NEEDS_RECALC,OVERRIDE,CUR_GPA_CALC_DATE,CUR_GPA,CUR_QUALITY_POINTS,CUR_ADD_ON_POINTS,CUR_ATT_CREDIT,CUR_EARN_CREDIT,CUR_RNK_CALC_DATE,CUR_RANK,CUR_PERCENTILE,CUR_DECILE,CUR_QUINTILE,CUR_QUARTILE,CUR_RANK_GPA,CUM_GPA_CALC_DATE,CUM_GPA,CUM_QUALITY_POINTS,CUM_ADD_ON_POINTS,CUM_ATT_CREDIT,CUM_EARN_CREDIT,CUM_RNK_CALC_DATE,CUM_RANK,CUM_PERCENTILE,CUM_DECILE,CUM_QUINTILE,CUM_QUARTILE,CUM_RANK_GPA,CUR_RANK_QUAL_PTS,CUM_RANK_QUAL_PTS,BLDG_OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_STU_GRAD",
-    "PKColumns": "DISTRICT,STUDENT_ID,REQUIRE_CODE",
-    "TableColumns": "DISTRICT,STUDENT_ID,REQUIRE_CODE,SUBJ_AREA_CREDIT,CUR_ATT_CREDITS,CUR_EARN_CREDITS,SUBJ_AREA_CRD_WAV,CUR_ATT_CRD_WAV,CUR_EARN_CRD_WAV,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_STU_GRAD_AREA",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,REQUIRE_CODE",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,REQUIRE_CODE,CODE_OVERRIDE,SUBJ_AREA_CREDIT,CREDIT_OVERRIDE,WAIVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_STU_GRAD_VALUE",
     "PKColumns": "DISTRICT,STUDENT_ID,REQUIRE_CODE",
     "TableColumns": "DISTRICT,STUDENT_ID,REQUIRE_CODE,VALUE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -16601,44 +19957,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_STU_HDR",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,RC_STATUS,ATT_CREDIT,ATT_OVERRIDE,ATT_OVR_REASON,EARN_CREDIT,EARN_OVERRIDE,ERN_OVR_REASON,STATE_CRS_EQUIV,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_STU_HDR_SUBJ",
     "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,SUBJECT_AREA",
     "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,SUBJECT_AREA,VALUE,OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_STU_HONOR",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,HONOR_TYPE,RC_RUN",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,HONOR_TYPE,RC_RUN,QUALIFIED,DISQUAL_REASON,HONOR_GPA,HONOR_CREDIT,HONOR_POINTS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_STU_MARKS",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,MARK_TYPE",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,MARK_TYPE,MARK_VALUE,OVERRIDE,RAW_MARK_VALUE,OVERRIDE_REASON,OVERRIDE_NOTES,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_STU_MP",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,ATT_CREDIT,ATT_OVERRIDE,ATT_OVR_REASON,EARN_CREDIT,EARN_OVERRIDE,ERN_OVR_REASON,TRAIL_FLAG,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_STU_MP_COMMENTS",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,COMMENT_TYPE",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,COMMENT_TYPE,CODE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -16685,13 +20006,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_STU_TEXT",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD",
-    "TableColumns": "DISTRICT,BUILDING,STUDENT_ID,SCHOOL_YEAR,SECTION_KEY,COURSE_SESSION,STAFF_ID,MARKING_PERIOD,COMMENT_TEXT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_STU_USER",
     "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STUDENT_ID,SCREEN_NUMBER,FIELD_NUMBER",
     "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STUDENT_ID,SCREEN_NUMBER,FIELD_NUMBER,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -16699,65 +20013,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_STU_XFER_BLDGS",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,STUDENT_ID,TRANSFER_SEQUENCE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,STUDENT_ID,BUILDING,TRANSFER_SEQUENCE,STATE_BUILDING,BUILDING_NAME,GRADE,ABBREVIATION,STREET1,STREET2,CITY,STATE,ZIP_CODE,COUNTRY,PHONE,FAX,PRINCIPAL,BUILDING_TYPE,TRANSFER_COMMENT,STATE_CODE_EQUIV,ENTRY_DATE,WITHDRAWAL_DATE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_STU_XFER_RUNS",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,STUDENT_ID,TRANSFER_SEQUENCE,RC_RUN",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,STUDENT_ID,TRANSFER_SEQUENCE,RC_RUN,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_TRN_PRINT_HDR",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,GROUP_BY,GRADE,RUN_TERM_YEAR",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,GROUP_BY,GRADE,RUN_TERM_YEAR,RUN_DATE,TRN_PRINT_KEY,BLDG_NAME,STREET1,STREET2,CITY,STATE,ZIP,PRINCIPAL,PHONE,CEEB_NUMBER,HEADER_TEXT,FOOTER_TEXT,DATA_TITLE_01,DATA_TITLE_02,DATA_TITLE_03,DATA_TITLE_04,DATA_TITLE_05,DATA_TITLE_06,DATA_TITLE_07,DATA_TITLE_08,DATA_TITLE_09,DATA_TITLE_10,DATA_TITLE_11,DATA_TITLE_12,DATA_TITLE_13,DATA_TITLE_14,DATA_TITLE_15,DATA_TITLE_16,DATA_TITLE_17,DATA_TITLE_18,DATA_TITLE_19,DATA_TITLE_20,DATA_TITLE_21,DATA_TITLE_22,DATA_TITLE_23,DATA_TITLE_24,DATA_TITLE_25,DATA_TITLE_26,DATA_TITLE_27,DATA_TITLE_28,DATA_TITLE_29,DATA_TITLE_30,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_TRN_PRT_CRS_UD",
     "PKColumns": "DISTRICT,MR_TRN_PRINT_KEY,SECTION_KEY",
     "TableColumns": "DISTRICT,MR_TRN_PRINT_KEY,SECTION_KEY,FIELD_LABEL01,FIELD_LABEL02,FIELD_LABEL03,FIELD_LABEL04,FIELD_LABEL05,FIELD_LABEL06,FIELD_LABEL07,FIELD_LABEL08,FIELD_LABEL09,FIELD_LABEL10,FIELD_VALUE01,FIELD_VALUE02,FIELD_VALUE03,FIELD_VALUE04,FIELD_VALUE05,FIELD_VALUE06,FIELD_VALUE07,FIELD_VALUE08,FIELD_VALUE09,FIELD_VALUE10,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_TRN_PRT_STU_ACT",
-    "PKColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID",
-    "TableColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID,ACTIVITY01,ACTIVITY02,ACTIVITY03,ACTIVITY04,ACTIVITY05,ACTIVITY06,ACTIVITY07,ACTIVITY08,ACTIVITY09,ACTIVITY10,ACTIVITY11,ACTIVITY12,ACTIVITY13,ACTIVITY14,ACTIVITY15,ACTIVITY16,ACTIVITY17,ACTIVITY18,ACTIVITY19,ACTIVITY20,ACTIVITY21,ACTIVITY22,ACTIVITY23,ACTIVITY24,ACTIVITY25,ACTIVITY26,ACTIVITY27,ACTIVITY28,ACTIVITY29,ACTIVITY30,ACTIVITY_YEARS01,ACTIVITY_YEARS02,ACTIVITY_YEARS03,ACTIVITY_YEARS04,ACTIVITY_YEARS05,ACTIVITY_YEARS06,ACTIVITY_YEARS07,ACTIVITY_YEARS08,ACTIVITY_YEARS09,ACTIVITY_YEARS10,ACTIVITY_YEARS11,ACTIVITY_YEARS12,ACTIVITY_YEARS13,ACTIVITY_YEARS14,ACTIVITY_YEARS15,ACTIVITY_YEARS16,ACTIVITY_YEARS17,ACTIVITY_YEARS18,ACTIVITY_YEARS19,ACTIVITY_YEARS20,ACTIVITY_YEARS21,ACTIVITY_YEARS22,ACTIVITY_YEARS23,ACTIVITY_YEARS24,ACTIVITY_YEARS25,ACTIVITY_YEARS26,ACTIVITY_YEARS27,ACTIVITY_YEARS28,ACTIVITY_YEARS29,ACTIVITY_YEARS30,ACTIVITY_COMMENTS01,ACTIVITY_COMMENTS02,ACTIVITY_COMMENTS03,ACTIVITY_COMMENTS04,ACTIVITY_COMMENTS05,ACTIVITY_COMMENTS06,ACTIVITY_COMMENTS07,ACTIVITY_COMMENTS08,ACTIVITY_COMMENTS09,ACTIVITY_COMMENTS10,ACTIVITY_COMMENTS11,ACTIVITY_COMMENTS12,ACTIVITY_COMMENTS13,ACTIVITY_COMMENTS14,ACTIVITY_COMMENTS15,ACTIVITY_COMMENTS16,ACTIVITY_COMMENTS17,ACTIVITY_COMMENTS18,ACTIVITY_COMMENTS19,ACTIVITY_COMMENTS20,ACTIVITY_COMMENTS21,ACTIVITY_COMMENTS22,ACTIVITY_COMMENTS23,ACTIVITY_COMMENTS24,ACTIVITY_COMMENTS25,ACTIVITY_COMMENTS26,ACTIVITY_COMMENTS27,ACTIVITY_COMMENTS28,ACTIVITY_COMMENTS29,ACTIVITY_COMMENTS30,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_TRN_PRT_STU_BRK",
-    "PKColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID,SCHOOL_YEAR,RUN_TERM_YEAR",
-    "TableColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID,SCHOOL_YEAR,RUN_TERM_YEAR,DISPLAY_YEAR,STUDENT_GRADE,CUR_GPA,CUM_GPA,BUILDING,BLDG_NAME,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_TRN_PRT_STU_COM",
-    "PKColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID",
-    "TableColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID,COMMENT01,COMMENT02,COMMENT03,COMMENT04,COMMENT05,COMMENT06,COMMENT07,COMMENT08,COMMENT09,COMMENT10,COMMENT11,COMMENT12,COMMENT13,COMMENT14,COMMENT15,COMMENT16,COMMENT17,COMMENT18,COMMENT19,COMMENT20,COMMENT21,COMMENT22,COMMENT23,COMMENT24,COMMENT25,COMMENT26,COMMENT27,COMMENT28,COMMENT29,COMMENT30,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_TRN_PRT_STU_DET",
-    "PKColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,RUN_TERM_YEAR",
-    "TableColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID,SECTION_KEY,COURSE_BUILDING,COURSE,COURSE_SECTION,COURSE_SESSION,RUN_TERM_YEAR,SCHOOL_YEAR,STUDENT_GRADE,DESCRIPTION,CRS_PERIOD,COURSE_LEVEL,PRIMARY_STAFF_ID,STAFF_NAME,ROOM_ID,ATTEMPTED_CREDIT,EARNED_CREDIT,DEPARTMENT,DEPT_DESCR,TRN_DATA_VALUE_01,TRN_DATA_VALUE_02,TRN_DATA_VALUE_03,TRN_DATA_VALUE_04,TRN_DATA_VALUE_05,TRN_DATA_VALUE_06,TRN_DATA_VALUE_07,TRN_DATA_VALUE_08,TRN_DATA_VALUE_09,TRN_DATA_VALUE_10,TRN_DATA_VALUE_11,TRN_DATA_VALUE_12,TRN_DATA_VALUE_13,TRN_DATA_VALUE_14,TRN_DATA_VALUE_15,TRN_DATA_VALUE_16,TRN_DATA_VALUE_17,TRN_DATA_VALUE_18,TRN_DATA_VALUE_19,TRN_DATA_VALUE_20,TRN_DATA_VALUE_21,TRN_DATA_VALUE_22,TRN_DATA_VALUE_23,TRN_DATA_VALUE_24,TRN_DATA_VALUE_25,TRN_DATA_VALUE_26,TRN_DATA_VALUE_27,TRN_DATA_VALUE_28,TRN_DATA_VALUE_29,TRN_DATA_VALUE_30,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_TRN_PRT_STU_HDR",
-    "PKColumns": "DISTRICT,TRN_PRINT_KEY,STUDENT_ID",
-    "TableColumns": "DISTRICT,TRN_PRINT_KEY,STUDENT_ID,STUDENT_NAME,BUILDING,GRADE,TRACK,COUNSELOR,HOUSE_TEAM,HOMEROOM_PRIMARY,BIRTHDATE,GRADUATION_YEAR,GRADUATION_DATE,GENDER,GUARDIAN_NAME,PHONE,APARTMENT,COMPLEX,STREET_NUMBER,STREET_PREFIX,STREET_NAME,STREET_SUFFIX,STREET_TYPE,CITY,STATE,ZIP,DAILY_ATT_DESCR_01,DAILY_ATT_DESCR_02,DAILY_ATT_DESCR_03,DAILY_ATT_DESCR_04,DAILY_ATT_DESCR_05,DAILY_ATT_DESCR_06,DAILY_ATT_DESCR_07,DAILY_ATT_DESCR_08,DAILY_ATT_DESCR_09,DAILY_ATT_DESCR_10,DAILY_ATT_TOT_01,DAILY_ATT_TOT_02,DAILY_ATT_TOT_03,DAILY_ATT_TOT_04,DAILY_ATT_TOT_05,DAILY_ATT_TOT_06,DAILY_ATT_TOT_07,DAILY_ATT_TOT_08,DAILY_ATT_TOT_09,DAILY_ATT_TOT_10,GPA_TYPE_01,GPA_TYPE_02,GPA_TYPE_03,GPA_TYPE_04,GPA_TYPE_05,GPA_TYPE_06,GPA_TYPE_07,GPA_TYPE_08,GPA_TYPE_09,GPA_TYPE_10,GPA_DESCR_01,GPA_DESCR_02,GPA_DESCR_03,GPA_DESCR_04,GPA_DESCR_05,GPA_DESCR_06,GPA_DESCR_07,GPA_DESCR_08,GPA_DESCR_09,GPA_DESCR_10,GPA_CUM_01,GPA_CUM_02,GPA_CUM_03,GPA_CUM_04,GPA_CUM_05,GPA_CUM_06,GPA_CUM_07,GPA_CUM_08,GPA_CUM_09,GPA_CUM_10,GPA_RANK_01,GPA_RANK_02,GPA_RANK_03,GPA_RANK_04,GPA_RANK_05,GPA_RANK_06,GPA_RANK_07,GPA_RANK_08,GPA_RANK_09,GPA_RANK_10,GPA_PERCENTILE_01,GPA_PERCENTILE_02,GPA_PERCENTILE_03,GPA_PERCENTILE_04,GPA_PERCENTILE_05,GPA_PERCENTILE_06,GPA_PERCENTILE_07,GPA_PERCENTILE_08,GPA_PERCENTILE_09,GPA_PERCENTILE_10,GPA_DECILE_01,GPA_DECILE_02,GPA_DECILE_03,GPA_DECILE_04,GPA_DECILE_05,GPA_DECILE_06,GPA_DECILE_07,GPA_DECILE_08,GPA_DECILE_09,GPA_DECILE_10,GPA_QUARTILE_01,GPA_QUARTILE_02,GPA_QUARTILE_03,GPA_QUARTILE_04,GPA_QUARTILE_05,GPA_QUARTILE_06,GPA_QUARTILE_07,GPA_QUARTILE_08,GPA_QUARTILE_09,GPA_QUARTILE_10,GPA_QUINTILE_01,GPA_QUINTILE_02,GPA_QUINTILE_03,GPA_QUINTILE_04,GPA_QUINTILE_05,GPA_QUINTILE_06,GPA_QUINTILE_07,GPA_QUINTILE_08,GPA_QUINTILE_09,GPA_QUINTILE_10,GPA_CLASS_SIZE_01,GPA_CLASS_SIZE_02,GPA_CLASS_SIZE_03,GPA_CLASS_SIZE_04,GPA_CLASS_SIZE_05,GPA_CLASS_SIZE_06,GPA_CLASS_SIZE_07,GPA_CLASS_SIZE_08,GPA_CLASS_SIZE_09,GPA_CLASS_SIZE_10,REPORT_TEMPLATE,GENDER_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -16776,48 +20034,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MR_TRN_PRT_STU_REQ",
-    "PKColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID",
-    "TableColumns": "DISTRICT,MR_TRN_PRINT_KEY,STUDENT_ID,REQ_GROUP,GRADUATION_YEAR,REQUIRE_CODE01,REQUIRE_CODE02,REQUIRE_CODE03,REQUIRE_CODE04,REQUIRE_CODE05,REQUIRE_CODE06,REQUIRE_CODE07,REQUIRE_CODE08,REQUIRE_CODE09,REQUIRE_CODE10,REQUIRE_CODE11,REQUIRE_CODE12,REQUIRE_CODE13,REQUIRE_CODE14,REQUIRE_CODE15,REQUIRE_CODE16,REQUIRE_CODE17,REQUIRE_CODE18,REQUIRE_CODE19,REQUIRE_CODE20,REQUIRE_CODE21,REQUIRE_CODE22,REQUIRE_CODE23,REQUIRE_CODE24,REQUIRE_CODE25,REQUIRE_CODE26,REQUIRE_CODE27,REQUIRE_CODE28,REQUIRE_CODE29,REQUIRE_CODE30,REQUIRE_DESC01,REQUIRE_DESC02,REQUIRE_DESC03,REQUIRE_DESC04,REQUIRE_DESC05,REQUIRE_DESC06,REQUIRE_DESC07,REQUIRE_DESC08,REQUIRE_DESC09,REQUIRE_DESC10,REQUIRE_DESC11,REQUIRE_DESC12,REQUIRE_DESC13,REQUIRE_DESC14,REQUIRE_DESC15,REQUIRE_DESC16,REQUIRE_DESC17,REQUIRE_DESC18,REQUIRE_DESC19,REQUIRE_DESC20,REQUIRE_DESC21,REQUIRE_DESC22,REQUIRE_DESC23,REQUIRE_DESC24,REQUIRE_DESC25,REQUIRE_DESC26,REQUIRE_DESC27,REQUIRE_DESC28,REQUIRE_DESC29,REQUIRE_DESC30,SUBJ_AREA_CREDIT01,SUBJ_AREA_CREDIT02,SUBJ_AREA_CREDIT03,SUBJ_AREA_CREDIT04,SUBJ_AREA_CREDIT05,SUBJ_AREA_CREDIT06,SUBJ_AREA_CREDIT07,SUBJ_AREA_CREDIT08,SUBJ_AREA_CREDIT09,SUBJ_AREA_CREDIT10,SUBJ_AREA_CREDIT11,SUBJ_AREA_CREDIT12,SUBJ_AREA_CREDIT13,SUBJ_AREA_CREDIT14,SUBJ_AREA_CREDIT15,SUBJ_AREA_CREDIT16,SUBJ_AREA_CREDIT17,SUBJ_AREA_CREDIT18,SUBJ_AREA_CREDIT19,SUBJ_AREA_CREDIT20,SUBJ_AREA_CREDIT21,SUBJ_AREA_CREDIT22,SUBJ_AREA_CREDIT23,SUBJ_AREA_CREDIT24,SUBJ_AREA_CREDIT25,SUBJ_AREA_CREDIT26,SUBJ_AREA_CREDIT27,SUBJ_AREA_CREDIT28,SUBJ_AREA_CREDIT29,SUBJ_AREA_CREDIT30,CUR_ATT_CREDITS01,CUR_ATT_CREDITS02,CUR_ATT_CREDITS03,CUR_ATT_CREDITS04,CUR_ATT_CREDITS05,CUR_ATT_CREDITS06,CUR_ATT_CREDITS07,CUR_ATT_CREDITS08,CUR_ATT_CREDITS09,CUR_ATT_CREDITS10,CUR_ATT_CREDITS11,CUR_ATT_CREDITS12,CUR_ATT_CREDITS13,CUR_ATT_CREDITS14,CUR_ATT_CREDITS15,CUR_ATT_CREDITS16,CUR_ATT_CREDITS17,CUR_ATT_CREDITS18,CUR_ATT_CREDITS19,CUR_ATT_CREDITS20,CUR_ATT_CREDITS21,CUR_ATT_CREDITS22,CUR_ATT_CREDITS23,CUR_ATT_CREDITS24,CUR_ATT_CREDITS25,CUR_ATT_CREDITS26,CUR_ATT_CREDITS27,CUR_ATT_CREDITS28,CUR_ATT_CREDITS29,CUR_ATT_CREDITS30,CUR_EARN_CREDITS01,CUR_EARN_CREDITS02,CUR_EARN_CREDITS03,CUR_EARN_CREDITS04,CUR_EARN_CREDITS05,CUR_EARN_CREDITS06,CUR_EARN_CREDITS07,CUR_EARN_CREDITS08,CUR_EARN_CREDITS09,CUR_EARN_CREDITS10,CUR_EARN_CREDITS11,CUR_EARN_CREDITS12,CUR_EARN_CREDITS13,CUR_EARN_CREDITS14,CUR_EARN_CREDITS15,CUR_EARN_CREDITS16,CUR_EARN_CREDITS17,CUR_EARN_CREDITS18,CUR_EARN_CREDITS19,CUR_EARN_CREDITS20,CUR_EARN_CREDITS21,CUR_EARN_CREDITS22,CUR_EARN_CREDITS23,CUR_EARN_CREDITS24,CUR_EARN_CREDITS25,CUR_EARN_CREDITS26,CUR_EARN_CREDITS27,CUR_EARN_CREDITS28,CUR_EARN_CREDITS29,CUR_EARN_CREDITS30,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_TRN_VIEW_ATT",
-    "PKColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,VIEW_ORDER",
-    "TableColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,ATT_VIEW_TYPE,VIEW_ORDER,ATT_TITLE,ATT_VIEW_INTERVAL,ATT_VIEW_SUM_BY,ATT_VIEW_CODE_GRP,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_TRN_VIEW_BLDTYP",
-    "PKColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,BLDG_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,BLDG_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_TRN_VIEW_DET",
-    "PKColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,RUN_TERM_YEAR,VIEW_SEQUENCE",
-    "TableColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,RUN_TERM_YEAR,VIEW_SEQUENCE,TITLE,VIEW_ORDER,SLOT_TYPE,SLOT_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_TRN_VIEW_GPA",
-    "PKColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,GPA_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,GPA_TYPE,VIEW_ORDER,GPA_TITLE,INCLUDE_RANK,INCLUDE_PERCENTILE,INCLUDE_DECILE,INCLUDE_QUARTILE,INCLUDE_QUINTILE,GPA_LEVEL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_TRN_VIEW_HDR",
-    "PKColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY",
-    "TableColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,DISPLAY_ATTCREDIT,DISPLAY_ERNCREDIT,DISPLAY_CRSLEVEL,DISPLAY_CRSTYPE,STU_ADDRESS_TYPE,PRINT_BLDG_INFO,PRINT_STU_DATA,PRINT_CREDIT_SUM,CRS_AREA_GPA,PRINT_CLASS_RANK,PRINT_COMMENTS,PRINT_ACTIVITIES,PRINT_GRAD_REQ,CEEB_NUMBER,HEADER_TEXT,FOOTER_TEXT,REPORT_TEMPLATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MR_TRN_VIEW_LTDB",
     "PKColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,VIEW_ORDER",
     "TableColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,VIEW_ORDER,LABEL,TEST_CODE,TEST_LEVEL,TEST_FORM,SUBTEST,SCORE_CODE,PRINT_TYPE,PRINT_NUMBER,PRINT_BLANK,GROUP_SCORES,CHANGE_DATE_TIME,CHANGE_UID",
@@ -16828,20 +20044,6 @@ $dbDefinitions = @'
     "name": "MR_TRN_VIEW_MED",
     "PKColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,SERIES_SHOT",
     "TableColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,SERIES_SHOT,VIEW_ORDER,SHOT_TITLE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_TRN_VIEW_MPS",
-    "PKColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,RUN_TERM_YEAR,VIEW_SEQUENCE,MARKING_PERIOD",
-    "TableColumns": "DISTRICT,BUILDING,TYPE,GRADE,GROUP_BY,RUN_TERM_YEAR,VIEW_SEQUENCE,MARKING_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MR_TRN_VIEW_MS",
-    "PKColumns": "DISTRICT,BUILDING,GRADE,VIEW_ID",
-    "TableColumns": "DISTRICT,BUILDING,GRADE,VIEW_ID,VIEW_ORDER,TABLE_NAME,COLUMN_NAME,SCREEN_NUMBER,FIELD_NUMBER,DEFAULT_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -16867,37 +20069,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MRTB_DISQUALIFY_REASON",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MRTB_GB_CATEGORY",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CATEGORY_ID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MRTB_GB_EXCEPTION",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,EXCLUDE_AVERAGE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MRTB_LEVEL_HDR_PESC_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MRTB_MARKOVR_REASON",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -16916,55 +20090,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "MSG_BUILDING_SETUP",
-    "PKColumns": "DISTRICT,BUILDING,EVENT_CODE",
-    "TableColumns": "DISTRICT,BUILDING,EVENT_CODE,EVENT_AVAILABILITY,ALLOW_ESP,ALLOW_TAC,ALLOW_HAC,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MSG_BUILDING_SETUP_ENABLE",
-    "PKColumns": "DISTRICT,BUILDING,EVENT_PACKAGE",
-    "TableColumns": "DISTRICT,BUILDING,EVENT_PACKAGE,IS_ENABLED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MSG_BUILDING_SETUP_VALUES",
-    "PKColumns": "DISTRICT,BUILDING,EVENT_CODE,WORKFLOW_VALUE",
-    "TableColumns": "DISTRICT,BUILDING,EVENT_CODE,WORKFLOW_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MSG_DISTRICT_SETUP",
-    "PKColumns": "DISTRICT,EVENT_CODE",
-    "TableColumns": "DISTRICT,EVENT_CODE,EVENT_AVAILABILITY,ALLOW_ESP,ALLOW_TAC,ALLOW_HAC,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MSG_DISTRICT_SETUP_ENABLE",
-    "PKColumns": "DISTRICT,EVENT_PACKAGE",
-    "TableColumns": "DISTRICT,EVENT_PACKAGE,IS_ENABLED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MSG_DISTRICT_SETUP_VALUES",
-    "PKColumns": "DISTRICT,EVENT_CODE,WORKFLOW_VALUE",
-    "TableColumns": "DISTRICT,EVENT_CODE,WORKFLOW_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MSG_EVENT",
-    "PKColumns": "DISTRICT,EVENT_CODE",
-    "TableColumns": "DISTRICT,EVENT_CODE,EVENT_DESCRIPTION,EVENT_PACKAGE,EVENT_ORDER,ESP_SEC_PACKAGE,ESP_SEC_SUBPACKAGE,ESP_SEC_FEATURE,USE_ESP,USE_TAC,USE_HAC,USE_WATCHLIST,SCHEDULE_POPUP,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "MSG_IEP_AUDIENCE",
     "PKColumns": "DISTRICT,EVENT_CODE,AUDIENCE",
     "TableColumns": "DISTRICT,EVENT_CODE,AUDIENCE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -16975,34 +20100,6 @@ $dbDefinitions = @'
     "name": "MSG_SCHEDULE",
     "PKColumns": "DISTRICT,BUILDING,EVENT_CODE",
     "TableColumns": "DISTRICT,BUILDING,EVENT_CODE,TASK_OWNER,SCHEDULE_TYPE,SCHD_TIME,SCHD_DATE,SCHD_INTERVAL,SCHD_DOW,PARAM_KEY,LAST_RUN_DATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MSG_SUB_EVENT",
-    "PKColumns": "DISTRICT,EVENT_CODE,EVENT_SUB_CODE",
-    "TableColumns": "DISTRICT,EVENT_CODE,EVENT_SUB_CODE,PNRS_SHORTMESSAGE,PNRS_LONGMESSAGE,PNRS_LONGMESSAGEREMOTE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MSG_USER_PREFERENCE_DET",
-    "PKColumns": "DISTRICT,APPLICATION_TYPE,LOGIN_ID,EVENT_CODE",
-    "TableColumns": "DISTRICT,APPLICATION_TYPE,LOGIN_ID,EVENT_CODE,SEND_EMAIL,WATCH_NAME,HOME_BUILDING_ONLY,SEND_HIGH_PRIORITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MSG_USER_PREFERENCE_HDR",
-    "PKColumns": "DISTRICT,APPLICATION_TYPE,LOGIN_ID",
-    "TableColumns": "DISTRICT,APPLICATION_TYPE,LOGIN_ID,DAILY_DIGEST,NO_IEP_LOGIN,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "MSG_VALUE_SPECIFICATION",
-    "PKColumns": "DISTRICT,EVENT_CODE",
-    "TableColumns": "DISTRICT,EVENT_CODE,VALUE_LABEL,DATA_TYPE,VALIDATION_TABLE,VALIDATION_CODE_COLUMN,VALIDATION_DESCRIPTION_COLUMN,USE_SUBSCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -17077,13 +20174,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "NSE_CONFIGURABLE_FIELDS",
-    "PKColumns": "FIELD_ID",
-    "TableColumns": "FIELD_ID,TAB_ID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "NSE_CONTACT",
     "PKColumns": "CONTACT_ID",
     "TableColumns": "CONTACT_ID,NSE_ID,ADDRESS_ID,TITLE,FIRSTNAME,MIDDLENAME,LASTNAME,GENERATION,RELATIONSHIP,WORKPHONE,WORKPHONEEXT,HOME_LANGUAGE,LANGUAGE_OF_CORRESPONDENCE,USE_LANGUAGE_FOR_MAILING,EMAIL_ID,USE_EMAIL_FOR_MAILING,EDUCATION_LEVEL,COPYADDRESSFLAG,REGISTRATIONLABELSFLAG,ATTENDANCENOTIFICATIONSFLAG,DISCIPLINELETTERSFLAG,SCHEDULESFLAG,SUCCESSPLANFLAG,IPRLETTERSFLAG,REPORTCARDSFLAG,MEDICALLETTERSFLAG,STUDENTFEESFLAG,ESCHOOL_CONTACT_ID,ISEXISTING_ESCHOOL_CONTACT_ID,CONTACT_TYPE,LIVINGWITH,LASTMODIFIEDBY,LASTMODIFIEDDATE,IS_COPIED_FROM_NSE,COPIED_FROM_ID,CONTACT_STATUS",
@@ -17108,20 +20198,6 @@ $dbDefinitions = @'
     "name": "NSE_CONTACTMATCH_LOG",
     "PKColumns": "CONTACT_ID",
     "TableColumns": "CONTACT_ID,NSE_ID,ADDRESS_ID,TITLE,FIRSTNAME,MIDDLENAME,LASTNAME,GENERATION,RELATIONSHIP,WORKPHONE,WORKPHONEEXT,HOME_LANGUAGE,LANGUAGE_OF_CORRESPONDENCE,USE_LANGUAGE_FOR_MAILING,EMAIL_ID,USE_EMAIL_FOR_MAILING,EDUCATION_LEVEL,COPYADDRESSFLAG,REGISTRATIONLABELSFLAG,ATTENDANCENOTIFICATIONSFLAG,DISCIPLINELETTERSFLAG,SCHEDULESFLAG,SUCCESSPLANFLAG,IPRLETTERSFLAG,REPORTCARDSFLAG,MEDICALLETTERSFLAG,STUDENTFEESFLAG,ESCHOOL_CONTACT_ID,ISEXISTING_ESCHOOL_CONTACT_ID,CONTACT_TYPE,LIVINGWITH,LASTMODIFIEDBY,LASTMODIFIEDDATE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "NSE_CONTROLSLIST",
-    "PKColumns": "CONTROL_ID",
-    "TableColumns": "CONTROL_ID,CONTROL_TYPE,CONTROL_NAME,DEFAULT_TRANSLATION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "NSE_CONTROLTRANSLATION",
-    "PKColumns": "TRANSLATION_ID",
-    "TableColumns": "TRANSLATION_ID,CONTROL_ID,LANGUAGE_ID,TRANSLATION,LASTMODIFIEDBY,LASTMODIFIEDDATE",
     "TableHasChangeDT": ""
   },
   {
@@ -17168,13 +20244,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "NSE_FIELDS",
-    "PKColumns": "FIELD_ID",
-    "TableColumns": "FIELD_ID,RESOURCE_ID,FIELD_TYPE,DB_FIELD_NAME,TAB_ID,LASTMODIFIEDBY,LASTMODIFIEDDATE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
     "name": "NSE_HAC_ACCESS",
     "PKColumns": "NSE_GUID,LOGIN_ID",
     "TableColumns": "NSE_GUID,LOGIN_ID,WEB_PASSWORD,STUDENT_ID,PREFERRED_LANG,ACCESSED_TIME,NSE_ID",
@@ -17207,20 +20276,6 @@ $dbDefinitions = @'
     "PKColumns": "NSE_ID,DYNAMIC_FIELD_ID",
     "TableColumns": "NSE_ID,DYNAMIC_FIELD_ID,FIELD_VALUE,LASTMODIFIEDBY,LASTMODIFIEDDATE",
     "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "NSE_RESOURCE",
-    "PKColumns": "RESOURCE_ID",
-    "TableColumns": "RESOURCE_ID,RESOURCE_VALUE,RESOURCE_TYPE_ID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "NSE_RESOURCE_TYPE",
-    "PKColumns": "RESOURCE_TYPE_ID",
-    "TableColumns": "RESOURCE_TYPE_ID,RESOURCE_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
   },
   {
     "db": "eSch",
@@ -17259,23 +20314,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "NSE_TABS",
-    "PKColumns": "TAB_ID",
-    "TableColumns": "TAB_ID,RESOURCE_ID,TAB_ORDER,APPLICATION_ID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "NSE_TOOLTIP",
     "PKColumns": "TOOLTIP_ID",
     "TableColumns": "TOOLTIP_ID,RESOURCE_ID,FIELD_ID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "NSE_TRANSLATION",
-    "PKColumns": "TRANS_ID,LANGUAGE_ID,RESOURCE_ID",
-    "TableColumns": "TRANS_ID,LANGUAGE_ID,RESOURCE_ID,TRANSLATION,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -17315,23 +20356,16 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
+    "name": "Outdated_statistics",
+    "PKColumns": "",
+    "TableColumns": "Table name,Index name,Last updated,Rows modified",
+    "TableHasChangeDT": ""
+  },
+  {
+    "db": "eSch",
     "name": "P360_NotificationLink",
     "PKColumns": "PNL_ID",
     "TableColumns": "PNL_ID,PNL_TStamp,PNL_LastUser,PNL_District,PNL_PNR_ID,PNL_SessionVariableNumber,PNL_SessionVariableName",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "P360_NotificationResultSet",
-    "PKColumns": "PNRS_ID",
-    "TableColumns": "PNRS_ID,PNRS_TStamp,PNRS_LastUser,PNRS_District,PNRS_PNR_ID,PNRS_PNRU_ID,PNRS_PNR_Subquery_ID,PNRS_SentToPOD,PNRS_Category,PNRS_ShortMessage,PNRS_LongMessage,PNRS_LongMessageRemote,PNRS_Value01,PNRS_Value02,PNRS_Value03,PNRS_Value04,PNRS_Value05,PNRS_Value06,PNRS_Value07,PNRS_Value08,PNRS_Value09,PNRS_Value10,PNRS_Value11,PNRS_Value12,PNRS_Value13,PNRS_Value14,PNRS_Value15,PNRS_Value16",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "P360_NotificationResultSetUser",
-    "PKColumns": "PNRSU_ID",
-    "TableColumns": "PNRSU_ID,PNRSU_TStamp,PNRSU_LastUser,PNRSU_District,PNRSU_PNRS_ID,PNRSU_UserId,PNRSU_UserApplication,PNRSU_EmailAddress,PNRSU_DeliveryMethod,PNRSU_InstantAlert",
     "TableHasChangeDT": ""
   },
   {
@@ -17378,20 +20412,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "PESC_SUBTEST_CODE",
-    "PKColumns": "DISTRICT,SUBTEST_CODE",
-    "TableColumns": "DISTRICT,SUBTEST_CODE,SUBTEST_NAME,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "PESC_TEST_CODE",
-    "PKColumns": "DISTRICT,TEST_CODE",
-    "TableColumns": "DISTRICT,TEST_CODE,TEST_NAME,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "PESCTB_DIPLO_XWALK",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,ACADEMICAWARDLEVEL,DIPLOMATYPE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -17399,51 +20419,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "PESCTB_GEND_XWALK",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,PESCCODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "PESCTB_GPA_XWALK",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,PESCCODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "PESCTB_GRADE_XWALK",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,PESCCODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "PESCTB_SCORE_XWALK",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,PESCCODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "PESCTB_SHOT_XWALK",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,PESCCODE,PESC_DESC_HELP,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "PESCTB_STU_STATUS",
     "PKColumns": "DISTRICT,STUDENT_ID,REPORT_ID,DATASET_ID",
     "TableColumns": "DISTRICT,STUDENT_ID,REPORT_ID,DATASET_ID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "PESCTB_SUFFIX_XWALK",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,PESCCODE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -17483,13 +20461,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "PP_SECURITY",
-    "PKColumns": "DISTRICT,CUBE_NAME,ITEM_TYPE,ITEM_NAME",
-    "TableColumns": "DISTRICT,CUBE_NAME,ITEM_TYPE,ITEM_NAME,PACKAGE,SUBPACKAGE,FEATURE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "PP_STUDENT_CACHE",
     "PKColumns": "DISTRICT,START_DATE,END_DATE,STUDENT_ID",
     "TableColumns": "DISTRICT,START_DATE,END_DATE,SCHOOL_YEAR,BUILDING,SUMMER_SCHOOL,STUDENT_GUID,STUDENT_ID,STUDENT_NAME,ETHNIC_CODE,GENDER,GRADE,HOUSE_TEAM,MEAL_STATUS,CURRICULUM,GRADUATION_YEAR,TRACK,CALENDAR,RESIDENCY_CODE,CITIZEN_STATUS,AT_RISK,MIGRANT,HAS_IEP,SECTION_504_PLAN,HOMELESS_STATUS,ESL,DIPLOMA_TYPE,DISTDEF_01,DISTDEF_02,DISTDEF_03,DISTDEF_04,DISTDEF_05,DISTDEF_06,DISTDEF_07,DISTDEF_08,DISTDEF_09,DISTDEF_10,DISTDEF_11,DISTDEF_12,DISTDEF_13,DISTDEF_14,DISTDEF_15,DISTDEF_16,DISTDEF_17,DISTDEF_18,DISTDEF_19,DISTDEF_20,DISTDEF_21,DISTDEF_22,DISTDEF_23,DISTDEF_24,DISTDEF_25,IS_DIRTY,CHANGE_DATE_TIME,CHANGE_UID",
@@ -17525,51 +20496,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "PS_SPECIAL_ED_PHONE_TYPE_MAP",
-    "PKColumns": "SPECIAL_ED_PHONE_TYPE",
-    "TableColumns": "DISTRICT,SPECIAL_ED_PHONE_TYPE,ESCHOOLPLUS_PHONE_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG",
-    "PKColumns": "DISTRICT,STUDENT_ID",
-    "TableColumns": "DISTRICT,STUDENT_ID,FIRST_NAME,MIDDLE_NAME,LAST_NAME,GENERATION,BUILDING,HOME_BUILDING,BUILDING_OVERRIDE,BUILDING_REASON,GRADE,GENDER,LANGUAGE,NATIVE_LANGUAGE,CALENDAR,TRACK,CURRENT_STATUS,SUMMER_STATUS,COUNSELOR,HOUSE_TEAM,HOMEROOM_PRIMARY,HOMEROOM_SECONDARY,BIRTHDATE,FAMILY_CENSUS,ALT_BUILDING,ALT_DISTRICT,NICKNAME,HOME_DISTRICT,ATTENDING_DISTRICT,ALT_BLDG_ACCT,DIST_ENROLL_DATE,STATE_ENROLL_DATE,US_ENROLL_DATE,STUDENT_GUID,RES_COUNTY_CODE,STATE_RES_BUILDING,GRADE_9_DATE,GENDER_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID,HOME_DISTRICT_OVERRIDE",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_ACADEMIC",
-    "PKColumns": "DISTRICT,STUDENT_ID",
-    "TableColumns": "DISTRICT,STUDENT_ID,GRADUATION_YEAR,GRADUATION_DATE,PROMOTION,CURRICULUM,SCHD_PRIORITY,GRADUATE_REQ_GROUP,MODELED_GRAD_PLAN,PENDING_GRAD_PLAN,EXP_GRAD_PLAN,ACT_GRAD_PLAN,DIPLOMA_TYPE,ELIG_STATUS,ELIG_REASON,ELIG_EFFECTIVE_DTE,ELIG_EXPIRES_DATE,HOLD_REPORT_CARD,RC_HOLD_OVERRIDE,VOTEC,ADVISOR,DISCIPLINARIAN,FEDERAL_GRAD_YEAR,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REG_ACADEMIC_SUPP",
     "PKColumns": "DISTRICT,STUDENT_ID,SUPP_TYPE,SUPP_REQ_GROUP",
     "TableColumns": "DISTRICT,STUDENT_ID,SUPP_TYPE,SUPP_REQ_GROUP,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_ACT_PREREQ",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,SEQUENCE_NUM",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,SEQUENCE_NUM,AND_OR_FLAG,TABLE_NAME,COLUMN_NAME,OPERATOR,LOW_VALUE,HIGH_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_ACTIVITY_ADV",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,STAFF_ID",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,STAFF_ID,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_ACTIVITY_DET",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,STUDENT_ID",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,STUDENT_ID,ACTIVITY_STATUS,INELIGIBLE,OVERRIDE,START_DATE,END_DATE,DURATION,ACTIVITY_COMMENT,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -17581,23 +20510,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REG_ACTIVITY_HDR",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,DESCRIPTION,MODERATOR,MAX_ENROLLMENT,CURRENT_ENROLLMENT,EXCEED_MAXIMUM,STATE_CODE_EQUIV,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REG_ACTIVITY_INEL",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,ACTIVITY_CODE,NOTIFICATION_DATE,TRIGGER_EVENT,ATTENDANCE_DATE,ATTENDANCE_PERIOD",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,ACTIVITY_CODE,NOTIFICATION_DATE,TRIGGER_EVENT,ATTENDANCE_DATE,ATTENDANCE_PERIOD,INELIGIBILITY_CODE,SOURCE,INVALID_EVENT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_ACTIVITY_MP",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,MARKING_PERIOD",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,ACTIVITY_CODE,MARKING_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -17630,27 +20545,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REG_BUILDING",
-    "PKColumns": "DISTRICT,BUILDING",
-    "TableColumns": "DISTRICT,BUILDING,NAME,TRANSFER_BUILDING,ABBREVIATION,STREET1,STREET2,CITY,STATE,ZIP,PHONE,FAX,PRINCIPAL,CALENDAR,BUILDING_TYPE,DEFAULT_ZIP,STATE_CODE_EQUIV,COUNTY_CODE,OUT_OF_DISTRICT,PESC_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_BUILDING_GRADE",
-    "PKColumns": "DISTRICT,BUILDING,GRADE",
-    "TableColumns": "DISTRICT,BUILDING,GRADE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_CAL_DAYS",
-    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,TRACK,CALENDAR,CAL_DATE",
-    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,TRACK,CALENDAR,CAL_DATE,CYCLE_FLAG,CYCLE_CODE,MEMBERSHIP_DAY,MEMBERSHIP_VALUE,TAKE_ATTENDANCE,INCLUDE_TOTALS,DAY_TYPE,DAY_NUMBER,DAY_IN_MEMBERSHIP,ALTERNATE_CYCLE,WEEK_NUMBER,INSTRUCT_TIME,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REG_CAL_DAYS_LEARNING_LOC",
     "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,TRACK,CALENDAR,CAL_DATE,LEARNING_LOCATION",
     "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,TRACK,CALENDAR,CAL_DATE,LEARNING_LOCATION,CHANGE_DATE_TIME,CHANGE_UID,ROW_IDENTITY,LOCATION_TYPE",
@@ -17661,34 +20555,6 @@ $dbDefinitions = @'
     "name": "REG_CAL_DAYS_LL_PDS",
     "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,TRACK,CALENDAR,CAL_DATE,LEARNING_LOCATION,LOCATION_TYPE,ATT_PERIOD",
     "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,TRACK,CALENDAR,CAL_DATE,LEARNING_LOCATION,LOCATION_TYPE,ATT_PERIOD,CHANGE_DATE_TIME,CHANGE_UID,ROW_IDENTITY",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_CALENDAR",
-    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,TRACK,CALENDAR",
-    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,TRACK,CALENDAR,DESCRIPTION,DEF_MEM_VALUE,FIRST_DAY,LAST_DAY,SUNDAY,MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,DAYS_IN_CYCLE,FIRST_DAY_CYCLE,DAYS_IN_CALENDAR,DAYS_IN_MEMBERSHIP,STATE_CODE_EQUIV,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_CFG",
-    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR",
-    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,AUTO_ASSIGN,OVERIDE_AUTO_ASSGN,STARTING_ID,MAX_ID_ALLOWED,HIGHEST_ID_USED,DEFAULT_ENTRY_CODE,DEFAULT_ENTRY_DATE,YEAREND_WD_CODE,YEAREND_ENTRY_CODE,DROP_OUT_CODE,EMAIL,YEAR_ROUND,PHOTO_PATH,PHOTO_EXTENSION,ST_ID_PREFIX,ST_STARTING_ID,ST_MAX_ID_ALLOWED,ST_HIGHEST_ID_USED,ST_AUTO_ASSIGN_OV,TEA_PERS_STU_SUMM,SUB_PERS_STU_SUMM,TEA_EMERG_STU_SUMM,SUB_EMERG_STU_SUMM,TEA_STUDENT_SEARCH,SUB_STUDENT_SEARCH,TEA_VIEW_IEP,SUB_VIEW_IEP,TEA_VIEW_GIFTED,SUB_VIEW_GIFTED,TEA_VIEW_504,SUB_VIEW_504,LOCKER_ASSIGN,AUTO_LOCKER_ASSIGN,REGISTRAR_EMAIL,MAX_WITH_BACKDATE,MSG_NEW_STUD,MSG_NEW_PR_STUD,MSG_PRIM_HOMEROOM,MSG_SEC_HOMEROOM,MSG_STU_COUNS,MSG_SUMMER_COUNS,MSG_EW_REENTRY,MSG_EW_CHG_BLDG,CHANGE_DATE_TIME,CHANGE_UID,PHOTO_DIRECTORY",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_CFG_ALERT",
-    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,ALERT_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,ALERT_TYPE,VISIBLE_TO_TEACHER,VISIBLE_TO_SUB,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_CFG_ALERT_CODE",
-    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,ALERT_TYPE,CODE",
-    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,ALERT_TYPE,CODE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -17777,23 +20643,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REG_CLASSIFICATION",
-    "PKColumns": "DISTRICT,STUDENT_ID,CLASSIFICATION_CODE",
-    "TableColumns": "DISTRICT,STUDENT_ID,CLASSIFICATION_CODE,CLASSIFICATION_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REG_CLASSIFICATION_EVA",
     "PKColumns": "DISTRICT,STUDENT_ID,CLASSIFICATION_CODE",
     "TableColumns": "DISTRICT,STUDENT_ID,CLASSIFICATION_CODE,CLASSIFICATION_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_CONTACT",
-    "PKColumns": "DISTRICT,CONTACT_ID",
-    "TableColumns": "DISTRICT,CONTACT_ID,TITLE,SALUTATION,FIRST_NAME,MIDDLE_NAME,LAST_NAME,GENERATION,LANGUAGE,HOME_LANGUAGE,USE_FOR_MAILING,EMPLOYER,DEVELOPMENT,APARTMENT,COMPLEX,STREET_NUMBER,STREET_PREFIX,STREET_NAME,STREET_SUFFIX,STREET_TYPE,CITY,STATE,ZIP,PLAN_AREA_NUMBER,HOME_BUILDING_TYPE,EMAIL,EMAIL_PREFERENCE,DELIVERY_POINT,LOGIN_ID,WEB_PASSWORD,PWD_CHG_DATE_TIME,LAST_LOGIN_DATE,EDUCATION_LEVEL,SIF_REFID,HAC_LDAP_FLAG,ACCT_LOCKED,ACCT_LOCKED_DATE_TIME,CHG_PW_NEXT_LOGIN,ONBOARD_TOKEN,ONBOARD_TOKEN_USED,ROW_IDENTITY,KEY_USED,CONTACT_KEY,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -17805,93 +20657,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REG_CONTACT_HIST",
-    "PKColumns": "DISTRICT,STUDENT_ID,ADDRESS_TYPE,CONTACT_ID,CHANGE_DATE_TIME",
-    "TableColumns": "DISTRICT,STUDENT_ID,ADDRESS_TYPE,CONTACT_ID,DEVELOPMENT,APARTMENT,COMPLEX,STREET_NUMBER,STREET_PREFIX,STREET_NAME,STREET_SUFFIX,STREET_TYPE,CITY,STATE,ZIP,DELIVERY_POINT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_CONTACT_HIST_TMP",
-    "PKColumns": "DISTRICT,STUDENT_ID,ADDRESS_TYPE,CONTACT_ID,CHANGE_DATE_TIME",
-    "TableColumns": "DISTRICT,STUDENT_ID,ADDRESS_TYPE,CONTACT_ID,DEVELOPMENT,APARTMENT,COMPLEX,STREET_NUMBER,STREET_PREFIX,STREET_NAME,STREET_SUFFIX,STREET_TYPE,CITY,STATE,ZIP,DELIVERY_POINT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REG_CONTACT_LANGUAGE_INTERPRETER",
     "PKColumns": "DISTRICT,CONTACT_ID,LANGUAGE_INTERPRETER",
     "TableColumns": "DISTRICT,CONTACT_ID,LANGUAGE_INTERPRETER,INTERPRETER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_CONTACT_PHONE",
-    "PKColumns": "DISTRICT,CONTACT_ID,PHONE_TYPE",
-    "TableColumns": "DISTRICT,CONTACT_ID,PHONE_TYPE,PHONE_LISTING,PHONE,PHONE_EXTENSION,SIF_REFID,PHONE_PRIORITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_CYCLE",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CYCLE_ORDER,CODE,DESCRIPTION,ALTERNATE_CYCLE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_DISABILITY",
-    "PKColumns": "DISTRICT,STUDENT_ID,DISABILITY,SEQUENCE_NUM",
-    "TableColumns": "DISTRICT,STUDENT_ID,DISABILITY,SEQUENCE_NUM,DISABILITY_ORDER,START_DATE,END_DATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_DISTRICT",
-    "PKColumns": "DISTRICT",
-    "TableColumns": "DISTRICT,NAME,VALIDATION_ONLY,SCHOOL_YEAR,SUMMER_SCHOOL_YEAR,ADDRESS_FORMAT,STREET1,STREET2,CITY,STATE,ZIP,PHONE,SUPERINTENDENT,EMAIL,ALPHANUMERIC_IDS,STUDENT_ID_LENGTH,ZERO_FILL_IDS,AUTO_ASSIGN,OVERIDE_AUTO_ASSGN,STARTING_ID,HIGHEST_ID_USED,SHOW_SSN,TRANSPORT_STUDENT,ST_ID_REQUIRED,ST_ID_LABEL,ST_ID_LENGTH,ST_ID_ENFORCE_LEN,CHANGE_ID_IN_PRIOR,ID_ON_STATE_REPORT,ST_AUTO_ASSIGN,ST_ID_PREFIX,ST_STARTING_ID,ST_MAX_ID_ALLOWED,ST_HIGHEST_ID_USED,ST_ID_INCLUDE,ST_AUTO_ASSIGN_OV,FMS_DEPARTMENT,FMS_HOME_ORGN,FMS_PROGRAM,AGGREGATE,LIST_MAX,ETHNICITY_REQUIRED,USE_ETHNIC_PERCENT,USE_DIS_DATES,USE_ALERT_DATES,STATE_CODE_EQUIV,AUDIT_UPDATES,AUDIT_DELETE_ONLY,AUDIT_CLEAR_INT,LANGUAGE_REQUIRED,SPECIAL_ED_TABLE,SPECIAL_ED_SCR_NUM,SPECIAL_ED_COLUMN,IEPPLUS_INTEGRATION,PARAM_KEY,CRN_FROM_TAC,SHOW_RES_BLDG,ALT_ATTENDANCE_AGE,ALT_ATT_GRADES,CUTOFF_DATE,EW_MEMBERSHIP,ROLL_ENTRY_RULE,ROLL_WD_RULE,USE_RANK_CLASS_SIZE_EXCLUDE,INCLUDE_IEP,INCLUDE_GIFTED,INCLUDE_504,MIN_AGE_CITATION,LOCKOUT_USERS,DISABLE_SCHEDULED_TASKS,FIRSTWAVE_ID,SHOW_USERVOICE,EMAIL_DELIMITER,ALLOW_USERS_TO_SET_THEMES,AUTO_GENERATE_FAMILY_NUMBER,LOG_HAC_LOGINS,LOG_TAC_LOGINS,LOG_TAC_PUBLISH_EVENTS,MULTIPLE_CLASSIFICATIONS,CURRENT_KEY,PREVIOUS_KEY,COMPROMISED,CHANGE_DATE_TIME,CHANGE_UID,HIDE_GENDER_IDENTITY,HOME_PHONE_TYPE,MOBILE_PHONE_TYPE,GAINSIGHTS_ENABLED,ALLOW_MULTIPLE_STUDENT_EMAIL,ALLOW_MULTIPLE_CONTACT_EMAIL,ADDITIONAL_GENDERS",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_DISTRICT_ATTACHMENT",
-    "PKColumns": "DISTRICT",
-    "TableColumns": "DISTRICT,ALLOW_ATTACHMENTS,MAX_FILES,MAX_KB_SIZE,ATTACHMENT_FILE_TYPES,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_DISTRICT_SMTP",
-    "PKColumns": "DISTRICT",
-    "TableColumns": "DISTRICT,USE_LOCALHOST,SERVER_ADDRESS,SERVER_PORT,USE_SSL,LOGIN_ID,LOGIN_DOMAIN,PASSWORD,USE_GENERIC_FROM,GENERIC_FROM_ADDRESS,GENERIC_FROM_NAME,GENERIC_REPLY_ALLOWED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_DURATION",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,CODE,DESCRIPTION,SUMMER_SCHOOL,NUMBER_WEEKS,NUMBER_IN_YEAR,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_EMERGENCY",
-    "PKColumns": "DISTRICT,STUDENT_ID",
-    "TableColumns": "DISTRICT,STUDENT_ID,DOCTOR_NAME,DOCTOR_PHONE,DOCTOR_EXTENSION,HOSPITAL_CODE,INSURANCE_COMPANY,INSURANCE_ID,INSURANCE_GROUP,INSURANCE_GRP_NAME,INSURANCE_SUBSCR,CHANGE_DATE_TIME,CHANGE_UID,DENTIST,DENTIST_PHONE,DENTIST_EXT",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_ENTRY_WITH",
-    "PKColumns": "DISTRICT,STUDENT_ID,ENTRY_WD_TYPE,SCHOOL_YEAR,ENTRY_DATE",
-    "TableColumns": "DISTRICT,STUDENT_ID,ENTRY_WD_TYPE,SCHOOL_YEAR,ENTRY_DATE,ENTRY_CODE,BUILDING,GRADE,TRACK,CALENDAR,WITHDRAWAL_DATE,WITHDRAWAL_CODE,COMMENTS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_ETHNICITY",
-    "PKColumns": "DISTRICT,STUDENT_ID,ETHNIC_CODE",
-    "TableColumns": "DISTRICT,STUDENT_ID,ETHNIC_CODE,ETHNICITY_ORDER,PERCENTAGE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -17945,20 +20713,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REG_EXCLUDE_RANK",
-    "PKColumns": "DISTRICT,STUDENT_ID,RANK_TYPE",
-    "TableColumns": "DISTRICT,STUDENT_ID,RANK_TYPE,INCLUDE_CLASS_SIZE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_GEO_CFG",
-    "PKColumns": "DISTRICT",
-    "TableColumns": "DISTRICT,USE_GEO_CODE,USE_ZONES,SHARE_PLANS,ADDRESS_REQUIRED,ALLOW_OVERLAP,USE_PREFIX_SUFFIX,NEXT_ASSIGN_YEAR,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REG_GEO_CFG_DATES",
     "PKColumns": "DISTRICT",
     "TableColumns": "DISTRICT,USE_DATE_RANGE,REQUIRE_OVR_REASON,DISPLAY_DATE_MESSAGE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -18001,13 +20755,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REG_GRADE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,NEXT_GRADE,YEARS_TILL_GRAD,STATE_CODE_EQUIV,FEDERAL_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,PESC_CODE,GRADE_ORDER,GRAD_PLAN_LABEL,CHANGE_DATE_TIME,CHANGE_UID,CEDS_CODE",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REG_GROUP_HDR",
     "PKColumns": "DISTRICT,GROUP_CODE",
     "TableColumns": "DISTRICT,GROUP_CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
@@ -18025,13 +20772,6 @@ $dbDefinitions = @'
     "name": "REG_HISPANIC",
     "PKColumns": "DISTRICT,STUDENT_ID,HISPANIC_CODE",
     "TableColumns": "DISTRICT,STUDENT_ID,HISPANIC_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_HISTORY_CFG",
-    "PKColumns": "DISTRICT",
-    "TableColumns": "DISTRICT,USE_ADDRESS_HISTORY,HIST_CONTACT_TYPE,HIST_RELATIONSHIP,HIST_LIVING_WITH,HIST_TRANSPORT_TO,HIST_TRANSPORT_FROM,HIST_DEVELOPMENT,HIST_APARTMENT,HIST_COMPLEX,HIST_STREET_NUMBER,HIST_STREET_PREFIX,HIST_STREET_NAME,HIST_STREET_SUFFIX,HIST_STREET_TYPE,HIST_CITY,HIST_STATE,HIST_ZIP,HIST_DELIVERY_POINT,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -18099,44 +20839,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REG_KEY_CONTACT_ID",
-    "PKColumns": "DISTRICT,CONTACT_ID",
-    "TableColumns": "DISTRICT,CONTACT_ID,WRAPPED,MAX_VALUE,EXTERNAL_VALUE,LAST_CMD,CMD_VALUE,CMD_DATE_TIME,CMD_UID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_LEGAL_INFO",
-    "PKColumns": "DISTRICT,STUDENT_ID",
-    "TableColumns": "DISTRICT,STUDENT_ID,LEGAL_FIRST_NAME,LEGAL_MIDDLE_NAME,LEGAL_LAST_NAME,LEGAL_GENERATION,LEGAL_GENDER,CHANGE_REASON,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_LOCKER",
-    "PKColumns": "DISTRICT,BUILDING,LOCKER_ID",
-    "TableColumns": "DISTRICT,BUILDING,LOCKER_ID,LOCKER_DESC,SERIAL_NUM,LOCATION,IS_LOCKED,MAX_ASSIGNED,HOMEROOM,GRADE,GENDER,HOUSE_TEAM,IN_SERVICE,CURRENT_COMBO,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_LOCKER_COMBO",
-    "PKColumns": "DISTRICT,BUILDING,LOCKER_ID,COMBO_SEQUENCE",
-    "TableColumns": "DISTRICT,BUILDING,LOCKER_ID,COMBO_SEQUENCE,COMBINATION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REG_MAP_STU_GEOCODE",
     "PKColumns": "DISTRICT,STUDENT_ID",
     "TableColumns": "DISTRICT,STUDENT_ID,LATITUDE,LONGITUDE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_MED_ALERTS",
-    "PKColumns": "DISTRICT,STUDENT_ID,MED_ALERT_CODE,SEQUENCE_NUM",
-    "TableColumns": "DISTRICT,STUDENT_ID,MED_ALERT_CODE,SEQUENCE_NUM,MED_ALERT_COMMENT,START_DATE,END_DATE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -18148,72 +20853,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REG_MP_DATES",
-    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,TRACK,MARKING_PERIOD",
-    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,TRACK,MARKING_PERIOD,START_DATE,END_DATE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_MP_WEEKS",
-    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,MARKING_PERIOD",
-    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,MARKING_PERIOD,MP_ORDER,DURATION_TYPE,DESCRIPTION,START_WEEK_NUMBER,END_WEEK_NUMBER,SCHD_INTERVAL,TERM,RC_RUN,STATE_CODE_EQUIV,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_NEXT_YEAR",
-    "PKColumns": "DISTRICT,STUDENT_ID",
-    "TableColumns": "DISTRICT,STUDENT_ID,BUILDING,HOME_BUILDING,BUILDING_OVERRIDE,BUILDING_REASON,GRADE,COUNSELOR,HOMEROOM_PRIMARY,HOMEROOM_SECONDARY,HOUSE_TEAM,TRACK,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_NOTES",
-    "PKColumns": "DISTRICT,STUDENT_ID,NOTE_TYPE,ENTRY_DATE_TIME",
-    "TableColumns": "DISTRICT,STUDENT_ID,NOTE_TYPE,ENTRY_DATE_TIME,ENTRY_UID,NOTE_TEXT,SENSITIVE,PRIVATE_FLAG,PUBLISH_TO_WEB,APPOINTMENT_ID,CHANGE_DATE_TIME,CHANGE_UID,STUDENT_ALERT_TYPE",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_PERSONAL",
-    "PKColumns": "DISTRICT,STUDENT_ID",
-    "TableColumns": "DISTRICT,STUDENT_ID,SSN,BIRTH_CITY,BIRTH_STATE,BIRTH_COUNTRY,MEAL_STATUS,CLASSIFICATION,LOCKER_NUMBER,LOCKER_COMBINATION,COMMENTS,ETHNIC_CODE,HISPANIC,FED_RACE_ETHNIC,RESIDENCY_CODE,STATE_REPORT_ID,PREVIOUS_ID,PREVIOUS_ID_ASOF,SHOW_ALERTS,MIGRANT,AT_RISK,ESL,HAS_IEP,IEP_STATUS,SECTION_504_PLAN,HOMELESS_STATUS,MIGRANT_ID,CITIZEN_STATUS,MOTHER_MAIDEN_NAME,FEE_STATUS,FEE_STATUS_OVR,FEE_BALANCE,FERPA_NAME,FERPA_ADDRESS,FERPA_PHONE,FERPA_PHOTO,TRANSFER_BLDG_FROM,ACADEMIC_DIS,HAS_SSP,IEP_INTEGRATION,FOSTER_CARE,ORIGIN_COUNTRY,ELL_YEARS,IMMIGRANT,AT_RISK_CALC_OVR,AT_RISK_LAST_CALC,PRIVATE_MILITARY,PRIVATE_COLLEGE,PRIVATE_COMPANY,PRIVATE_ORGANIZATIONS,PRIVATE_INDIVIDUAL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_PHONE_HIST",
-    "PKColumns": "DISTRICT,CONTACT_ID,PHONE_TYPE,STUDENT_ID,ADDRESS_TYPE,CHANGE_DATE_TIME",
-    "TableColumns": "DISTRICT,CONTACT_ID,PHONE_TYPE,STUDENT_ID,ADDRESS_TYPE,PHONE_LISTING,PHONE,PHONE_EXTENSION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_PHONE_HISTORY_CFG",
-    "PKColumns": "DISTRICT",
-    "TableColumns": "DISTRICT,USE_PHONE_HISTORY,HIST_STU_NUMBER,HIST_STU_EXT,HIST_STU_LISTING,HIST_CONTACT_NUM,HIST_CONTACT_EXT,HIST_CONTACT_LISTING,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REG_PROG_SETUP_BLD",
     "PKColumns": "DISTRICT,PROGRAM_ID,BUILDING",
     "TableColumns": "DISTRICT,PROGRAM_ID,BUILDING,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_PROGRAM_COLUMN",
-    "PKColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER",
-    "TableColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER,FIELD_ORDER,FIELD_LEVEL,TABLE_NAME,SCREEN_NUMBER,COLUMN_NAME,LINK_DATES_TO,LINK_TYPE,LABEL,SCREEN_TYPE,DATA_TYPE,DATA_SIZE,ADD_DEFAULT,VALIDATION_LIST,VALIDATION_TABLE,CODE_COLUMN,DESCRIPTION_COLUMN,STATE_CODE_EQUIV,USE_REASONS,USE_OVERRIDE,YREND_INACTIVES,INACTIVE_SRC_RESET,INACTIVE_WD_CODE,YREND_ACTIVES,ACTIVE_SRC_RESET,ACTIVE_WD_CODE,YREND_ENTRY_DATE,YREND_ACTPRES,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,YREND_LOCKED,CHANGE_DATE_TIME,CHANGE_UID,ROW_IDENTITY",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_PROGRAM_SETUP",
-    "PKColumns": "DISTRICT,PROGRAM_ID",
-    "TableColumns": "DISTRICT,PROGRAM_ID,DESCRIPTION,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,START_DATE,END_DATE,INSTRUCT_HOURS,INSTRUCT_HOUR_UNIT,RESERVED,RULES_LOCKED,CHANGE_DATE_TIME,CHANGE_UID,ROW_IDENTITY",
     "TableHasChangeDT": "y"
   },
   {
@@ -18225,55 +20867,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REG_PROGRAMS",
-    "PKColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER,STUDENT_ID,START_DATE,SUMMER_SCHOOL",
-    "TableColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER,STUDENT_ID,START_DATE,SUMMER_SCHOOL,ENTRY_REASON,PROGRAM_VALUE,END_DATE,WITHDRAWAL_REASON,PROGRAM_OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID,ROW_IDENTITY",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_PRT_FLG_DFLT",
-    "PKColumns": "DISTRICT,CONTACT_TYPE",
-    "TableColumns": "DISTRICT,CONTACT_TYPE,MAIL_ATT,MAIL_DISC,MAIL_FEES,MAIL_IPR,MAIL_MED,MAIL_RC,MAIL_REG,MAIL_SCHD,MAIL_SSP,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_ROOM",
-    "PKColumns": "DISTRICT,BUILDING,ROOM_ID",
-    "TableColumns": "DISTRICT,BUILDING,ROOM_ID,DESCRIPTION,ROOM_TYPE,MAX_STUDENTS,ROOM_AVAILABLE,HANDICAPPED_ACCESS,COMPUTERS_COUNT,PHONE,PHONE_EXTENSION,COMMENTS,GROUP_CODE,REGULAR_YEAR,SUMMER_SCHOOL,STATE_CODE_EQUIV,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_ROOM_AIN",
-    "PKColumns": "DISTRICT,BUILDING,ROOM_ID",
-    "TableColumns": "DISTRICT,BUILDING,ROOM_ID,IS_HRM_SCHD_PRIMARY_HOMEROOM,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_STAFF",
-    "PKColumns": "DISTRICT,STAFF_ID",
-    "TableColumns": "DISTRICT,STAFF_ID,FIRST_NAME,MIDDLE_NAME,LAST_NAME,MAIDEN_NAME,TITLE_CODE,EMAIL,SSN,FMS_DEPARTMENT,FMS_EMPL_NUMBER,FMS_LOCATION,TEACHER_LOAD,LOGIN_ID,SUB_LOGIN_ID,SUB_EXPIRATION,GENDER,PRIM_ETHNIC_CODE,HISPANIC,FED_RACE_ETHNIC,BIRTHDATE,STAFF_STATE_ID,ESP_LOGIN_ID,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID,GENDER_IDENTITY,CLASSLINK_ID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_STAFF_ADDRESS",
-    "PKColumns": "DISTRICT,STAFF_ID",
-    "TableColumns": "DISTRICT,STAFF_ID,APARTMENT,COMPLEX,STREET_NUMBER,STREET_PREFIX,STREET_NAME,STREET_SUFFIX,STREET_TYPE,CITY,STATE,ZIP,DELIVERY_POINT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_STAFF_BLDGS",
-    "PKColumns": "DISTRICT,BUILDING,STAFF_ID",
-    "TableColumns": "DISTRICT,BUILDING,STAFF_ID,STAFF_NAME,INITIALS,IS_COUNSELOR,IS_TEACHER,IS_ADVISOR,HOMEROOM_PRIMARY,HOMEROOM_SECONDARY,ROOM,HOUSE_TEAM,DEPARTMENT,PHONE,PHONE_EXTENSION,ACTIVE,IS_PRIMARY_BLDG,GROUP_CODE,MAXIMUM_CONTIGUOUS,MAXIMUM_PER_DAY,ALLOW_OVERRIDE,REGULAR_YEAR,SUMMER_SCHOOL,TAKE_LUNCH_COUNTS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REG_STAFF_BLDGS_ELEM_AIN",
     "PKColumns": "DISTRICT,BUILDING,STAFF_ID",
     "TableColumns": "DISTRICT,BUILDING,STAFF_ID,ELEM_NEXT_HOMEROOM_PRIMARY,CHANGE_DATE_TIME,CHANGE_UID",
@@ -18281,37 +20874,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REG_STAFF_BLDGS_HRM_AIN",
-    "PKColumns": "DISTRICT,BUILDING,STAFF_ID",
-    "TableColumns": "DISTRICT,BUILDING,STAFF_ID,NEXT_YEAR_PRIMARY_HRM,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_STAFF_ETHNIC",
-    "PKColumns": "DISTRICT,STAFF_ID,ETHNIC_CODE",
-    "TableColumns": "DISTRICT,STAFF_ID,ETHNIC_CODE,ETHNICITY_ORDER,PERCENTAGE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REG_STAFF_HISPANIC",
     "PKColumns": "DISTRICT,STAFF_ID,HISPANIC_CODE",
     "TableColumns": "DISTRICT,STAFF_ID,HISPANIC_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_STAFF_PHOTO_CFG",
-    "PKColumns": "DISTRICT",
-    "TableColumns": "DISTRICT,PHOTO_PATH,PHOTO_DIRECTORY,PHOTO_NAME,PHOTO_EXTENSION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_STAFF_QUALIFY",
-    "PKColumns": "DISTRICT,STAFF_ID,QUALIFICATION",
-    "TableColumns": "DISTRICT,STAFF_ID,QUALIFICATION,EXPIRATION_DATE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -18330,72 +20895,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REG_STATE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STU_WITHDRAW_RULE,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REG_STU_AT_RISK",
     "PKColumns": "DISTRICT,STUDENT_ID,FACTOR_CODE",
     "TableColumns": "DISTRICT,STUDENT_ID,FACTOR_CODE,FACTOR_STATUS,STATUS_OVR,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_STU_AT_RISK_CALC",
-    "PKColumns": "DISTRICT,STUDENT_ID",
-    "TableColumns": "DISTRICT,STUDENT_ID,LTDB_CALC_DATE,ATT_CALC_DATE,REG_CALC_DATE,MR_CALC_DATE,DISC_CALC_DATE,IPR_CALC_DATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_STU_CONT_HIST",
-    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,CONTACT_TYPE,LIVING_WITH,TRANSPORT_TO,TRANSPORT_FROM,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,CONTACT_TYPE,RELATION_CODE,LIVING_WITH,TRANSPORT_TO,TRANSPORT_FROM,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_STU_CONTACT",
-    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,CONTACT_TYPE",
-    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,CONTACT_TYPE,CONTACT_PRIORITY,RELATION_CODE,LIVING_WITH,WEB_ACCESS,COMMENTS,TRANSPORT_TO,TRANSPORT_FROM,MAIL_ATT,MAIL_DISC,MAIL_FEES,MAIL_IPR,MAIL_MED,MAIL_RC,MAIL_REG,MAIL_SCHD,MAIL_SSP,LEGAL_GUARD,CUST_GUARD,UPD_STU_EO_INFO,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_STU_CONTACT_ALERT",
-    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,ALERT_TYPE",
-    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,ALERT_TYPE,SIGNUP_DATE,LAST_ALERT_DATE,NEXT_ALERT_DATE,SCHEDULE_TYPE,SCHD_INTERVAL,SCHD_DOW,NOTIFICATION_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_STU_CONTACT_ALERT_ATT",
-    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,ATTENDANCE_CODE",
-    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,ATTENDANCE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_STU_CONTACT_ALERT_AVG",
-    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID",
-    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,MIN_AVG,MAX_AVG,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_STU_CONTACT_ALERT_DISC",
-    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,CODE",
-    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_STU_CONTACT_ALERT_GB",
-    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID",
-    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,MIN_AVG,MAX_AVG,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -18407,41 +20909,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REG_TRACK",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,CODE,DESCRIPTION,START_DATE,END_DATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_TRAVEL",
-    "PKColumns": "DISTRICT,STUDENT_ID,TRAVEL_DIRECTION,TRAVEL_TRIP,TRAVEL_SEGMENT",
-    "TableColumns": "DISTRICT,STUDENT_ID,TRAVEL_DIRECTION,TRAVEL_TRIP,START_DATE,END_DATE,TRAVEL_SEGMENT,SUNDAY,MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,TRAVEL_TYPE,TRANSPORT_DISTANCE,BUS_NUMBER,BUS_ROUTE,STOP_NUMBER,STOP_TIME,STOP_DESCRIPTION,SHUTTLE_STOP,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_USER",
-    "PKColumns": "DISTRICT,STUDENT_ID,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE",
-    "TableColumns": "DISTRICT,STUDENT_ID,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE,FIELD_VALUE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_USER_BUILDING",
-    "PKColumns": "DISTRICT,BUILDING,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE",
-    "TableColumns": "DISTRICT,BUILDING,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_USER_DISTRICT",
-    "PKColumns": "DISTRICT,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE",
-    "TableColumns": "DISTRICT,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REG_USER_PLAN_AREA",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,PLAN_AREA_NUMBER,SCREEN_NUMBER,FIELD_NUMBER",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,PLAN_AREA_NUMBER,SCREEN_NUMBER,FIELD_NUMBER,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -18449,30 +20916,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REG_USER_STAFF",
-    "PKColumns": "DISTRICT,STAFF_ID,SCREEN_NUMBER,LIST_SEQUENCE,FIELD_NUMBER",
-    "TableColumns": "DISTRICT,STAFF_ID,SCREEN_NUMBER,LIST_SEQUENCE,FIELD_NUMBER,FIELD_VALUE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REG_USER_STAFF_BLD",
     "PKColumns": "DISTRICT,BUILDING,STAFF_ID,SCREEN_NUMBER,LIST_SEQUENCE,FIELD_NUMBER",
     "TableColumns": "DISTRICT,BUILDING,STAFF_ID,SCREEN_NUMBER,LIST_SEQUENCE,FIELD_NUMBER,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_YREND_CRITERIA",
-    "PKColumns": "DISTRICT,RUN_PROCESS,CRITERION",
-    "TableColumns": "DISTRICT,RUN_PROCESS,CRITERION,SEQUENCE,DESCRIPTION,STUDENT_STATUS,ROLLOVER_ENTRY,ROLLOVER_WITH,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_YREND_RUN",
-    "PKColumns": "DISTRICT,RUN_KEY",
-    "TableColumns": "DISTRICT,RUN_KEY,SCHOOL_YEAR,SUMMER_SCHOOL,RUN_STATUS,CALENDAR_SELECT,CRITERIA_SELECT,PURGE_APPT_DATE,PURGE_TAC_MSG_DATE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -18487,34 +20933,6 @@ $dbDefinitions = @'
     "name": "REG_YREND_RUN_CRIT",
     "PKColumns": "DISTRICT,RUN_KEY,CRITERION",
     "TableColumns": "DISTRICT,RUN_KEY,CRITERION,SCHOOL_YEAR,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_YREND_SELECT",
-    "PKColumns": "DISTRICT,RUN_PROCESS,CRITERION,LINE_NUMBER",
-    "TableColumns": "DISTRICT,RUN_PROCESS,CRITERION,LINE_NUMBER,AND_OR_FLAG,TABLE_NAME,COLUMN_NAME,OPERATOR,SEARCH_VALUE1,SEARCH_VALUE2,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_YREND_STUDENTS",
-    "PKColumns": "DISTRICT,STUDENT_ID,RUN_PROCESS",
-    "TableColumns": "DISTRICT,STUDENT_ID,RUN_PROCESS,SCHOOL_YEAR,REG_ROLLOVER,REG_CRITERION,WAS_PREREG,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REG_YREND_UPDATE",
-    "PKColumns": "DISTRICT,RUN_PROCESS,CRITERION,LINE_NUMBER",
-    "TableColumns": "DISTRICT,RUN_PROCESS,CRITERION,LINE_NUMBER,TABLE_NAME,COLUMN_NAME,NEW_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGPROG_YREND_RUN",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,RUN_KEY",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,RUN_KEY,RUN_DATE,RUN_STATUS,RESTORE_KEY,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -18540,189 +20958,7 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REGTB_ALT_PORTFOLIO",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_APPT_TYPE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,LINK_PATH,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_ACT641",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_ANTICSVCE",
-    "PKColumns": "DISTRICT,code",
-    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_BARRIER",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_BIRTHVER",
-    "PKColumns": "DISTRICT,code",
-    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_CNTYRESID",
-    "PKColumns": "DISTRICT,code",
-    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_COOPS",
-    "PKColumns": "DISTRICT,code",
-    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_CORECONT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_DEVICE_ACC",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_ELDPROG",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_ELL_MONI",
-    "PKColumns": "DISTRICT,code",
-    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_FACTYPE",
-    "PKColumns": "DISTRICT,code",
-    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REGTB_AR_HOMELESS",
-    "PKColumns": "DISTRICT,code",
-    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_IMMSTATUS",
-    "PKColumns": "district,code",
-    "TableColumns": "district,code,description,ACTIVE,change_date_time,change_uid",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_INS_CARRI",
-    "PKColumns": "DISTRICT,code",
-    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_LEARNDVC",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_MILITARYDEPEND",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_NETPRFRM",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_NETTYPE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_PRESCHOOL",
-    "PKColumns": "DISTRICT,code",
-    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_RAEL",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_SCH_LEA",
-    "PKColumns": "DISTRICT,code",
-    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_SEND_LEA",
-    "PKColumns": "DISTRICT,code",
-    "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_SHAREDDVC",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_STU_INSTRUCT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_AR_SUP_SVC",
     "PKColumns": "DISTRICT,code",
     "TableColumns": "DISTRICT,code,description,ACTIVE,change_date_time,change_uid",
     "TableHasChangeDT": "y"
@@ -18743,20 +20979,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REGTB_BLDG_REASON",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_BLDG_TYPES",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REGTB_CC_BLDG_TYPE",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,SCHOOL_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -18771,20 +20993,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REGTB_CITIZENSHIP",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_CLASSIFY",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,SCHEDULING_WEIGHT,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REGTB_COMPLEX",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,TYPE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -18795,55 +21003,6 @@ $dbDefinitions = @'
     "name": "REGTB_COMPLEX_TYPE",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_COUNTRY",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_COUNTY",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_CURR_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_DAY_TYPE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_DEPARTMENT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,DEPT_ORDER,STATE_CODE_EQUIV,PERF_PLUS_CODE,ACTIVE,SIF_CODE,SIF2_CODE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_DIPLOMAS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,TRANSCRIPT_DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_DISABILITY",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,SENSITIVE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -18869,79 +21028,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REGTB_ENTRY",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_ETHNICITY",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,FEDERAL_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID,PREVIOUSLY_REPORTED_AS",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_GENDER",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,FEDERAL_CODE_EQUIV,SIF_CODE,SIF2_CODE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_GENDER_IDENTITY",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV_01,STATE_CODE_EQUIV_02,STATE_CODE_EQUIV_03,STATE_CODE_EQUIV_04,STATE_CODE_EQUIV_05,STATE_CODE_EQUIV_06,STATE_CODE_EQUIV_07,STATE_CODE_EQUIV_08,STATE_CODE_EQUIV_09,STATE_CODE_EQUIV_10,FED_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_GENERATION",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_GRAD_PLANS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,EXPECTED,ACTUAL,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_GRADE_CEDS_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_GRADE_PESC_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_GROUP_USED_FOR",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REGTB_HISPANIC",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID,PREVIOUSLY_REPORTED_AS",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_HOLD_RC_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -18953,58 +21042,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REGTB_HOMELESS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,SIF2_CODE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_HOSPITAL",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_HOUSE_TEAM",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_IEP_STATUS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_IMMUN_STATUS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REGTB_IMMUNS",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_LANGUAGE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,ALTERNATE_LANGUAGE,HAC_LANGUAGE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID,USE_IN_HOME,USE_IN_NATIVE",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "regtb_language_SD091114",
-    "PKColumns": "",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,ALTERNATE_LANGUAGE,HAC_LANGUAGE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -19016,58 +21056,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REGTB_MEAL_STATUS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REGTB_MED_PROC",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_MEDIC_ALERT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,SENSITIVE,ACTIVE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_NAME_CHGRSN ",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_NOTE_TYPE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,SENSITIVE,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID,STATE_CODE_EQUIV",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_PESC_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_PHONE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,STATE_CODE_EQUIV,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_PROC_STATUS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -19079,65 +21070,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REGTB_PROG_WITH",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_QUALIFY",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_RELATION",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,PESC_CODE,CHANGE_DATE_TIME,CHANGE_UID,IMS_EQUIV",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_RELATION_PESC_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_REQ_GROUP",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,IMAGE_FILE_NAME,GRAD_OR_SUPP,STATE_CODE_EQUIV,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_RESIDENCY",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_ROOM_TYPE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REGTB_SCHOOL",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_SCHOOL_YEAR",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,DISPLAY_YEAR,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -19156,37 +21091,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REGTB_ST_PREFIX",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_ST_SUFFIX",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_ST_TYPE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "REGTB_STATE_BLDG",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID,LOCAL_BUILDING",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_TITLE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -19198,37 +21105,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "REGTB_TRAVEL",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,SIF_CODE,SIF2_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "REGTB_WITHDRAWAL",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,SIF_CODE,SIF2_CODE,DROPOUT_CODE,STUDENT_EXIT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SCHD_ALLOCATION",
     "PKColumns": "DISTRICT,BUILDING,GROUP_TYPE,GROUP_CODE,PERIOD,MARKING_PERIOD,CYCLE",
     "TableColumns": "DISTRICT,BUILDING,GROUP_TYPE,GROUP_CODE,PERIOD,MARKING_PERIOD,CYCLE,ALLOCATIONS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_CFG",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,MAXIMUM_TIMESLOTS,DEF_ADD_DATE_CODE,DEFAULT_ADD_DATE,CURRENT_INTERVAL,DATE_CHECK,IN_PROGRESS,DISPLAY_MSE_BLDG,OUTPUT_FILE_PATH,MAX_SCAN_GUID,TRAIL_MARKS,MULTIPLE_BELL_SCHD,DEFAULT_DURATION,DEFAULT_MAX_SEATS,DEFAULT_MARKS_ARE,TEA_SCHD_STU_SUMM,SUB_SCHD_STU_SUMM,TEA_SCHD_STU_REC,SUB_SCHD_STU_REC,TAC_LIMIT_REC_NUM,TAC_LIMIT_REC_DEPT,PREREQ_CRS_BLDG,PREREQ_CHK_REQ,PREREQ_CHK_SCHD,PREREQ_CRS_TOOK,DEFAULT_NOMARKS_FIRST_DAYS,DEFAULT_UNGRADED_LAST_DAYS,DEFAULT_FIRST_NEXT,DEFAULT_LAST_PREVIOUS,LAST_ISSUED_BY,USE_UNGRADED,USE_FOCUS,MAX_FOCUS_PERCENT,REQ_CRS_STAFF_DATE_ENTRY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_CFG_DISC_OFF",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,OFFENSE_CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,OFFENSE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -19247,76 +21126,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SCHD_CFG_HOUSETEAM",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,HOUSE_TEAM",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,HOUSE_TEAM,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_CFG_HRM_AIN",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,SCHD_BY_PRIMARY_HRM,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_CFG_INTERVAL",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SCHD_INTERVAL",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,SCHD_INTERVAL,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_CNFLCT_MATRIX",
-    "PKColumns": "DISTRICT,BUILDING,MATRIX_TYPE,SCHD_INTERVAL,COURSE1,COURSE2",
-    "TableColumns": "DISTRICT,BUILDING,MATRIX_TYPE,SCHD_INTERVAL,COURSE1,COURSE2,NUMBER_CONFLICTS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_COURSE",
-    "PKColumns": "DISTRICT,BUILDING,COURSE",
-    "TableColumns": "DISTRICT,BUILDING,COURSE,BUILDING_TYPE,DIST_LEVEL,DESCRIPTION,LONG_DESCRIPTION,DEPARTMENT,HOUSE_TEAM,STUDY_HALL,REGULAR_SCHOOL,SUMMER_SCHOOL,VOTEC,ACTIVE_STATUS,SIMPLE_TALLY,CONFLICT_MATRIX,GENDER_RESTRICTION,ALTERNATE_COURSE,CREDIT,FEE,PRIORITY,SEMESTER_WEIGHT,BLOCK_TYPE,SCAN_COURSE,TAKE_ATTENDANCE,RECEIVE_MARK,COURSE_LEVEL,SUBJ_AREA_CREDIT,REC_NEXT_COURSE,REQUEST_FROM_HAC,SAME_TEACHER,INCLD_PASSING_TIME,COURSE_CREDIT_BASIS,NCES_CODE,INCLD_CURRICULUM_CONNECTOR,MIN_GRADE,MAX_GRADE,CLASSIFY_STUS_MAX,CLASSIFY_NUM_OR_PER,SIF_CREDIT_TYPE,SIF_INSTRUCTIONAL_LEVEL,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_COURSE_BLOCK",
-    "PKColumns": "DISTRICT,BUILDING,BLOCK_COURSE,BLOCKETTE_COURSE",
-    "TableColumns": "DISTRICT,BUILDING,BLOCK_COURSE,BLOCKETTE_COURSE,SAME_SECTION,MANDATORY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_COURSE_GPA",
-    "PKColumns": "DISTRICT,BUILDING,COURSE,GPA_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,COURSE,GPA_TYPE,GPA_LEVEL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_COURSE_GRADE",
-    "PKColumns": "DISTRICT,BUILDING,COURSE,RESTRICT_GRADE",
-    "TableColumns": "DISTRICT,BUILDING,COURSE,RESTRICT_GRADE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_COURSE_HONORS",
-    "PKColumns": "DISTRICT,BUILDING,COURSE,HONOR_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,COURSE,HONOR_TYPE,HONOR_LEVEL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_COURSE_QUALIFY",
-    "PKColumns": "DISTRICT,BUILDING,COURSE,QUALIFICATION",
-    "TableColumns": "DISTRICT,BUILDING,COURSE,QUALIFICATION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SCHD_COURSE_SEQ",
     "PKColumns": "DISTRICT,BUILDING,COURSE_OR_GROUP_A,SEQUENCE_A,COURSE_OR_GROUP_B,SEQUENCE_B",
     "TableColumns": "DISTRICT,BUILDING,SEQUENCE_NUM,COURSE_OR_GROUP_A,SEQUENCE_A,SEQUENCE_TYPE,COURSE_OR_GROUP_B,SEQUENCE_B,IS_VALID,ERROR_MESSAGE,PREREQ_MIN_MARK,PREREQ_MARK_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -19324,72 +21133,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SCHD_COURSE_SUBJ",
-    "PKColumns": "DISTRICT,BUILDING,COURSE,SUBJECT_AREA",
-    "TableColumns": "DISTRICT,BUILDING,COURSE,SUBJECT_AREA,SUBJ_ORDER,SUB_AREA,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_COURSE_SUBJ_TAG",
-    "PKColumns": "DISTRICT,BUILDING,COURSE,SUBJECT_AREA,TAG",
-    "TableColumns": "DISTRICT,BUILDING,COURSE,SUBJECT_AREA,TAG,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_COURSE_USER",
-    "PKColumns": "DISTRICT,BUILDING,COURSE,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE",
-    "TableColumns": "DISTRICT,BUILDING,COURSE,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_CRS_BLDG_TYPE",
-    "PKColumns": "DISTRICT,BUILDING,COURSE,BLDG_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,COURSE,BLDG_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_CRS_GROUP_DET",
-    "PKColumns": "DISTRICT,BUILDING,COURSE_GROUP,COURSE_BUILDING,COURSE",
-    "TableColumns": "DISTRICT,BUILDING,COURSE_GROUP,COURSE_BUILDING,COURSE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_CRS_GROUP_HDR",
-    "PKColumns": "DISTRICT,BUILDING,COURSE_GROUP",
-    "TableColumns": "DISTRICT,BUILDING,COURSE_GROUP,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_CRS_MARK_TYPE",
-    "PKColumns": "DISTRICT,BUILDING,COURSE,MARK_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,COURSE,MARK_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SCHD_CRS_MSB_COMBO",
     "PKColumns": "DISTRICT,BUILDING,COMBINATION_NUMBER,COMBINATION_COURSE",
     "TableColumns": "DISTRICT,BUILDING,COMBINATION_NUMBER,COMBINATION_COURSE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_CRS_MSB_DET",
-    "PKColumns": "DISTRICT,BUILDING,COURSE,COURSE_SECTION",
-    "TableColumns": "DISTRICT,BUILDING,COURSE,COURSE_SECTION,MEETING_CODE,STAFF_TYPE,STAFF_RESOURCE,ROOM_TYPE,ROOM_RESOURCE,MAXIMUM_SEATS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_CRS_MSB_HDR",
-    "PKColumns": "DISTRICT,BUILDING,COURSE",
-    "TableColumns": "DISTRICT,BUILDING,COURSE,NUMBER_REQUESTS,AVERAGE_CLASS_SIZE,NUMBER_SECTIONS,SECTIONS_SAME,COURSE_LENGTH,DURATION_TYPE,SPAN,SAME_TEACHER,SAME_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -19415,37 +21161,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SCHD_DISTCRS_SECTIONS_OVERRIDE",
-    "PKColumns": "DISTRICT,BUILDING,COURSE,PAGE_SECTION",
-    "TableColumns": "DISTRICT,BUILDING,COURSE,PAGE_SECTION,BLDG_OVERRIDDEN,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_DISTRICT_CFG",
-    "PKColumns": "DISTRICT",
-    "TableColumns": "DISTRICT,USE_DIST_CRS_CAT,BLDGS_UPD_CRS_CAT,BLDGS_ADD_CRS_CAT,CLASSIFY_STUS_MAX,CLASSIFY_NUM_OR_PER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_DISTRICT_CFG_UPD",
-    "PKColumns": "DISTRICT,PAGE_SECTION",
-    "TableColumns": "DISTRICT,PAGE_SECTION,CAN_UPDATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SCHD_LUNCH_CODE",
     "PKColumns": "DISTRICT,BUILDING,LUNCH_CODE",
     "TableColumns": "DISTRICT,BUILDING,LUNCH_CODE,START_TIME,END_TIME,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,COURSE,COURSE_SECTION",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,COURSE,COURSE_SECTION,SECTION_KEY,DESCRIPTION,STUDY_HALL,MAXIMUM_SEATS,DEPARTMENT,VOTEC,FEE,GENDER_RESTRICTION,BLOCK_TYPE,TRACK,DURATION_TYPE,SUBJ_AREA_CREDIT,AVERAGE_TYPE,STATE_CRS_EQUIV,SAME_TEACHER,LOCK,COURSE_CREDIT_BASIS,NCES_CODE,CATEGORY_TYPE,CLASSIFY_STUS_MAX,CLASSIFY_NUM_OR_PER,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -19457,65 +21175,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SCHD_MS_BLDG_TYPE",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,BLDG_TYPE",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,BLDG_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_BLOCK",
-    "PKColumns": "DISTRICT,BLOCK_SECTION,COURSE",
-    "TableColumns": "DISTRICT,BLOCK_SECTION,COURSE,BLOCKETTE_SECTION,MANDATORY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_CYCLE",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,CYCLE_CODE",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,CYCLE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_GPA",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,GPA_TYPE",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,GPA_TYPE,GPA_LEVEL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_GRADE",
-    "PKColumns": "DISTRICT,SECTION_KEY,RESTRICT_GRADE",
-    "TableColumns": "DISTRICT,SECTION_KEY,RESTRICT_GRADE,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_HONORS",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,HONOR_TYPE",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,HONOR_TYPE,HONOR_LEVEL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SCHD_MS_HOUSE_TEAM",
     "PKColumns": "DISTRICT,SECTION_KEY,HOUSE_TEAM",
     "TableColumns": "DISTRICT,SECTION_KEY,HOUSE_TEAM,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_HRM_AIN",
-    "PKColumns": "DISTRICT,SECTION_KEY",
-    "TableColumns": "DISTRICT,SECTION_KEY,HRM_SCHD_PRIMARY_HOMEROOM,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_KEY",
-    "PKColumns": "DISTRICT,SECTION_KEY",
-    "TableColumns": "DISTRICT,SECTION_KEY,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -19527,51 +21189,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SCHD_MS_MARK_TYPES",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARK_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_MP",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,USED_SEATS,CLASSIFICATION_WEIGHT,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_QUALIFY",
-    "PKColumns": "DISTRICT,SECTION_KEY,QUALIFICATION",
-    "TableColumns": "DISTRICT,SECTION_KEY,QUALIFICATION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SCHD_MS_SCHEDULE",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,COURSE,COURSE_SECTION,COURSE_SESSION",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,COURSE,COURSE_SECTION,SECTION_KEY,DESCRIPTION,STUDY_HALL,TRACK,COURSE_SESSION,SESSION_DESCRIPTION,START_PERIOD,END_PERIOD,TAKE_ATTENDANCE,RECEIVE_MARK,PRIMARY_STAFF_ID,ROOM_ID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_SESSION",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,DESCRIPTION,START_PERIOD,END_PERIOD,TAKE_ATTENDANCE,RECEIVE_MARK,CREDIT,PRIMARY_STAFF_ID,ROOM_ID,COURSE_LEVEL,INCLD_PASSING_TIME,USE_FOCUS,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_STAFF",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STAFF_ID",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STAFF_ID,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_STAFF_DATE",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STAFF_ID,START_DATE,SEQUENCE",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STAFF_ID,START_DATE,SEQUENCE,END_DATE,PRIMARY_SECONDARY,COTEACHER,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -19604,34 +21224,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SCHD_MS_STUDY_SEAT",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,CYCLE_CODE",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,MARKING_PERIOD,CYCLE_CODE,USED_SEATS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_SUBJ",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,SUBJECT_AREA",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,SUBJECT_AREA,SUBJ_ORDER,SUB_AREA,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_SUBJ_TAG",
-    "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,SUBJECT_AREA,TAG",
-    "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,SUBJECT_AREA,TAG,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MS_USER",
-    "PKColumns": "DISTRICT,SECTION_KEY,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE",
-    "TableColumns": "DISTRICT,SECTION_KEY,SCREEN_NUMBER,FIELD_NUMBER,LIST_SEQUENCE,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SCHD_MSB_MEET_CYC",
     "PKColumns": "DISTRICT,MEETING_KEY,SEQUENCE_NUM,CYCLE_CODE",
     "TableColumns": "DISTRICT,MEETING_KEY,SEQUENCE_NUM,CYCLE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -19639,58 +21231,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SCHD_MSB_MEET_DET",
-    "PKColumns": "DISTRICT,MEETING_KEY,SEQUENCE_NUM",
-    "TableColumns": "DISTRICT,MEETING_KEY,SEQUENCE_NUM,JOIN_CONDITION,CYCLES_SELECTED,PERIODS_SELECTED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MSB_MEET_HDR",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,MEETING_CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,MEETING_CODE,MEETING_KEY,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_MSB_MEET_PER",
-    "PKColumns": "DISTRICT,MEETING_KEY,SEQUENCE_NUM,PERIOD",
-    "TableColumns": "DISTRICT,MEETING_KEY,SEQUENCE_NUM,PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_PARAMS",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,OVERRIDE_SEATS,OVERRIDE_HOUSETEAM,IGNORED_PRIORITIES,STUDENT_ALT,COURSE_ALT,STUDENT_COURSE_ALT,SCHD_INTERVAL,PRESERVE_SCHEDULE,BALANCE_CRITERIA,MAXIMUM_TRIES,USE_BALANCING,MAXIMUM_IMBALANCE,MAXIMUM_RESHUFFLE,MAXIMUM_RESCHEDULE,SECONDS_TIMEOUT,MATCH_PERIODS_ONLY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_PARAMS_SORT",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,SORT_ORDER",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,SORT_ORDER,ORDER_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_PERIOD",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CODE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CODE,DESCRIPTION,PERIOD_ORDER,STANDARD_PERIOD,STATE_CODE_EQUIV,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SCHD_PREREQ_COURSE_ERR",
     "PKColumns": "DISTRICT,STUDENT_ID,BUILDING,COURSE,ERROR_CODE",
     "TableColumns": "DISTRICT,STUDENT_ID,BUILDING,COURSE,ERROR_CODE,PREREQ_BUILDING,PREREQ_COURSE,PREREQ_COURSE_OR_GROUP,PREREQ_MARK_TYPE,PREREQ_MIN_MARK,PREREQ_ACTUAL_MARK,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_REC_TAKEN",
-    "PKColumns": "DISTRICT,SECTION_KEY,LOGIN_ID",
-    "TableColumns": "DISTRICT,SECTION_KEY,LOGIN_ID,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -19709,51 +21252,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SCHD_RUN",
-    "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,RUN_KEY",
-    "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,RUN_KEY,RUN_LABEL,RUN_STATUS,RUN_DATE_TIME,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_RUN_TABLE",
-    "PKColumns": "DISTRICT,TABLE_NAME",
-    "TableColumns": "DISTRICT,TABLE_NAME,DELETE_VIA_TRIGGER,HAS_BUILDING,HAS_SCHOOL_YEAR,CROSS_TABLE,KEY_COLUMN",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
     "name": "SCHD_SCAN_REQUEST",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,COURSE,GRADE",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,SCAN_GUID,COURSE,GRADE,SEQUENCE_NUMBER,PAGE_NUMBER,LINE_NUMBER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_STU_CONF_CYC",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY,COURSE_SESSION,CYCLE_CODE",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY,COURSE_SESSION,CYCLE_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_STU_CONF_MP",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY,COURSE_SESSION,MARKING_PERIOD",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY,COURSE_SESSION,MARKING_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_STU_COURSE",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,COURSE_STATUS,MODEL_VAL_TYPE,RETAKE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_STU_CRS_DATES",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY,DATE_ADDED,DATE_DROPPED,RESOLVED_CONFLICT,MR_UNGRADED,MR_FIRST_MP,MR_LAST_MP,MR_LAST_MARK_BY,FROM_SECTION_KEY,FROM_RANGE_KEY,TO_SECTION_KEY,TO_RANGE_KEY,ROW_IDENTITY,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -19765,27 +21266,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SCHD_STU_RECOMMEND",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,COURSE,STAFF_ID,SECTION_KEY",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,COURSE,STAFF_ID,SECTION_KEY,PRIORITY,ENROLL_COURSE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_STU_REQ",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SCHD_INTERVAL,COURSE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SCHD_INTERVAL,COURSE,COURSE_SECTION,TEACHER_OVERLOAD,REQUEST_TYPE,IS_LOCKED,ALT_TO_REQUEST,ALTERNATE_SEQUENCE,RETAKE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_STU_REQ_MP",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SCHD_INTERVAL,COURSE,MARKING_PERIOD",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SCHD_INTERVAL,COURSE,MARKING_PERIOD,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SCHD_STU_STAFF_USER",
     "PKColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STAFF_ID,STUDENT_ID,START_DATE,STAFF_STUDENT_KEY,FIELD_NUMBER",
     "TableColumns": "DISTRICT,SECTION_KEY,COURSE_SESSION,STAFF_ID,STUDENT_ID,START_DATE,SEQUENCE,STAFF_STUDENT_KEY,FIELD_NUMBER,LIST_SEQUENCE,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -19793,23 +21273,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SCHD_STU_STATUS",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SCHD_INTERVAL",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,STUDENT_ID,SCHD_INTERVAL,SCHEDULE_STATUS,REQUEST_STATUS,NUMBER_SINGLETONS,NUMBER_DOUBLETONS,NUMBER_MULTISESS,NUMBER_BLOCKS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SCHD_STU_USER",
     "PKColumns": "DISTRICT,SECTION_KEY,DATE_RANGE_KEY,STUDENT_ID,SCREEN_NUMBER,FIELD_NUMBER",
     "TableColumns": "DISTRICT,SECTION_KEY,DATE_RANGE_KEY,STUDENT_ID,SCREEN_NUMBER,FIELD_NUMBER,FIELD_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHD_TIMETABLE",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,BELL_SCHD,TIMESLOT,CYCLE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,BELL_SCHD,TIMESLOT,CYCLE,START_TIME,END_TIME,PERIOD,PARENT_CYCLE_DAY,LUNCH_TIME,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -19842,93 +21308,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SCHDTB_AR_ALETYPE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHDTB_AR_DIG_LRN",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHDTB_AR_DIST_PRO",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHDTB_AR_HQT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHDTB_AR_INST",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHDTB_AR_JOBCODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHDTB_AR_LEARN",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHDTB_AR_LIC_EX",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHDTB_AR_TRANSVEN",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHDTB_AR_VOCLEA",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHDTB_COURSE_NCES_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SCHDTB_CREDIT_BASIS",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,PESC_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SCHDTB_CREDIT_BASIS_PESC_CODE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -20031,13 +21413,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SDE_SESSION_TRACKER",
-    "PKColumns": "SessionID",
-    "TableColumns": "SessionID,UserId,InstitutionID,DistrictID,eSPDBConnect,TaskServer,SchoolYear,SummerSchool,AppHosting,DSN,ApplicationVersion,ApplicationType,DebugMode,SiteCode,BuildingID",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
     "name": "SDE_TRANSACTION_TIME",
     "PKColumns": "INSTITUTION_ID",
     "TableColumns": "INSTITUTION_ID,LAST_FETCH_TIME_TRANSACTION_LOG,LAST_FETCH_TIME_NOTIFICATION",
@@ -20059,48 +21434,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SEC_GLOBAL_ID",
-    "PKColumns": "DISTRICT,LOGIN_ID,LOGIN_TYPE",
-    "TableColumns": "DISTRICT,LOGIN_ID,LOGIN_TYPE,CHANGE_DATE_TIME,CHANGE_UID,GLOBAL_ID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SEC_LOOKUP_INFO",
-    "PKColumns": "DISTRICT,MENU_ITEM,LOOKUP_ID,SEC_TYPE,PACKAGE,SUBPACKAGE,FEATURE",
-    "TableColumns": "DISTRICT,MENU_ITEM,LOOKUP_ID,SEC_TYPE,PACKAGE,SUBPACKAGE,FEATURE,READ_WRITE_REQD,FUNCTIONALITY_DESC,SUBPACKAGE_YEAR_SPEC,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SEC_LOOKUP_MENU_ITEMS",
-    "PKColumns": "DISTRICT,PARENT_MENU,SEQUENCE",
-    "TableColumns": "DISTRICT,PARENT_MENU,SEQUENCE,LOOKUP_ID,SEARCH_TYPE,SORT_TYPE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SEC_LOOKUP_MENU_REL",
-    "PKColumns": "DISTRICT,SOURCE_MENU_ITEM,SOURCE_LOOKUP_ID,DEST_MENU_ITEM,DEST_LOOKUP_ID",
-    "TableColumns": "DISTRICT,SOURCE_MENU_ITEM,SOURCE_LOOKUP_ID,DEST_MENU_ITEM,DEST_LOOKUP_ID,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SEC_LOOKUP_NON_MENU",
-    "PKColumns": "DISTRICT,LOOKUP_ID",
-    "TableColumns": "DISTRICT,LOOKUP_ID,PAGE_TITLE,PAGE_NAME,SEARCH_TYPE,SORT_TYPE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SEC_USER",
-    "PKColumns": "DISTRICT,LOGIN_ID",
-    "TableColumns": "DISTRICT,LOGIN_ID,USER_OR_ROLE,LOGIN_NAME,BUILDING,DEPARTMENT,EMAIL,SCHOOL_YEAR,SUMMER_SCHOOL,USE_MENU_CACHE,MAY_IMPERSONATE,HAS_READ_NEWS,INITIALS,LOCAL_LOGIN_ID,TEACHER_ACCOUNT,CHANGE_DATE_TIME,CHANGE_UID,CLASSLINK_ID,USER_UNIQUE_ID,ROW_IDENTITY",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SEC_USER_AD",
     "PKColumns": "DISTRICT,LOGIN_ID",
     "TableColumns": "DISTRICT,LOGIN_ID,USER_OR_ROLE,DEACTIVATE,AD_GROUP,REV_REQ_FOR_ADD,REV_REQ_FOR_DEL,REV_EMAIL_ADDRESS,NOT_REQ_FOR_ADD,NOT_REQ_FOR_DEL,NOT_EMAIL_ADDRESS,CHANGE_DATE_TIME,CHANGE_UID",
@@ -20108,86 +21441,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SEC_USER_BUILDING",
-    "PKColumns": "DISTRICT,LOGIN_ID,BUILDING",
-    "TableColumns": "DISTRICT,LOGIN_ID,BUILDING,CHANGE_DATE_TIME,CHANGE_UID,ROW_IDENTITY",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SEC_USER_MENU_CACHE",
-    "PKColumns": "DISTRICT,LOGIN_ID",
-    "TableColumns": "DISTRICT,LOGIN_ID,MENU,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SEC_USER_RESOURCE",
-    "PKColumns": "DISTRICT,LOGIN_ID,ROLE_ID,PACKAGE,SUBPACKAGE,FEATURE,BUILDING",
-    "TableColumns": "DISTRICT,LOGIN_ID,ROLE_ID,PACKAGE,SUBPACKAGE,FEATURE,BUILDING,ACCESS_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SEC_USER_ROLE",
-    "PKColumns": "DISTRICT,LOGIN_ID,ROLE_ID",
-    "TableColumns": "DISTRICT,LOGIN_ID,ROLE_ID,DEF_BUILDING_OVR,CHANGE_DATE_TIME,CHANGE_UID,ROW_IDENTITY",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SEC_USER_ROLE_BLDG_OVR",
-    "PKColumns": "DISTRICT,LOGIN_ID,ROLE_ID,BUILDING",
-    "TableColumns": "DISTRICT,LOGIN_ID,ROLE_ID,BUILDING,CHANGE_DATE_TIME,CHANGE_UID,ROW_IDENTITY",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SEC_USER_STAFF",
     "PKColumns": "DISTRICT,LOGIN_ID,STAFF_ID",
     "TableColumns": "DISTRICT,LOGIN_ID,STAFF_ID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SECTB_ACTION_FEATURE",
-    "PKColumns": "DISTRICT,AREA,CONTROLLER,ACTION,FEATURE_ID",
-    "TableColumns": "DISTRICT,AREA,CONTROLLER,ACTION,FEATURE_ID,PACKAGE,SUBPACKAGE,FEATURE,DESCRIPTION,BUILDING_ACCESS_LEVEL,RESERVED,CHANGE_DATE_TIME,CHANGE_UID,TAC_ACCESS",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SECTB_ACTION_RESOURCE",
-    "PKColumns": "DISTRICT,AREA,CONTROLLER,ACTION",
-    "TableColumns": "DISTRICT,AREA,CONTROLLER,ACTION,PACKAGE,SUBPACKAGE,FEATURE,ENV_SUBPACKAGE,DESCRIPTION,BUILDING_ACCESS_LEVEL,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SECTB_PACKAGE",
-    "PKColumns": "DISTRICT,PACKAGE",
-    "TableColumns": "DISTRICT,PACKAGE,DESCRIPTION,IS_ADVANCED_FEATURE,RESERVED,LICENSE_KEY,IS_VALID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SECTB_PAGE_RESOURCE",
-    "PKColumns": "DISTRICT,MENU_ID,MENU_TYPE",
-    "TableColumns": "DISTRICT,MENU_ID,MENU_TYPE,PACKAGE,SUBPACKAGE,FEATURE,ENV_SUBPACKAGE,DESCRIPTION,BUILDING_ACCESS_LEVEL,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SECTB_RESOURCE",
-    "PKColumns": "DISTRICT,PACKAGE,SUBPACKAGE,FEATURE",
-    "TableColumns": "DISTRICT,PACKAGE,SUBPACKAGE,FEATURE,DESCRIPTION,RESERVED,BLDG_LIST_REQUIRED,ADVANCED_FEATURE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SECTB_SUBPACKAGE",
-    "PKColumns": "DISTRICT,SUBPACKAGE",
-    "TableColumns": "DISTRICT,SUBPACKAGE,DESCRIPTION,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -20472,48 +21728,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SMS_PROGRAM_RULES",
-    "PKColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER,GROUP_NUMBER,RULE_NUMBER",
-    "TableColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER,FIELD_ATTRIBUTE,GROUP_NUMBER,RULE_NUMBER,RULE_OPERATOR,RULE_VALUE,RULE_TABLE,RULE_COLUMN,RULE_IDENTIFIER,RULE_FIELD_NUMBER,RULE_FIELD_ATTRIBUTE,WHERE_TABLE,WHERE_COLUMN,WHERE_IDENTIFIER,WHERE_FIELD_NUMBER,WHERE_FIELD_ATTRIBUTE,WHERE_OPERATOR,WHERE_VALUE,AND_OR_FLAG,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SMS_PROGRAM_RULES_MESSAGES",
-    "PKColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER,GROUP_NUMBER",
-    "TableColumns": "DISTRICT,PROGRAM_ID,FIELD_NUMBER,GROUP_NUMBER,ERROR_MESSAGE,SHOW_CUSTOM_MESSAGE,SHOW_BOTH,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SMS_USER_FIELDS",
-    "PKColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER,FIELD_NUMBER",
-    "TableColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER,FIELD_NUMBER,FIELD_LABEL,STATE_CODE_EQUIV,FIELD_ORDER,REQUIRED_FIELD,FIELD_TYPE,DATA_TYPE,NUMBER_TYPE,DATA_LENGTH,FIELD_SCALE,FIELD_PRECISION,DEFAULT_VALUE,DEFAULT_TABLE,DEFAULT_COLUMN,VALIDATION_LIST,VALIDATION_TABLE,CODE_COLUMN,DESCRIPTION_COLUMN,SPI_TABLE,SPI_COLUMN,SPI_SCREEN_NUMBER,SPI_FIELD_NUMBER,SPI_FIELD_TYPE,INCLUDE_PERFPLUS,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SMS_USER_RULES",
-    "PKColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER,FIELD_NUMBER,GROUP_NUMBER,RULE_NUMBER",
-    "TableColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER,FIELD_NUMBER,GROUP_NUMBER,RULE_NUMBER,RULE_OPERATOR,RULE_VALUE,RULE_TABLE,RULE_COLUMN,RULE_SCREEN_NUMBER,RULE_FIELD_NUMBER,WHERE_TABLE,WHERE_COLUMN,WHERE_SCREEN_NUM,WHERE_FIELD_NUMBER,WHERE_OPERATOR,WHERE_VALUE,AND_OR_FLAG,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SMS_USER_RULES_MESSAGES",
-    "PKColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER,FIELD_NUMBER,GROUP_NUMBER",
-    "TableColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER,FIELD_NUMBER,GROUP_NUMBER,ERROR_MESSAGE,SHOW_CUSTOM_MESSAGE,SHOW_BOTH,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SMS_USER_SCREEN",
-    "PKColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER",
-    "TableColumns": "DISTRICT,SCREEN_TYPE,SCREEN_NUMBER,LIST_TYPE,COLUMNS,DESCRIPTION,REQUIRED_SCREEN,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,RESERVED,STATE_FLAG,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SMS_USER_SCREEN_COMB_DET",
     "PKColumns": "DISTRICT,COMBINED_SCREEN_TYPE,COMBINED_SCREEN_NUMBER,SCREEN_TYPE,SCREEN_NUMBER",
     "TableColumns": "DISTRICT,COMBINED_SCREEN_TYPE,COMBINED_SCREEN_NUMBER,SCREEN_TYPE,SCREEN_NUMBER,SCREEN_ORDER,HIDE_ON_MENU,CHANGE_DATE_TIME,CHANGE_UID",
@@ -20528,83 +21742,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SMS_USER_TABLE",
-    "PKColumns": "DISTRICT,TABLE_NAME,PACKAGE",
-    "TableColumns": "DISTRICT,TABLE_NAME,PACKAGE,TABLE_DESCR,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_API_VAL_COLUMN",
-    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME",
-    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,COLUMN_ORDER,JSON_PROPERTY_NAME,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_API_VAL_SCOPE",
-    "PKColumns": "DISTRICT,TABLE_NAME,SCOPE",
-    "TableColumns": "DISTRICT,TABLE_NAME,SCOPE,SQL_WHERE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_API_VAL_TABLE",
-    "PKColumns": "DISTRICT,TABLE_NAME",
-    "TableColumns": "DISTRICT,TABLE_NAME,JSON_PROPERTY_NAME,SQL_WHERE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_APPUSERDEF",
-    "PKColumns": "",
-    "TableColumns": "PARENT_MENU,PAGE,SCREEN_TYPE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_AUDIT_DET1",
-    "PKColumns": "KEY_GUID,REC_INDEX",
-    "TableColumns": "KEY_GUID,REC_INDEX,DISTRICT,TABLE_NAME,USER_ID,TWS_USER_ID,MOD_DATE,UPDATE_MODE,DATA_FIELD_01,DATA_VALUE_01,DATA_FIELD_02,DATA_VALUE_02,DATA_FIELD_03,DATA_VALUE_03,DATA_FIELD_04,DATA_VALUE_04,DATA_FIELD_05,DATA_VALUE_05,DATA_FIELD_06,DATA_VALUE_06,DATA_FIELD_07,DATA_VALUE_07,DATA_FIELD_08,DATA_VALUE_08,DATA_FIELD_09,DATA_VALUE_09,DATA_FIELD_10,DATA_VALUE_10,DATA_FIELD_11,DATA_VALUE_11,DATA_FIELD_12,DATA_VALUE_12,DATA_FIELD_13,DATA_VALUE_13,DATA_FIELD_14,DATA_VALUE_14,DATA_FIELD_15,DATA_VALUE_15,DATA_FIELD_16,DATA_VALUE_16,DATA_FIELD_17,DATA_VALUE_17,DATA_FIELD_18,DATA_VALUE_18,DATA_FIELD_19,DATA_VALUE_19,DATA_FIELD_20,DATA_VALUE_20,DATA_FIELD_21,DATA_VALUE_21,DATA_FIELD_22,DATA_VALUE_22,DATA_FIELD_23,DATA_VALUE_23,DATA_FIELD_24,DATA_VALUE_24,DATA_FIELD_25,DATA_VALUE_25",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_AUDIT_DET2",
-    "PKColumns": "KEY_GUID,REC_INDEX",
-    "TableColumns": "KEY_GUID,REC_INDEX,DATA_FIELD_26,DATA_VALUE_26,DATA_FIELD_27,DATA_VALUE_27,DATA_FIELD_28,DATA_VALUE_28,DATA_FIELD_29,DATA_VALUE_29,DATA_FIELD_30,DATA_VALUE_30,DATA_FIELD_31,DATA_VALUE_31,DATA_FIELD_32,DATA_VALUE_32,DATA_FIELD_33,DATA_VALUE_33,DATA_FIELD_34,DATA_VALUE_34,DATA_FIELD_35,DATA_VALUE_35,DATA_FIELD_36,DATA_VALUE_36,DATA_FIELD_37,DATA_VALUE_37,DATA_FIELD_38,DATA_VALUE_38,DATA_FIELD_39,DATA_VALUE_39,DATA_FIELD_40,DATA_VALUE_40,DATA_FIELD_41,DATA_VALUE_41,DATA_FIELD_42,DATA_VALUE_42,DATA_FIELD_43,DATA_VALUE_43,DATA_FIELD_44,DATA_VALUE_44,DATA_FIELD_45,DATA_VALUE_45,DATA_FIELD_46,DATA_VALUE_46,DATA_FIELD_47,DATA_VALUE_47,DATA_FIELD_48,DATA_VALUE_48,DATA_FIELD_49,DATA_VALUE_49,DATA_FIELD_50,DATA_VALUE_50",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_AUDIT_HISTORY",
-    "PKColumns": "CHANGE_ID",
-    "TableColumns": "CHANGE_ID,SERVER_NAME,TABLE_NAME,CHANGE_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_AUDIT_HISTORY_FIELDS",
-    "PKColumns": "CHANGE_ID,COLUMN_NAME",
-    "TableColumns": "CHANGE_ID,COLUMN_NAME,INITIAL_VALUE,NEW_VALUE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_AUDIT_HISTORY_KEYS",
-    "PKColumns": "CHANGE_ID,KEY_FIELD",
-    "TableColumns": "CHANGE_ID,KEY_FIELD,KEY_VALUE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_AUDIT_SESS",
-    "PKColumns": "KEY_GUID",
-    "TableColumns": "KEY_GUID,LOGON_USER,SERVER_NAME,REMOTE_ADDR,USER_AGENT,PATH_INFO,HTTP_REFERER,QUERY_STRING",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
     "name": "SPI_AUDIT_TASK",
     "PKColumns": "PARAM_KEY,RUN_TIME",
     "TableColumns": "PARAM_KEY,RUN_TIME,DISTRICT,TASK_OWNER,TASK_DESCRIPTION",
@@ -20616,34 +21753,6 @@ $dbDefinitions = @'
     "PKColumns": "PARAM_KEY,PARAM_IDX,RUN_TIME",
     "TableColumns": "PARAM_KEY,PARAM_IDX,RUN_TIME,IS_ENV_PARAM,PARAM_NAME,PARAM_VALUE",
     "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_BACKUP_TABLES",
-    "PKColumns": "PACKAGE,TABLE_NAME",
-    "TableColumns": "PACKAGE,TABLE_NAME,RESTORE_ORDER,JOIN_CONDITION",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_BLDG_PACKAGE",
-    "PKColumns": "DISTRICT,BUILDING,PACKAGE",
-    "TableColumns": "DISTRICT,BUILDING,PACKAGE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_BUILDING_LIST",
-    "PKColumns": "DISTRICT,OPTION_TYPE",
-    "TableColumns": "DISTRICT,OPTION_TYPE,LIST_PAGE_TITLE,TABLE_NAME,NAVIGATE_TO,USE_SCHOOL_YEAR,USE_SUMMER_SCHOOL",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "Spi_checklist_menu_items",
-    "PKColumns": "",
-    "TableColumns": "DISTRICT,PAGE_ID,DESCRIPTION,URL,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
   },
   {
     "db": "eSch",
@@ -20668,69 +21777,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SPI_CODE_IN_USE",
-    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,FOREIGN_KEY_TABLE_NAME,FOREIGN_KEY_COLUMN_NAME",
-    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,FOREIGN_KEY_TABLE_NAME,FOREIGN_KEY_COLUMN_NAME,USE_ENV_DISTRICT,USE_ENV_SCHOOL_YEAR,USE_ENV_SUMMER_SCHOOL,CRITERIA,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_CODE_IN_USE_FILTER",
-    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,FOREIGN_KEY_TABLE_NAME,FOREIGN_KEY_COLUMN_NAME,FILTER_COLUMN_NAME",
-    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,FOREIGN_KEY_TABLE_NAME,FOREIGN_KEY_COLUMN_NAME,FILTER_COLUMN_NAME,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_COLUMN_CONTROL",
-    "PKColumns": "COLUMNCONTROLID",
-    "TableColumns": "COLUMNCONTROLID,TABLENAME,COLUMNNAME,CONTROLTYPEID,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_COLUMN_INFO",
-    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME",
-    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,UI_CONTROL_TYPE,VAL_LIST,VAL_LIST_DISP,VAL_TBL_NAME,VAL_COL_CODE,VAL_COL_DESC,VAL_SQL_WHERE,VAL_ORDER_BY_CODE,VAL_DISP_FORMAT,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,COLUMN_WIDTH,CHANGE_DATE_TIME,CHANGE_UID,SOUNDS_LIKE",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_COLUMN_NAMES",
-    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,CULTURE_CODE",
-    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,CULTURE_CODE,COLUMN_DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_COLUMN_VALIDATION",
-    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME",
-    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,VAL_LIST,VAL_LIST_DISP,VAL_TBL_NAME,VAL_COL_CODE,VAL_COL_DESC,VAL_SQL_WHERE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_CONFIG_EXTENSION",
-    "PKColumns": "CONFIG_ID",
-    "TableColumns": "CONFIG_ID,TABLE_NAME,SCHOOL_YEAR_REQUIRED,SUMMER_SCHOOL_REQUIRED,BUILDING_REQUIRED,CONFIG_TYPE_REQUIRED",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_CONFIG_EXTENSION_DETAIL",
-    "PKColumns": "DETAIL_ID",
-    "TableColumns": "DETAIL_ID,ENV_ID,CONFIG_ID,PRODUCT,DATA,DATA_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_CONFIG_EXTENSION_ENVIRONMENT",
-    "PKColumns": "ENV_ID",
-    "TableColumns": "ENV_ID,DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,CONFIG_TYPE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
     "name": "SPI_CONVERT",
     "PKColumns": "ID_NUM",
     "TableColumns": "DISTRICT,DESCRIPTION,CATEGORY,INDEX1,INDEX2,INDEX3,INDEX4,INDEX5,INDEX6,FIELD_VALUE,LOADED,ID_NUM,CHANGE_DATE_TIME,CHANGE_UID",
@@ -20738,240 +21784,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SPI_CONVERT_CONTACT",
-    "PKColumns": "DISTRICT,STUDENT_ID,CONTACT_ID",
-    "TableColumns": "DISTRICT,STUDENT_ID,CONTACT_ID,FIRST_NAME,MIDDLE_NAME,LAST_NAME,APARTMENT,LOT,STREET,CITY,STATE,ZIPCODE,PHONE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_CONVERT_ERROR_LOG",
-    "PKColumns": "DISTRICT,RUN_ID,RUN_TIME,RUN_ORDER",
-    "TableColumns": "DISTRICT,RUN_ID,RUN_TIME,RUN_ORDER,PACKAGE_ID,PROC_NAME,TABLE_NAME,ERROR_ID,LINE_NUMBER,SQL_STATEMENT,ERROR_DESCRIPTION,SEVERITY,KEY1_COLNAME,KEY1_VALUE,KEY2_COLNAME,KEY2_VALUE,KEY3_COLNAME,KEY3_VALUE,KEY4_COLNAME,KEY4_VALUE,KEY5_COLNAME,KEY5_VALUE,KEY6_COLNAME,KEY6_VALUE,KEY7_COLNAME,KEY7_VALUE,KEY8_COLNAME,KEY8_VALUE,KEY9_COLNAME,KEY9_VALUE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_CONVERT_MAP",
-    "PKColumns": "DISTRICT,TABLE_NAME,FIELD_NAME",
-    "TableColumns": "DISTRICT,TABLE_NAME,FIELD_NAME,INDEX1_DESC,INDEX2_DESC,INDEX3_DESC,INDEX4_DESC,INDEX5_DESC,INDEX6_DESC,VAL_TABLE,VAL_FIELD,CATEGORY,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_CONVERT_STAFF",
-    "PKColumns": "",
-    "TableColumns": "DISTRICT,BUILDING,OS_TEA_NUMBER,STAFF_ID,FIRST_NAME,LAST_NAME,SSN",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_CONVERT_TYPE",
-    "PKColumns": "DISTRICT,CATEGORY",
-    "TableColumns": "DISTRICT,CATEGORY,INDEX1_DESC,INDEX2_DESC,INDEX3_DESC,INDEX4_DESC,INDEX5_DESC,INDEX6_DESC,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_COPY_CALC",
-    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME",
-    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,PROCESS_ACTION,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_COPY_DET",
-    "PKColumns": "DISTRICT,COPY_ID,TABLE_NAME",
-    "TableColumns": "DISTRICT,COPY_ID,TABLE_NAME,ORDER_WITHIN_ID,WHERE_BUILDING,WHERE_SCHOOL_YEAR,WHERE_SUMMER,WHERE_ALL_BUILDINGS,SKIP_IF_YEAR_DIFFERS,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "spi_copy_det_731719",
-    "PKColumns": "",
-    "TableColumns": "DISTRICT,COPY_ID,TABLE_NAME,ORDER_WITHIN_ID,WHERE_BUILDING,WHERE_SCHOOL_YEAR,WHERE_SUMMER,WHERE_ALL_BUILDINGS,SKIP_IF_YEAR_DIFFERS,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_COPY_HDR",
-    "PKColumns": "DISTRICT,COPY_ID",
-    "TableColumns": "DISTRICT,COPY_ID,COPY_ID_ORDER,SEC_PACKAGE,TITLE,PACKAGE_ORDER,ROW_POSITION,COLUMN_POSITION,SCHOOL_YEAR_DIFFER,SUMMER_DIFFER,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "spi_copy_hdr_731719",
-    "PKColumns": "",
-    "TableColumns": "DISTRICT,COPY_ID,COPY_ID_ORDER,SEC_PACKAGE,TITLE,PACKAGE_ORDER,ROW_POSITION,COLUMN_POSITION,SCHOOL_YEAR_DIFFER,SUMMER_DIFFER,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_COPY_JOIN",
-    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,HDR_TABLE_NAME,HDR_COLUMN_NAME",
-    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,HDR_TABLE_NAME,HDR_COLUMN_NAME,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_COPY_LINK",
-    "PKColumns": "DISTRICT,COPY_ID,LINK_COPY_ID",
-    "TableColumns": "DISTRICT,COPY_ID,LINK_COPY_ID,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "spi_copy_link_731719",
-    "PKColumns": "",
-    "TableColumns": "DISTRICT,COPY_ID,LINK_COPY_ID,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_COPY_MS_DET",
-    "PKColumns": "DISTRICT,TABLE_NAME",
-    "TableColumns": "DISTRICT,TABLE_NAME,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SPI_CUST_TEMPLATES",
     "PKColumns": "DISTRICT,CUSTOM_CODE,TEMPLATE_FILE_NAME",
     "TableColumns": "DISTRICT,CUSTOM_CODE,TEMPLATE_FILE_NAME,FRIENDLY_NAME,DEFAULT_TEMPLATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_CUSTOM_CODE",
-    "PKColumns": "DISTRICT,CUSTOM_CODE,PACKAGE",
-    "TableColumns": "DISTRICT,CUSTOM_CODE,PACKAGE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_CUSTOM_DATA",
-    "PKColumns": "DISTRICT,CUSTOM_CODE,DATA_CODE",
-    "TableColumns": "DISTRICT,CUSTOM_CODE,DATA_CODE,DATA_VALUE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_CUSTOM_LAUNCH",
-    "PKColumns": "LAUNCHER_ID",
-    "TableColumns": "LAUNCHER_ID,BIN_NAME,LAUNCHER_TYPE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_CUSTOM_MODS",
-    "PKColumns": "DISTRICT,CUSTOM_CODE,BASE_MODULE",
-    "TableColumns": "DISTRICT,CUSTOM_CODE,BASE_MODULE,CUSTOM_MODULE,DESCRIPTION",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_CUSTOM_SCRIPT",
-    "PKColumns": "MODULE_NAME",
-    "TableColumns": "MODULE_NAME,PROGRAM",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_DATA_CACHE",
-    "PKColumns": "DISTRICT,CACHE_TYPE,CACHE_KEY,OWNER_ID",
-    "TableColumns": "DISTRICT,CACHE_TYPE,CACHE_KEY,OWNER_ID,CACHE_DATA,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_DIST_BUILDING_CHECKLIST",
-    "PKColumns": "DISTRICT,SETUP_TYPE,PANEL_HEADING_CODE,MENU_ID,MENU_TYPE,OPTION_ORDER",
-    "TableColumns": "DISTRICT,SETUP_TYPE,PANEL_HEADING_CODE,PACKAGE,MENU_ID,MENU_TYPE,MENU_TITLE_OVERRIDE,OPTION_ORDER,VAL_TABLE_NAME,EVALUATE_SCHOOL_YEAR,EVALUATE_SUMMER_SCHOOL,QUERYSTRING,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_DIST_PACKAGE",
-    "PKColumns": "DISTRICT,CONFIG_DIST,PACKAGE",
-    "TableColumns": "DISTRICT,CONFIG_DIST,PACKAGE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_DISTRICT_INIT",
-    "PKColumns": "VAL_TAB,APP_CODE",
-    "TableColumns": "VAL_TAB,APP_CODE,DELETE_BEFORE_COPY",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_DYNAMIC_CONTAINERTYPE",
-    "PKColumns": "CONTAINERTYPEID",
-    "TableColumns": "CONTAINERTYPEID,CONTAINERTYPE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_DYNAMIC_LAYOUT",
-    "PKColumns": "LAYOUTID",
-    "TableColumns": "LAYOUTID,PAGEID,USERID,PARENTLAYOUTID,CONTAINERTYPEID,ORDERNUMBER,TITLE,WIDTH,WIDGETID,INSTANCEID,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_DYNAMIC_PAGE",
-    "PKColumns": "PAGEID",
-    "TableColumns": "PAGEID,PAGENAME,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_DYNAMIC_PAGE_WIDGET",
-    "PKColumns": "PAGEWIDGETID",
-    "TableColumns": "PAGEWIDGETID,PAGEID,WIDGETID,ISEDITABLE,ISREQUIRED,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_DYNAMIC_SETTING",
-    "PKColumns": "SETTINGID",
-    "TableColumns": "SETTINGID,SETTINGNAME,SETTINGTYPEID,DATATYPEID,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_DYNAMIC_WIDGET",
-    "PKColumns": "WIDGETID",
-    "TableColumns": "WIDGETID,WIDGETTYPEID,TITLE,DESCRIPTION,ISRESIZABLE,AREA,CONTROLLER,ACTION,PARTIALVIEW,COLUMNCONTROLID,PACKAGE,SUBPACKAGE,FEATURE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_DYNAMIC_WIDGET_SETTING",
-    "PKColumns": "WIDGETSETTINGID,INSTANCEID",
-    "TableColumns": "WIDGETSETTINGID,INSTANCEID,WIDGETID,SETTINGID,PAGEID,USERID,DATAKEY,VALUEINT,VALUEBOOL,VALUESTRING,VALUEDATETIME,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_DYNAMIC_WIDGET_TYPE",
-    "PKColumns": "WIDGETTYPEID",
-    "TableColumns": "WIDGETTYPEID,WIDGETTYPE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_EVENT",
-    "PKColumns": "DISTRICT,LOGIN_ID,EVENT_DATE_TIME,EVENT_TYPE",
-    "TableColumns": "DISTRICT,LOGIN_ID,EVENT_DATE_TIME,EVENT_TYPE,SECTION_KEY,COURSE_SESSION,ASMT_NUMBER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_FEATURE_FLAG",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ENABLED,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -20997,27 +21812,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SPI_FEEDBACK_RECIP",
-    "PKColumns": "DISTRICT,RECIPIENT",
-    "TableColumns": "DISTRICT,RECIPIENT,RECIPIENT_TYPE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_FIELD_HELP",
-    "PKColumns": "DISTRICT,AREA,CONTROLLER,ACTION,FIELD,STATE",
-    "TableColumns": "DISTRICT,AREA,CONTROLLER,ACTION,FIELD,IS_GRID_HEADER,IS_IN_DIALOG,GRID_ID,DIALOG_ID,DESCRIPTION,DISPLAY_NAME,STATE,RESERVED,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_FIRSTWAVE",
-    "PKColumns": "FIRSTWAVE_ID",
-    "TableColumns": "FIRSTWAVE_ID,SITE_CODE,DISTRICT_NAME",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
     "name": "SPI_HAC_NEWS",
     "PKColumns": "DISTRICT,NEWS_ID",
     "TableColumns": "DISTRICT,NEWS_ID,ADMIN_OR_TEACHER,HEADLINE,NEWS_TEXT,EFFECTIVE_DATE,EXPIRATION_DATE,FOR_PARENTS,FOR_STUDENTS,STAFF_ID,SECTION_KEY,PRINT_COURSE_INFO,CHANGE_DATE_TIME,CHANGE_UID",
@@ -21032,37 +21826,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SPI_HOME_SECTIONS",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,REQUIRED_SECTION,HAS_SETTINGS,REFRESH_TYPE,CAN_DELETE,DESIRED_COL_WIDTH,XSL_DISPLAY_FILE,XSL_SETTINGS_FILE,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,CAN_ADDNEW,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_HOME_USER_CFG",
-    "PKColumns": "DISTRICT,LOGIN_ID,SECTION_CODE,SETTING_CODE",
-    "TableColumns": "DISTRICT,LOGIN_ID,SECTION_CODE,SETTING_CODE,SETTING_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_HOME_USER_SEC",
-    "PKColumns": "DISTRICT,LOGIN_ID,SECTION_CODE",
-    "TableColumns": "DISTRICT,LOGIN_ID,SECTION_CODE,COLUMN_NO,ROW_NO,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SPI_IEPWEBSVC_CFG",
     "PKColumns": "DISTRICT",
     "TableColumns": "DISTRICT,CUSTOMER_CODE,PASSWORD,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_IMM_TSK_RESULT",
-    "PKColumns": "DISTRICT,PARAM_KEY",
-    "TableColumns": "DISTRICT,PARAM_KEY,RESULT,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -21074,38 +21840,10 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SPI_INTEGRATION_DET",
-    "PKColumns": "DISTRICT,PRODUCT,OPTION_NAME",
-    "TableColumns": "DISTRICT,PRODUCT,OPTION_NAME,OPTION_VALUE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_INTEGRATION_HDR",
-    "PKColumns": "DISTRICT,PRODUCT",
-    "TableColumns": "DISTRICT,PRODUCT,DESCRIPTION,PACKAGE,SUBPACKAGE,FEATURE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
     "name": "SPI_INTEGRATION_LOGIN",
     "PKColumns": "DISTRICT,PRODUCT,LOGIN_ID",
     "TableColumns": "DISTRICT,PRODUCT,LOGIN_ID,OTHER_LOGIN_ID,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_INTEGRATION_SESSION_DET",
-    "PKColumns": "SESSION_GUID,VARIABLE_NAME",
-    "TableColumns": "SESSION_GUID,VARIABLE_NAME,VARIABLE_VALUE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_INTEGRATION_SESSION_HDR",
-    "PKColumns": "SESSION_GUID",
-    "TableColumns": "SESSION_GUID,TSTAMP",
-    "TableHasChangeDT": ""
   },
   {
     "db": "eSch",
@@ -21123,45 +21861,10 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SPI_JOIN_COND",
-    "PKColumns": "REFTABLE,REFCOL,LINKTABLE,SEQUENCE",
-    "TableColumns": "REFTABLE,REFCOL,LINKTABLE,SEQUENCE,JOINTABLE,JOINCOLUMN,JOINTYPE,VALUE_TYPE,JOINVALUE,BASETABLE,BASECOLUMN",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_JOIN_SELECT",
-    "PKColumns": "REFTABLE,REFCOL,LINKTABLE",
-    "TableColumns": "REFTABLE,REFCOL,LINKTABLE,SELECTCLAUSE,AS_COLUMN",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
     "name": "SPI_MAP_CFG",
     "PKColumns": "DISTRICT",
     "TableColumns": "DISTRICT,GOOGLE_MAP_KEY,HEAT_MAP_KEY,MAX_ROWS,TASK_USER_ID,TASK_PASSWORD,TASK_DOMAIN,TASK_PROXY,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_NEWS",
-    "PKColumns": "DISTRICT,NEWS_ID",
-    "TableColumns": "DISTRICT,NEWS_ID,NEWS_DATE,NEWS_HEADLINE,NEWS_TEXT,EXPIRATION_DATE,REQUIRED_READING,FOR_OFFICE_EMPLOYEES,FOR_TEACHERS,FOR_PARENTS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_NEWS_BLDG",
-    "PKColumns": "DISTRICT,NEWS_ID,BUILDING",
-    "TableColumns": "DISTRICT,NEWS_ID,BUILDING,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_OBJECT_PERM",
-    "PKColumns": "DISTRICT,PERMISSION,OBJECT,SQL_USER",
-    "TableColumns": "DISTRICT,PERMISSION,OBJECT,SQL_USER",
-    "TableHasChangeDT": ""
   },
   {
     "db": "eSch",
@@ -21172,93 +21875,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SPI_OPTION_EXCLD",
-    "PKColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME",
-    "TableColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_OPTION_LIST_FIELD",
-    "PKColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME",
-    "TableColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME,DISPLAY_ORDER,IS_HIDDEN,FORMATTER,NAVIGATION_PARAM,COLUMN_LABEL,IS_SEC_BUILDING_COL,COLUMN_WIDTH,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_OPTION_NAME",
-    "PKColumns": "DISTRICT,SEARCH_TYPE",
-    "TableColumns": "DISTRICT,SEARCH_TYPE,OPTION_NAME,NAVIGATE_TO,BTN_NEW_NAVIGATE,USER_DEF_SCR_TYPE,USE_PROGRAMS,TARGET_TABLE,DELETE_TABLE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_OPTION_SIMPLE_SEARCH",
-    "PKColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME,ENVIRONMENT",
-    "TableColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME,ENVIRONMENT,DISPLAY_ORDER,OPERATOR,OVERRIDE_LABEL,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_OPTION_TABLE",
-    "PKColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME",
-    "TableColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,SEQUENCE_NUM,SEC_PACKAGE,SEC_SUBPACKAGE,SEC_FEATURE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_OPTION_UPDATE",
-    "PKColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME",
-    "TableColumns": "DISTRICT,SEARCH_TYPE,TABLE_NAME,COLUMN_NAME,UI_CONTROL_TYPE,IS_REQUIRED,ENTRY_FILTER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_POWERPACK_CONFIGURATION",
-    "PKColumns": "DISTRICT,ROW_NUMBER",
-    "TableColumns": "DISTRICT,ROW_NUMBER,CUSTOM_CODE,CUSTOM_NAME,CUSTOM_DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_PRIVATE_FIELD",
-    "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME",
-    "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,PACKAGE,SUBPACKAGE,FEATURE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_RESOURCE",
-    "PKColumns": "DISTRICT,APPLICATION_ID,RESOURCE_ID,CULTURE_CODE,RESOURCE_KEY",
-    "TableColumns": "DISTRICT,APPLICATION_ID,RESOURCE_ID,CULTURE_CODE,RESOURCE_KEY,RESOURCE_VALUE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SPI_RESOURCE_OVERRIDE",
     "PKColumns": "DISTRICT,APPLICATION_ID,RESOURCE_ID,CULTURE_CODE,RESOURCE_KEY",
     "TableColumns": "DISTRICT,APPLICATION_ID,RESOURCE_ID,CULTURE_CODE,RESOURCE_KEY,OVERRIDE_VALUE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_SEARCH_FAV",
-    "PKColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,SEARCH_NUMBER",
-    "TableColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,SEARCH_NUMBER,SEARCH_NAME,DESCRIPTION,LAST_SEARCH,GROUPING_MASK,CATEGORY,PUBLISH,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_SEARCH_FAV_SUBSCRIBE",
-    "PKColumns": "DISTRICT,LOGIN_ID,PUB_LOGIN_ID,PUB_SEARCH_TYPE,PUB_SEARCH_NUMBER",
-    "TableColumns": "DISTRICT,LOGIN_ID,PUB_LOGIN_ID,PUB_SEARCH_TYPE,PUB_SEARCH_NUMBER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_SECONDARY_KEY_USED",
-    "PKColumns": "DISTRICT,TABLE_NAME",
-    "TableColumns": "DISTRICT,TABLE_NAME,LAST_USED,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -21273,48 +21892,6 @@ $dbDefinitions = @'
     "name": "SPI_STATE_REQUIREMENTS",
     "PKColumns": "",
     "TableColumns": "ID,STATE,ASPPAGE,FRIENDLYNAME,SQL,WARNING,WARNINGTYPE,SCREENNAME,SHOWDDFORM,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_TABLE_JOIN",
-    "PKColumns": "DISTRICT,SOURCE_TABLE,TARGET_TABLE,SEQUENCE_NUMBER",
-    "TableColumns": "DISTRICT,SOURCE_TABLE,TARGET_TABLE,SEQUENCE_NUMBER,JOIN_TABLE_1,JOIN_COLUMN_1,JOIN_TABLE_2,JOIN_COLUMN_2,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_TABLE_NAMES",
-    "PKColumns": "DISTRICT,TABLE_NAME",
-    "TableColumns": "DISTRICT,TABLE_NAME,TABLE_DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_TASK",
-    "PKColumns": "DISTRICT,PARAM_KEY",
-    "TableColumns": "DISTRICT,PARAM_KEY,TASK_KEY,TASK_TYPE,RELATED_PAGE,CLASSNAME,TASK_DESCRIPTION,TASK_FILE,SCHEDULED_TIME,TASK_STATUS,TASK_OWNER,TASK_SERVER,NEXT_RUN_TIME,LAST_RUN_TIME,SCHEDULE_TYPE,SCHD_INTERVAL,SCHD_DOW,QUEUE_POSITION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_TASK_ERR_DESC",
-    "PKColumns": "PARAM_KEY,DESCRIPTION_INDEX",
-    "TableColumns": "PARAM_KEY,DESCRIPTION_INDEX,ERROR_DESCRIPTION",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_TASK_ERROR",
-    "PKColumns": "PARAM_KEY",
-    "TableColumns": "PARAM_KEY,DISTRICT,ERROR_SOURCE,ERROR_NUMBER,ERROR_LINE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_TASK_LB_STATS",
-    "PKColumns": "DISTRICT,SERVER_NAME",
-    "TableColumns": "DISTRICT,SERVER_NAME,TASK_DB_CONNECTION_STRING,DEBUG_TASK_SERVICES,TRACE_LB_SERVICE,INCLUDE_WEB_SERVERS,EXCLUDE_WEB_SERVERS,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -21347,27 +21924,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SPI_TASK_PARAMS",
-    "PKColumns": "PARAM_KEY,PARAM_IDX",
-    "TableColumns": "PARAM_KEY,PARAM_IDX,IS_ENV_PARAM,PARAM_NAME,PARAM_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_TASK_PROG",
-    "PKColumns": "PARAM_KEY",
-    "TableColumns": "PARAM_KEY,DISTRICT,LOGIN_ID,PROC_DESC,START_TIME,TOTAL_RECS,RECS_PROCESSED,END_TIME,DESCRIPTION,ERROR_OCCURRED",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_TIME_OFFSET",
-    "PKColumns": "DISTRICT",
-    "TableColumns": "DISTRICT,OFFSET,DISTRICT_TIMEZONE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
     "name": "SPI_TMP_WATCH_LIST",
     "PKColumns": "DISTRICT,LOGIN_ID,WATCH_NAME,STUDENT_ID",
     "TableColumns": "DISTRICT,LOGIN_ID,WATCH_NAME,STUDENT_ID,CHANGE_DATE_TIME,CHANGE_UID",
@@ -21382,51 +21938,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SPI_USER_GRID",
-    "PKColumns": "DISTRICT,LOGIN_ID,PAGE_CODE,GRID_ID",
-    "TableColumns": "DISTRICT,LOGIN_ID,PAGE_CODE,GRID_ID,GRID_COLUMN_NAMES,GRID_COLUMN_MODELS,GRID_STATE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_USER_OPTION",
-    "PKColumns": "DISTRICT,LOGIN_ID,PAGE_CODE,OPTION_CODE",
-    "TableColumns": "DISTRICT,LOGIN_ID,PAGE_CODE,OPTION_CODE,OPTION_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SPI_USER_OPTION_BLDG",
     "PKColumns": "DISTRICT,LOGIN_ID,BUILDING,PAGE_CODE,OPTION_CODE",
     "TableColumns": "DISTRICT,LOGIN_ID,BUILDING,PAGE_CODE,OPTION_CODE,OPTION_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_USER_PROMPT",
-    "PKColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,PROMPT_NAME",
-    "TableColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,PROMPT_NAME,PROMPT_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_USER_SEARCH",
-    "PKColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,SEARCH_NUMBER,SEQUENCE_NUM",
-    "TableColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,SEARCH_NUMBER,SEQUENCE_NUM,AND_OR_FLAG,TABLE_NAME,SCREEN_TYPE,SCREEN_NUMBER,PROGRAM_ID,COLUMN_NAME,FIELD_NUMBER,OPERATOR,SEARCH_VALUE1,SEARCH_VALUE2,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_USER_SEARCH_LIST_FIELD",
-    "PKColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,SEARCH_NUMBER,SEQUENCE_NUM",
-    "TableColumns": "DISTRICT,LOGIN_ID,SEARCH_TYPE,SEARCH_NUMBER,SEQUENCE_NUM,TABLE_NAME,SCREEN_TYPE,SCREEN_NUMBER,PROGRAM_ID,COLUMN_NAME,FIELD_NUMBER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_USER_SORT",
-    "PKColumns": "DISTRICT,LOGIN_ID,SORT_TYPE,SORT_NUMBER,SEQUENCE_NUM",
-    "TableColumns": "DISTRICT,LOGIN_ID,SORT_TYPE,SORT_NUMBER,SEQUENCE_NUM,TABLE_NAME,SCREEN_TYPE,SCREEN_NUMBER,PROGRAM_ID,COLUMN_NAME,FIELD_NUMBER,SORT_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -21438,72 +21952,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "SPI_VAL_TABS",
-    "PKColumns": "PACKAGE,REFTAB,REFCOL,SEQUENCE",
-    "TableColumns": "PACKAGE,REFTAB,REFCOL,SEQUENCE,VALTAB,VALCOL,VALDESC,PARAM,VALUE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_VALIDATION_TABLES",
-    "PKColumns": "DISTRICT,PACKAGE,TABLE_NAME,USER_DEFINED,RESERVED",
-    "TableColumns": "DISTRICT,PACKAGE,TABLE_NAME,TABLE_DESCR,USER_DEFINED,CUSTOM_CODE,RESERVED,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID,FEATURE_FLAG",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_VERSION",
-    "PKColumns": "",
-    "TableColumns": "VERSION,DB_VERSION,IS_STUPLUS_CONV,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_WATCH_LIST",
-    "PKColumns": "DISTRICT,LOGIN_ID,WATCH_NUMBER",
-    "TableColumns": "DISTRICT,LOGIN_ID,WATCH_NUMBER,WATCH_NAME,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_WATCH_LIST_STUDENT",
-    "PKColumns": "DISTRICT,LOGIN_ID,WATCH_NUMBER,STUDENT_ID",
-    "TableColumns": "DISTRICT,LOGIN_ID,WATCH_NUMBER,STUDENT_ID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "SPI_WORKFLOW_MESSAGES",
     "PKColumns": "DISTRICT,USER_ID,MSG_DATE,MSG_SEQUENCE",
     "TableColumns": "DISTRICT,USER_ID,MSG_DATE,MSG_SEQUENCE,BUILDING,MSG_TYPE,MESSAGE_BODY,URL,STUDENT_ID,SECTION_KEY,STAFF_ID,COURSE_SESSION,SCHD_RESOLVED,MESSAGE_DATE1,MESSAGE_DATE2,CHANGE_DATE_TIME,CHANGE_UID,FROM_BUILDING",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SPI_Z_SCALE",
-    "PKColumns": "DISTRICT,Z_INDEX,PERCENTILE",
-    "TableColumns": "DISTRICT,Z_INDEX,PERCENTILE",
-    "TableHasChangeDT": ""
-  },
-  {
-    "db": "eSch",
-    "name": "SPITB_SEARCH_FAV_CATEGORY",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SSP_CFG",
-    "PKColumns": "DISTRICT,BUILDING",
-    "TableColumns": "DISTRICT,BUILDING,TEA_STU_SUMM,SUB_STU_SUMM,TEA_SENS_PLAN,SUB_SENS_PLAN,TEA_SENS_INT,SUB_SENS_INT,TEA_SENS_INT_COMM,SUB_SENS_INT_COMM,TEA_INT_MNT,SUB_INT_MNT,TEA_GOAL_VIEW,SUB_GOAL_VIEW,TEA_GOAL_MNT,SUB_GOAL_MNT,TEA_GOAL_ACCESS,SUB_GOAL_ACCESS,TEA_INT_ACCESS,SUB_INT_ACCESS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "SSP_CFG_AUX",
-    "PKColumns": "DISTRICT,BUILDING",
-    "TableColumns": "DISTRICT,BUILDING,TEA_PLAN_ENTRY,SUB_PLAN_ENTRY,TEA_PLAN_UPD,SUB_PLAN_UPD,TEA_PLAN_UPD_UNASGN,SUB_PLAN_UPD_UNASGN,TEA_PLAN_DEL,SUB_PLAN_DEL,TEA_PLAN_DEL_UNASGN,SUB_PLAN_DEL_UNASGN,TEA_PLAN_VIEW_UNASGN,SUB_PLAN_VIEW_UNASGN,TEA_INT_ENTRY,SUB_INT_ENTRY,TEA_INT_UPD,SUB_INT_UPD,TEA_INT_UPD_UNASGN,SUB_INT_UPD_UNASGN,TEA_INT_DEL,SUB_INT_DEL,TEA_INT_DEL_UNASGN,SUB_INT_DEL_UNASGN,TEA_INT_VIEW_UNASGN,SUB_INT_VIEW_UNASGN,TEA_INT_PROG_ENT_UNASGN,SUB_INT_PROG_ENT_UNASGN,TEA_INT_PROG_DEL,SUB_INT_PROG_DEL,TEA_INT_PROG_DEL_UNASGN,SUB_INT_PROG_DEL_UNASGN,TEA_GOAL_ENTRY,SUB_GOAL_ENTRY,TEA_GOAL_UPD,SUB_GOAL_UPD,TEA_GOAL_UPD_UNASGN,SUB_GOAL_UPD_UNASGN,TEA_GOAL_DEL,SUB_GOAL_DEL,TEA_GOAL_DEL_UNASGN,SUB_GOAL_DEL_UNASGN,TEA_GOAL_VIEW_UNASGN,SUB_GOAL_VIEW_UNASGN,TEA_GOAL_OBJ_ENT_UNASGN,SUB_GOAL_OBJ_ENT_UNASGN,TEA_GOAL_OBJ_DEL,SUB_GOAL_OBJ_DEL,TEA_GOAL_OBJ_DEL_UNASGN,SUB_GOAL_OBJ_DEL_UNASGN,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -21865,13 +22316,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "STATE_DISTDEF_SCREENS",
-    "PKColumns": "DISTRICT,SCREEN_USED_FOR,SCREEN_TYPE,SCREEN_NUMBER",
-    "TableColumns": "DISTRICT,SCREEN_USED_FOR,SCREEN_TYPE,SCREEN_NUMBER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "STATE_DNLD_SUM_INFO",
     "PKColumns": "DISTRICT,STATE,DOWNLOAD_TYPE,TABLE_NAME",
     "TableColumns": "DISTRICT,STATE,DOWNLOAD_TYPE,TABLE_NAME,MULTI_RECORDS,DISPLAY_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
@@ -21909,7 +22353,7 @@ $dbDefinitions = @'
     "db": "eSch",
     "name": "STATE_OCR_BLDG_CFG",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,BUILDING",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,FEDERAL_CODE_EQUIV,UNGRADED_DETAIL,DISABILITY_SCHOOL,MAGNET_SCHOOL,MAGNET_ENTIRE_SCHOOL,CHARTER_SCHOOL,ALTERNATIVE_SCHOOL,ALT_ACADEMIC_STUDENTS,ALT_DISCIPLINE_STUDENTS,ALT_OTHER_STUDENTS,ALT_OTHER_COMMENTS,ABILITY_GROUPED_SCHOOL,AP_SELF_SELECT,CLASSROOM_TEACHER_FTE,LICENSED_TEACHER_FTE,FTE_TEACHERS_NOTMEETSTATEREQ,FIRST_YEAR_TEACHER_FTE,SECOND_YEAR_TEACHER_FTE,COUNSELOR_FTE,BUILDING_COMMENTS,DUAL_ENROLL,INTERSCH_ATHLETICS,INTERSCH_SPORTS_MALE,INTERSCH_SPORTS_FEMALE,INTERSCH_TEAMS_MALE,INTERSCH_TEAMS_FEMALE,INTERSCH_PARTIC_MALE,INTERSCH_PARTIC_FEMALE,HS_AGE_IN_UNGRADED,ABSENT_TEN_DAY_FTE,TOTAL_PERS_SALARY,TOTAL_PERS_SALARY_FED_ST_LOC,INSTR_PERS_SALARY,NON_PERS_EXP,NON_PERS_EXP_FED_ST_LOC,TEACH_PERS_SALARY,TEACHER_SALARY_FED_ST_LOC,TEACHER_SALARY_FTE,BUILDING_COMMENTS2,OTHER_BUILDING_LIST,JUSTICE_FACILITY,JUSTFAC_NUM_DAYS,JUSTFAC_HOURS_PERWEEK,JUSTFAC_EDUPROG_LESS15,JUSTFAC_EDUPROG_15TO30,JUSTFAC_EDUPROG_31TO90,JUSTFAC_EDUPROG_91TO180,JUSTFAC_EDUPROG_MORE180,PRES_AGE3,PRES_AGE4,PRES_AGE5,PRES_ONLY_IDEA,CREDIT_RECOV,CREDIT_RECOV_STUDENTS,LAW_ENFORCE_OFF,HOMICIDE_DEATHS,FIREARM_USE,FTE_PSYCHOLOGISTS,FTE_SOCIAL_WORKERS,FTE_NURSES,FTE_SECURITY_GUARDS,FTE_LAW_ENFORCEMENT,FTE_INSTRUCTIONAL_AIDES_ST_LOC,INST_AIDE_PERS_SALARY_ST_LOC,FTE_SUPPORT_STAFF_ST_LOC,SUPP_STAFF_PERS_SALARY_ST_LOC,FTE_SCHOOL_ADMIN_ST_LOC,SCHOOL_ADMIN_PERS_SALARY_ST_LOC,FTE_INSTRUCTIONAL_AIDES_FED_ST_LOC,INST_AIDE_PERS_SALARY_FED_ST_LOC,FTE_SUPPORT_STAFF_FED_ST_LOC,SUPP_STAFF_PERS_SALARY_FED_ST_LOC,FTE_SCHOOL_ADMIN_FED_ST_LOC,SCHOOL_ADMIN_PERS_SALARY_FED_ST_LOC,CUR_YEAR_TEACHERS,PRIOR_YEAR_TEACHERS,RETAINED_USE_FED_OR_LOC_GRADE_CODE,INTERNET_FIBER,INTERNET_WIFI,INTERNET_SCHOOL_ISSUED_DEVICE,INTERNET_STUDENT_OWNED_DEVICE,INTERNET_WIFI_ENABLED_DEVICES,CHANGE_DATE_TIME,CHANGE_UID,DIND_INSTRUCTION_TYPE,DIND_VIRTUAL_TYPE,FULLY_VIRTUAL,REMOTE_INSTRUCTION_AMOUNT,REMOTE_INSTRUCTION_PERCENT,INTERSCH_SPORTS_ALL,INTERSCH_TEAMS_ALL,INTERSCH_PARTIC_NONBINARY,FTE_MATH_TEACHERS,FTE_SCIENCE_TEACHERS,FTE_EL_TEACHERS,FTE_SPECIAL_ED_TEACHERS,TEACHERS_RETAINED,INTERNET_WIFI_ENABLED_DEVICES_NEEDED,INTERNET_WIFI_HOTSPOTS_NEEDED,INTERNET_WIFI_ENABLED_DEVICES_RECEIVED,INTERNET_WIFI_HOTSPOTS_RECEIVED",
+    "TableColumns": "DISTRICT,SCHOOL_YEAR,BUILDING,FEDERAL_CODE_EQUIV,UNGRADED_DETAIL,DISABILITY_SCHOOL,MAGNET_SCHOOL,MAGNET_ENTIRE_SCHOOL,CHARTER_SCHOOL,ALTERNATIVE_SCHOOL,ALT_ACADEMIC_STUDENTS,ALT_DISCIPLINE_STUDENTS,ALT_OTHER_STUDENTS,ALT_OTHER_COMMENTS,ABILITY_GROUPED_SCHOOL,AP_SELF_SELECT,CLASSROOM_TEACHER_FTE,LICENSED_TEACHER_FTE,FTE_TEACHERS_NOTMEETSTATEREQ,FIRST_YEAR_TEACHER_FTE,SECOND_YEAR_TEACHER_FTE,COUNSELOR_FTE,BUILDING_COMMENTS,DUAL_ENROLL,INTERSCH_ATHLETICS,INTERSCH_SPORTS_MALE,INTERSCH_SPORTS_FEMALE,INTERSCH_TEAMS_MALE,INTERSCH_TEAMS_FEMALE,INTERSCH_PARTIC_MALE,INTERSCH_PARTIC_FEMALE,HS_AGE_IN_UNGRADED,ABSENT_TEN_DAY_FTE,TOTAL_PERS_SALARY,TOTAL_PERS_SALARY_FED_ST_LOC,INSTR_PERS_SALARY,NON_PERS_EXP,NON_PERS_EXP_FED_ST_LOC,TEACH_PERS_SALARY,TEACHER_SALARY_FED_ST_LOC,TEACHER_SALARY_FTE,BUILDING_COMMENTS2,OTHER_BUILDING_LIST,JUSTICE_FACILITY,JUSTFAC_NUM_DAYS,JUSTFAC_HOURS_PERWEEK,JUSTFAC_EDUPROG_LESS15,JUSTFAC_EDUPROG_15TO30,JUSTFAC_EDUPROG_31TO90,JUSTFAC_EDUPROG_91TO180,JUSTFAC_EDUPROG_MORE180,PRES_AGE3,PRES_AGE4,PRES_AGE5,PRES_ONLY_IDEA,CREDIT_RECOV,CREDIT_RECOV_STUDENTS,LAW_ENFORCE_OFF,HOMICIDE_DEATHS,FIREARM_USE,FTE_PSYCHOLOGISTS,FTE_SOCIAL_WORKERS,FTE_NURSES,FTE_SECURITY_GUARDS,FTE_LAW_ENFORCEMENT,FTE_INSTRUCTIONAL_AIDES_ST_LOC,INST_AIDE_PERS_SALARY_ST_LOC,FTE_SUPPORT_STAFF_ST_LOC,SUPP_STAFF_PERS_SALARY_ST_LOC,FTE_SCHOOL_ADMIN_ST_LOC,SCHOOL_ADMIN_PERS_SALARY_ST_LOC,FTE_INSTRUCTIONAL_AIDES_FED_ST_LOC,INST_AIDE_PERS_SALARY_FED_ST_LOC,FTE_SUPPORT_STAFF_FED_ST_LOC,SUPP_STAFF_PERS_SALARY_FED_ST_LOC,FTE_SCHOOL_ADMIN_FED_ST_LOC,SCHOOL_ADMIN_PERS_SALARY_FED_ST_LOC,CUR_YEAR_TEACHERS,PRIOR_YEAR_TEACHERS,RETAINED_USE_FED_OR_LOC_GRADE_CODE,INTERNET_FIBER,INTERNET_WIFI,INTERNET_SCHOOL_ISSUED_DEVICE,INTERNET_STUDENT_OWNED_DEVICE,INTERNET_WIFI_ENABLED_DEVICES,CHANGE_DATE_TIME,CHANGE_UID,DIND_INSTRUCTION_TYPE,DIND_VIRTUAL_TYPE,FULLY_VIRTUAL,REMOTE_INSTRUCTION_AMOUNT,REMOTE_INSTRUCTION_PERCENT,INTERSCH_SPORTS_ALL,INTERSCH_TEAMS_ALL,INTERSCH_PARTIC_NONBINARY,FTE_MATH_TEACHERS,FTE_SCIENCE_TEACHERS,FTE_EL_TEACHERS,FTE_SPECIAL_ED_TEACHERS,TEACHERS_RETAINED,INTERNET_WIFI_ENABLED_DEVICES_NEEDED,INTERNET_WIFI_HOTSPOTS_NEEDED,INTERNET_WIFI_ENABLED_DEVICES_RECEIVED,INTERNET_WIFI_HOTSPOTS_RECEIVED,PRES_ENG_LEARNER_INDICATOR,PRES_ENG_LEARNER_IDENTIFICATION,PRES_SEC504_INDICATOR,PRES_SEC504_IDENTIFICATION,DISC_ENG_LEARNER_INDICATOR,DISC_ENG_LEARNER_IDENTIFICATION,DISC_SEC504_INDICATOR,DISC_SEC504_IDENTIFICATION",
     "TableHasChangeDT": "y"
   },
   {
@@ -21938,13 +22382,6 @@ $dbDefinitions = @'
     "name": "STATE_OCR_DIST_ATT",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,ATT_CODE",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,ATT_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "STATE_OCR_DIST_CFG",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,FEDERAL_CODE_EQUIV,ENROLL_DATE,IDEA_DATE,SEMESTER2_DATE,YEAR_START_DATE,YEAR_END_DATE,RACE_CATEGORY,GED_PREP,TOT_PUB_SCHOOLS,TOT_PUB_MEMBERSHIP,TOT_PUB_SERVED,TOT_PUB_WAITING,DESEGRAGATION_PLAN,KG_FULL,KG_FULL_FREE,KG_FULL_PARTORFULL,KG_PART,KG_PART_FREE,KG_PART_PARTORFULL,KG_NONE,KG_REQ_BY_STATUTE,PREK_FULL,PREK_FULL_FREE,PREK_FULL_PARTORFULL,PREK_PART,PREK_PART_FREE,PREK_PART_PARTORFULL,PREK_NONE,PREK_FOR_ALL,PREK_FOR_IDEA,PREK_FOR_TITLE1,PREK_FOR_LOWINCOME,PREK_FOR_OTHER,PREK_AGE_2,PREK_AGE_3,PREK_AGE_4,PREK_AGE_5,PREK_AGE_NONE,PREK_AGE_2_STU_COUNT,PREK_AGE_3_STU_COUNT,PREK_AGE_4_STU_COUNT,PREK_AGE_5_STU_COUNT,EARLY_CHILD_0_2,EARLY_CHILD_0_2_NON_IDEA,CIV_RIGHTS_COORD_GNDR_ID,CIV_RIGHTS_COORD_GNDR_PHONE,CIV_RIGHTS_COORD_GNDR_EXT,CIV_RIGHTS_COORD_RACE_ID,CIV_RIGHTS_COORD_RACE_PHONE,CIV_RIGHTS_COORD_RACE_EXT,CIV_RIGHTS_COORD_DIS_ID,CIV_RIGHTS_COORD_DIS_PHONE,CIV_RIGHTS_COORD_DIS_EXT,HAR_POL_NONE,HAR_POL_SEX,HAR_POL_DIS,HAR_POL_RACE,HAR_POL_ANY,HAR_POL_WEBLINK,CERTIFIED,CERT_NAME,CERT_TITLE,CERT_PHONE,CERT_DATE,CERT_AUTH,CERT_EMAIL,ATT_VIEW_TYPE,ENROLL_DIST_EDU_CRS,RETENTION_POLICY,NUM_STU_NON_LEA,STU_DISC_TRANSFER,CHANGE_DATE_TIME,CHANGE_UID,REPORT_NONBINARY_COUNTS,DETERMINE_STUDENT_GENDER,EARLY_CHILD,EARLY_CHILD_NON_IDEA,HAR_POL_SEX_WEBLINK,HAR_POL_GENDER,HAR_POL_GENDER_WEBLINK,HAR_POL_RELIGION,HAR_POL_RELIGION_WEBLINK",
     "TableHasChangeDT": "y"
   },
   {
@@ -21991,23 +22428,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "STATE_OCR_QUESTION",
-    "PKColumns": "DISTRICT,SCHOOL_YEAR,OCR_PART,FORM_TYPE,QUESTION_ID,RECORD_TYPE",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,OCR_PART,FORM_TYPE,QUESTION_ID,RECORD_TYPE,QUESTION_ORDER,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "STATE_OCR_SUMMARY",
     "PKColumns": "DISTRICT,SCHOOL_YEAR,OCR_PART,RECORD_TYPE,BUILDING,FED_RACE,GENDER,QUESTION_ID",
     "TableColumns": "DISTRICT,SCHOOL_YEAR,OCR_PART,RECORD_TYPE,BUILDING,FED_RACE,GENDER,QUESTION_ID,COUNT,OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "STATE_TASK_LOG_CFG",
-    "PKColumns": "DISTRICT,TASK_CODE",
-    "TableColumns": "DISTRICT,TASK_CODE,TASK_NAME,KEYFIELD01,KEYFIELD02,KEYFIELD03,KEYFIELD04,KEYFIELD05,KEYFIELD06,KEYFIELD07,KEYFIELD08,KEYFIELD09,KEYFIELD10,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -22068,13 +22491,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "STATETB_AP_SUBJECT",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "STATETB_DEF_CLASS",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -22085,34 +22501,6 @@ $dbDefinitions = @'
     "name": "STATETB_ENTRY_SOURCE",
     "PKColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME",
     "TableColumns": "DISTRICT,TABLE_NAME,COLUMN_NAME,DESCRIPTION,SOURCE_PAGE,SOURCE_DESCRIPTION,FORMATTER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "STATETB_OCR_COM_TYPE",
-    "PKColumns": "DISTRICT,COMMENT_TYPE",
-    "TableColumns": "DISTRICT,COMMENT_TYPE,DESCRIPTION,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "STATETB_OCR_COUNT_TYPE",
-    "PKColumns": "SECTION,ORDER_NUMBER,SEQUENCE,COUNT_TYPE",
-    "TableColumns": "DISTRICT,SECTION,ORDER_NUMBER,SEQUENCE,COUNT_TYPE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "STATETB_OCR_DISC_TYPE",
-    "PKColumns": "DISTRICT,DISC_CODE_ID",
-    "TableColumns": "DISTRICT,DISC_CODE_ID,DESCRIPTION,INCIDENT_OR_ACTION,DISC_CODE_ORDER,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "STATETB_OCR_EXP_TYPE",
-    "PKColumns": "DISTRICT,EXPENDITURE_ID",
-    "TableColumns": "DISTRICT,EXPENDITURE_ID,EXPENDITURE_ORDER,DESCRIPTION,EXPENDITURE_TYPE,ED_PREFERRED,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -22138,13 +22526,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "STATETB_RELIGION",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,ACTIVE,STATE_CODE_EQUIV,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "STATETB_STAFF_ROLE",
     "PKColumns": "DISTRICT,CODE",
     "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -22166,20 +22547,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "TAC_CFG",
-    "PKColumns": "DISTRICT,BUILDING",
-    "TableColumns": "DISTRICT,BUILDING,TEA_OVR_GB_AVG,SUB_OVR_GB_AVG,SHOW_ALL_TAB,DEFAULT_TAB_TYPE,DEFAULT_TAB,TEA_ISSUES,SUB_ISSUES,TEA_CONDUCT_REFER,SUB_CONDUCT_REFER,SET_ROLES_ON_REFER,SET_TYPE_ON_REFER,DEFAULT_ISSUE_TYPE,TEA_DISABLE_STD,TEA_DISABLE_RUBRIC,TEA_PUBLIC_RUBRIC,TEA_PERFORMANCEPLUS,SUB_PERFORMANCEPLUS,FREE_TEXT_OPTION,TEA_STU_ACCESS,SUB_STU_ACCESS,TEA_MEDALERTS,SUB_MEDALERTS,DISC_REFER,SSP_REFER,TEA_EFP_BP,SUB_EFP_BP,AUTO_PUBLISH_SCORES,TEACHER_EXTRA_CREDIT_CREATION,POINTS,POINTS_OVERRIDE,WEIGHT,WEIGHT_OVERRIDE,PUBLISH,PUBLISH_OVERRIDE,CHANGE_DATE_TIME,CHANGE_UID,TEA_UPD_PM_ASMT_SCORE",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TAC_CFG_ABS_SCRN",
-    "PKColumns": "DISTRICT,BUILDING",
-    "TableColumns": "DISTRICT,BUILDING,TEA_SCREEN_ACCESS,TEA_PREV_MP_ACCESS,SUB_SCREEN_ACCESS,SUB_PREV_MP_ACCESS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "TAC_CFG_ABS_SCRN_CODES",
     "PKColumns": "DISTRICT,BUILDING,SEQUENCE,ABS_CODE",
     "TableColumns": "DISTRICT,BUILDING,SEQUENCE,ABS_CODE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -22194,51 +22561,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "TAC_CFG_ATTACH",
-    "PKColumns": "DISTRICT,BUILDING",
-    "TableColumns": "DISTRICT,BUILDING,TEA_STU_ATTACH,TEA_STU_ATTACH_CAT_ALL,SUB_STU_ATTACH,SUB_STU_ATTACH_CAT_ALL,TEA_OTHER_ATTACH,TEA_OTHER_ATTACH_CAT_ALL,SUB_OTHER_ATTACH,SUB_OTHER_ATTACH_CAT_ALL,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "TAC_CFG_ATTACH_CATEGORIES",
     "PKColumns": "DISTRICT,BUILDING,CATEGORY_TYPE,CATEGORY_CODE",
     "TableColumns": "DISTRICT,BUILDING,CATEGORY_TYPE,CATEGORY_CODE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TAC_CFG_HAC",
-    "PKColumns": "DISTRICT,BUILDING",
-    "TableColumns": "DISTRICT,BUILDING,USE_TEA_NEWS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TAC_DISTRICT_CFG",
-    "PKColumns": "DISTRICT",
-    "TableColumns": "DISTRICT,ALLOW_EMAIL_ATTACH,MAX_ATTACH_SIZE,ATT_FILE_TYPES,FROM_ADDR_TYPE,FROM_ADDRESS,FROM_NAME,ALLOW_REPLY,USE_DEFAULT_MSG,DO_NOT_REPLY_MSG,CRN_FROM_TAC,PRIVACY_STATEMENT,SHOW_USERVOICE,ALLOW_TEACHER_STUDENT_ACCESS,ALLOW_SUBSTITUTE_STUDENT_ACCESS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TAC_ISSUE",
-    "PKColumns": "DISTRICT,ISSUE_ID",
-    "TableColumns": "DISTRICT,SCHOOL_YEAR,SUMMER_SCHOOL,BUILDING,STAFF_ID,ISSUE_ID,ISSUE_CODE,ISSUE_DATE,ISSUE_TIME,LOCATION,ISSUE_STATUS,ISSUE_SOURCE,ISSUE_SOURCE_DETAIL,COURSE_SESSION,ISSUE_RESOLVED,COMMENTS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TAC_ISSUE_ACTION",
-    "PKColumns": "DISTRICT,ISSUE_ID,ENTERED_DATE,ENTERED_SEQUENCE",
-    "TableColumns": "DISTRICT,ISSUE_ID,ENTERED_DATE,ENTERED_SEQUENCE,ACTION_CODE,START_DATE,END_DATE,START_TIME,END_TIME,ACTION_COMPLETED,PARENTS_CONTACTED,COMMENTS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TAC_ISSUE_REFER",
-    "PKColumns": "DISTRICT,ISSUE_ID,REFER_DATE,REFER_SEQUENCE",
-    "TableColumns": "DISTRICT,ISSUE_ID,REFER_DATE,REFER_SEQUENCE,REFER_STATUS,REFER_STAFF_ID,DISC_INCIDENT_ID,COMMENTS,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {
@@ -22250,27 +22575,6 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "TAC_ISSUE_RELATED",
-    "PKColumns": "DISTRICT,ISSUE_ID,RELATED_ISSUE_ID",
-    "TableColumns": "DISTRICT,ISSUE_ID,RELATED_ISSUE_ID,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TAC_ISSUE_STUDENT",
-    "PKColumns": "DISTRICT,ISSUE_ID,STUDENT_ID",
-    "TableColumns": "DISTRICT,ISSUE_ID,STUDENT_ID,STUDENT_ROLE,ADMIN_ROLE,COMMENTS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TAC_LINK",
-    "PKColumns": "DISTRICT,BUILDING,TAC_PAGE,SORT_ORDER",
-    "TableColumns": "DISTRICT,BUILDING,TAC_PAGE,SORT_ORDER,LINK_URL,LINK_DESCRIPTION,LINK_COLOR,NEW_UNTIL,POP_UP,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "TAC_LINK_MACRO",
     "PKColumns": "DISTRICT,BUILDING,MACRO_NAME",
     "TableColumns": "DISTRICT,BUILDING,MACRO_NAME,MACRO_VALUE,CHANGE_DATE_TIME,CHANGE_UID",
@@ -22278,44 +22582,9 @@ $dbDefinitions = @'
   },
   {
     "db": "eSch",
-    "name": "TAC_LUNCH_COUNTS",
-    "PKColumns": "DISTRICT,BUILDING,LUNCH_TYPE,STAFF_ID,LUNCH_DATE",
-    "TableColumns": "DISTRICT,BUILDING,LUNCH_TYPE,STAFF_ID,TEACHER,LUNCH_DATE,LUNCH_COUNT,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TAC_LUNCH_TYPES",
-    "PKColumns": "DISTRICT,BUILDING,LUNCH_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,LUNCH_TYPE,DESCRIPTION,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TAC_MENU_ITEMS",
-    "PKColumns": "DISTRICT,PARENT_MENU_ID,SEQUENCE",
-    "TableColumns": "DISTRICT,PARENT_MENU_ID,SEQUENCE,MENU_ID,TITLE,CONTROLLER,ACTION,AREA,RESERVED,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
     "name": "TAC_MESSAGES",
     "PKColumns": "DISTRICT,STAFF_ID,MSG_DATE,MSG_SEQUENCE",
     "TableColumns": "DISTRICT,STAFF_ID,MSG_DATE,MSG_SEQUENCE,BUILDING,MSG_TYPE,MESSAGE_BODY,STUDENT_ID,SECTION_KEY,COURSE_SESSION,SCHD_RESOLVED,MESSAGE_DATE1,MESSAGE_DATE2,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TAC_MS_SCHD",
-    "PKColumns": "DISTRICT,BUILDING,PARAM_KEY,MS_TYPE",
-    "TableColumns": "DISTRICT,BUILDING,PARAM_KEY,MS_TYPE,START_TIME,SUNDAY,MONDAY,TUESDAY,WEDNESDAY,THURSDAY,FRIDAY,SATURDAY,MS_PARAMETERS,EMAIL_TEACHERS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TAC_MSG_CRS_DATES",
-    "PKColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY",
-    "TableColumns": "DISTRICT,STUDENT_ID,SECTION_KEY,MODELED,DATE_RANGE_KEY,DATE_ADDED,DATE_DROPPED,RESOLVED_CONFLICT,CHANGE_DATE_TIME",
     "TableHasChangeDT": "y"
   },
   {
@@ -22365,34 +22634,6 @@ $dbDefinitions = @'
     "name": "TAC_SEAT_PER_HDR",
     "PKColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,PERIOD_LIST",
     "TableColumns": "DISTRICT,BUILDING,SCHOOL_YEAR,SUMMER_SCHOOL,PERIOD_LIST,LAYOUT_TYPE,NUM_GRID_COLS,NUM_GRID_ROWS,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TACTB_ISSUE",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,USE_IN_CLASS,USE_IN_REFER,DISC_REFER,SSP_REFER,SSP_REFER_TAG,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TACTB_ISSUE_ACTION",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "TACTB_ISSUE_LOCATION",
-    "PKColumns": "DISTRICT,CODE",
-    "TableColumns": "DISTRICT,CODE,DESCRIPTION,DISC_CODE,STATE_CODE_EQUIV,ACTIVE,CHANGE_DATE_TIME,CHANGE_UID",
-    "TableHasChangeDT": "y"
-  },
-  {
-    "db": "eSch",
-    "name": "tmp_medtb_vis_exam_ark",
-    "PKColumns": "",
-    "TableColumns": "DISTRICT,FOLLOWUP_CODE,CONFIRMED_NORMAL,CHANGE_DATE_TIME,CHANGE_UID",
     "TableHasChangeDT": "y"
   },
   {

@@ -10,7 +10,7 @@
     RootModule = 'CognosModule.psm1'
     
     # Version number of this module.
-    ModuleVersion = '24.6.5'
+    ModuleVersion = '25.3.21'
     
     # ID used to uniquely identify this module
     GUID = 'ff7a47df-5c0a-4a90-bba4-816b16290f27'
@@ -28,13 +28,13 @@
     Description = 'Module for pulling data from the Arkansas Cognos Data Servers'
     
     # Minimum version of the Windows PowerShell engine required by this module
-    PowerShellVersion = '7.0'
+    PowerShellVersion = '7.4'
     
     # Modules that must be imported into the global environment prior to importing this module
     #RequiredModules = @()
     
     # Functions to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no functions to export.
-    FunctionsToExport = 'Set-CognosConfig','Show-CognosConfig','Remove-CognosConfig','Connect-ToCognos',
+    FunctionsToExport = 'Set-CognosConfig','Show-CognosConfig','Get-CognosConfig','Remove-CognosConfig','Connect-ToCognos',
         'Update-CognosPassword','Get-CognosReport','Save-CognosReport','Get-CogStudent',
         'Get-CogSchool','Get-CogStuSchedule','Get-CogStuAttendance','Start-CognosBrowser',
         'Update-CognosModule','Start-CognosReport','Get-CognosDataSet','Get-CogSqlData','Update-CogTableDefinitions',

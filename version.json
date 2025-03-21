@@ -1,6 +1,10 @@
 {
     "versions": [
         {
+            "version": "25.3.21",
+            "description": "FMS 23 Tables. Do not upgrade until your district has been converted."
+        },
+        {
             "version": "24.6.5",
             "description": "Get-CogSqlData join keys on tables without primary keys."
         },
