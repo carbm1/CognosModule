@@ -1469,6 +1469,7 @@ function Get-CogStudent {
         [parameter(Mandatory=$false,ParameterSetName="Default")][datetime]$EntryAfter,
         [parameter(Mandatory=$false,ParameterSetName="Default")][switch]$InActive,
         [parameter(Mandatory=$false,ParameterSetName="Default")][switch]$Graduated,
+        [parameter(Mandatory=$false,ParameterSetName="Default")][switch]$PreRegistered,
         [parameter(Mandatory=$false,ParameterSetName="All")][switch]$All
     )
 
@@ -1513,6 +1514,8 @@ function Get-CogStudent {
             $parameters.reportparams += "p_status=I&"
         } elseif ($Graduated) {
             $parameters.reportparams += "p_status=G&"
+        } elseif ($PreRegistered) {
+            $parameters.reportparams += "p_status=P&"
         } else {
             $parameters.reportparams += "p_status=A&"    
         }
