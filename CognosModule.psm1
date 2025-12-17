@@ -240,6 +240,7 @@ function Connect-ToCognos {
         
     #>
 
+    [CmdletBinding()]
     Param(
         [parameter(Mandatory = $false)][string]$ConfigName = "DefaultConfig",
         [parameter(Mandatory = $false)][switch]$eFinance
@@ -1061,6 +1062,7 @@ function Get-CogSqlData {
         [Parameter(Mandatory=$false,ParameterSetName="awesomeSauce")][string]$OrderBy, # STUDENT_ID DESC
         [Parameter(Mandatory=$false)][switch]$RawCSV, #return the data as a string instead of objects.
         [Parameter(Mandatory=$false)][Switch]$DoNotLimitSchoolYear, #by default all queries, if table has SCHOOL_YEAR OR SECTION_KEY, will be limited to the current school year.
+        [Parameter(Mandatory=$false)][switch]$IncludeSSN,
         [Parameter(Mandatory=$false)][string]$cognosfolder
     )
 
@@ -1177,7 +1179,12 @@ function Get-CogSqlData {
                 Columns = $true
                 eFinance = $eFinance ? $true : $false
             }
-            $columns = (Get-CogTableDefinitions @tblParams | Where-Object { @('SSN','FMS_EMPL_NUMBER') -notcontains $PSItem }) -join ','
+            if ($IncludeSSN) {
+              #this will now include the SSN in the query to Cognos. 11/10/2025 per larger districts request.
+              $columns = (Get-CogTableDefinitions @tblParams) -join ','
+            } else {
+              $columns = (Get-CogTableDefinitions @tblParams | Where-Object { @('SSN','FMS_EMPL_NUMBER') -notcontains $PSItem }) -join ','
+            }
             $params.reportparams += "&p_colSpecify=$($Columns)"
         }
 
