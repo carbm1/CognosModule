@@ -38,7 +38,8 @@
         'Update-CognosPassword','Get-CognosReport','Save-CognosReport','Get-CogStudent',
         'Get-CogSchool','Get-CogStuSchedule','Get-CogStuAttendance','Start-CognosBrowser',
         'Update-CognosModule','Start-CognosReport','Get-CognosDataSet','Get-CogSqlData','Update-CogTableDefinitions',
-        'Invoke-IndexCognosFolder','Invoke-IndexCognosTeamContent','Get-CognosReportMetaData','Get-CogTableDefinitions'
+        'Invoke-IndexCognosFolder','Invoke-IndexCognosTeamContent','Get-CognosReportMetaData','Get-CogTableDefinitions',
+        'Invoke-CogSqlQuery'
     
     # Cmdlets to export from this module, for best performance, do not use wildcards and do not delete the entry, use an empty array if there are no cmdlets to export.
     CmdletsToExport = @()
