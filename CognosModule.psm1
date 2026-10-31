@@ -1579,8 +1579,8 @@ function Invoke-CogSqlQuery {
 
     $params = @{
         report = (Get-Hash $CognosDSN -Hash SHA256).Substring(0,24)
-        # TeamContent = $False
-        # cognosfolder = $cognosfolder -eq '' ? "_Shared Data File Reports\automation" : $cognosfolder
+        TeamContent = $cognosfolder -ne '' ? $True : $False
+        cognosfolder = $cognosfolder -eq '' ? "_Shared Data File Reports\automation" : $cognosfolder
     }
 
     if ($UseGet) {
