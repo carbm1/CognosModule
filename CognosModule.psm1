@@ -1534,7 +1534,7 @@ function Invoke-CogSqlQuery {
 
     [CmdletBinding()]
     Param(
-        [Parameter(Mandatory=$true)][string]$SQL,
+        [Parameter(Mandatory=$true)][Alias('Query')][string]$SQL,
         [Parameter(Mandatory=$false)][string]$CTE, #WITH x AS (...), y AS (...)
         [Parameter(Mandatory=$false)][int]$Top,
         [Parameter(Mandatory=$false)][string]$OrderBy, #output column names, e.g. 'LAST_NAME, FIRST_NAME DESC'
@@ -1579,7 +1579,7 @@ function Invoke-CogSqlQuery {
 
     $params = @{
         report = (Get-Hash $CognosDSN -Hash SHA256).Substring(0,24)
-        TeamContent = $cognosfolder -ne '' ? $True : $False
+        TeamContent = $cognosfolder -eq '' ? $True : $False
         cognosfolder = $cognosfolder -eq '' ? "_Shared Data File Reports\automation" : $cognosfolder
     }
 
