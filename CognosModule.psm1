@@ -88,7 +88,7 @@ function Set-CognosConfig {
     }
 
     if ($password) {
-        $CognosPassword = $password | ConvertTo-SecureString -AsPlainText -Force
+        $CognosPassword = $password | ConvertTo-SecureString -AsPlainText -Force | ConvertFrom-SecureString
     } else {
         $CognosPassword = Read-Host -Prompt "Please provide your Cognos Password" -AsSecureString | ConvertFrom-SecureString
     }
