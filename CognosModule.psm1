@@ -77,7 +77,8 @@ function Set-CognosConfig {
         [string]$ConfigName = "DefaultConfig",
         [parameter(Mandatory = $true)][string]$username,
         [parameter(Mandatory = $false)][string]$eFinanceUsername,
-        [parameter(Mandatory = $true)][string]$dsnname
+        [parameter(Mandatory = $true)][string]$dsnname,
+        [parameter(Mandatory = $false)][string]$password
 
     )
 
@@ -86,7 +87,11 @@ function Set-CognosConfig {
         New-Item "$($HOME)\.config\Cognos" -ItemType Directory -Force
     }
 
-    $CognosPassword = Read-Host -Prompt "Please provide your Cognos Password" -AsSecureString | ConvertFrom-SecureString
+    if ($password) {
+        $CognosPassword = $password | ConvertTo-SecureString -AsPlainText -Force
+    } else {
+        $CognosPassword = Read-Host -Prompt "Please provide your Cognos Password" -AsSecureString | ConvertFrom-SecureString
+    }
 
     $config = @{
         ConfigName = $ConfigName
