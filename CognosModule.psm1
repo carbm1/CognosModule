@@ -1549,6 +1549,7 @@ function Invoke-CogSqlQuery {
         [Parameter(Mandatory=$false)][Alias('TrimCSVWhiteSpace')][switch]$Trim,
         [Parameter(Mandatory=$false)][switch]$RawCSV,
         [Parameter(Mandatory=$false)][switch]$UseGet, #send the SQL on the URL instead of in a POST body.
+        [Parameter(Mandatory=$false)][switch]$Raw, #return the report CSV (single 'j' column) without parsing it. Not with -AsDataSet.
         [Parameter(Mandatory=$false)][string]$cognosfolder
     )
 
@@ -1681,6 +1682,7 @@ function Invoke-CogSqlQuery {
     } else {
         #Start the report ourselves so -PromptValues reaches Start-CognosReport, then collect the CSV output.
         $Conversation = Start-CognosReport @params
+        if ($Raw) { return Get-CognosReport -conversationID $Conversation.ConversationID -Timeout $Timeout -Raw }
         $data = Get-CognosReport -conversationID $Conversation.ConversationID -Timeout $Timeout
     }
 
